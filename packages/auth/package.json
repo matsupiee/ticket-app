@@ -1,0 +1,24 @@
+{
+  "name": "@ticket-app/auth",
+  "type": "module",
+  "exports": {
+    ".": {
+      "default": "./src/index.ts"
+    },
+    "./*": {
+      "default": "./src/*.ts"
+    }
+  },
+  "scripts": {},
+  "dependencies": {
+    "@ticket-app/db": "workspace:*",
+    "@ticket-app/env": "workspace:*",
+    "better-auth": "catalog:",
+    "dotenv": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@ticket-app/config": "workspace:*",
+    "typescript": "catalog:"
+  }
+}
