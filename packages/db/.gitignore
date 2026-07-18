@@ -6,6 +6,7 @@ out
 dist
 *.tgz
 /prisma/generated
+/src/generated
 
 # code coverage
 coverage

@@ -1,17 +1,14 @@
 import { createDb } from "@ticket-app/db";
-import * as schema from "@ticket-app/db/schema/auth";
 import { env } from "@ticket-app/env/server";
 import { betterAuth } from "better-auth";
-import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { prismaAdapter } from "better-auth/adapters/prisma";
 
 export function createAuth() {
   const db = createDb();
 
   return betterAuth({
-    database: drizzleAdapter(db, {
-      provider: "pg",
-
-      schema: schema,
+    database: prismaAdapter(db, {
+      provider: "postgresql",
     }),
     trustedOrigins: [env.CORS_ORIGIN],
     emailAndPassword: {

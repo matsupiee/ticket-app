@@ -10,22 +10,19 @@
     }
   },
   "scripts": {
-    "db:push": "drizzle-kit push",
-    "db:generate": "drizzle-kit generate",
-    "db:studio": "drizzle-kit studio",
-    "db:migrate": "drizzle-kit migrate"
+    "db:push": "bun --env-file=../../apps/server/.env prisma db push",
+    "db:generate": "bun prisma generate",
+    "db:studio": "bun --env-file=../../apps/server/.env prisma studio",
+    "db:migrate": "bun --env-file=../../apps/server/.env prisma migrate dev"
   },
   "dependencies": {
-    "@ticket-app/env": "workspace:*",
-    "dotenv": "catalog:",
-    "drizzle-orm": "^0.45.2",
-    "pg": "^8.22.0",
-    "zod": "catalog:"
+    "@prisma/adapter-pg": "7.8.0",
+    "@prisma/client": "7.8.0",
+    "@ticket-app/env": "workspace:*"
   },
   "devDependencies": {
     "@ticket-app/config": "workspace:*",
-    "@types/pg": "^8.20.0",
-    "drizzle-kit": "^0.31.10",
+    "prisma": "7.8.0",
     "typescript": "catalog:"
   }
 }

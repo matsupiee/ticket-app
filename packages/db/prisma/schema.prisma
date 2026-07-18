@@ -1,0 +1,924 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================================
+// Enum
+// ============================================================
+
+enum SaleMethod {
+  FIRST_COME
+  LOTTERY
+}
+
+enum AdmissionMethod {
+  GENERAL_ADMISSION
+  NUMBERED_ENTRY
+  RESERVED_SEAT
+}
+
+enum SeatAllocationMethod {
+  NONE
+  LOTTERY_LATER
+  IMMEDIATE
+}
+
+enum InventoryUnitType {
+  SEAT
+  ENTRY_NUMBER
+}
+
+enum InventoryUnitStatus {
+  AVAILABLE
+  HELD
+  RESERVED
+  SOLD
+  DISABLED
+}
+
+enum ApplicationStatus {
+  APPLIED
+  WON
+  LOST
+  CANCELED
+  EXPIRED
+}
+
+enum ApplicationChoiceResult {
+  PENDING
+  WON
+  LOST
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  CANCELED
+  EXPIRED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  CANCELED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+enum TicketStatus {
+  ACTIVE
+  USED
+  CANCELED
+  RESOLD
+  TRANSFERRED
+  REFUNDED
+}
+
+enum BenefitType {
+  DRINK
+  GOODS
+  PHOTO
+  COUPON
+  OTHER
+}
+
+enum BenefitStatus {
+  ACTIVE
+  USED
+  CANCELED
+}
+
+enum ResaleListingStatus {
+  LISTED
+  RESERVED
+  SOLD
+  CANCELED
+  EXPIRED
+}
+
+enum InventoryHoldStatus {
+  ACTIVE
+  CONSUMED
+  RELEASED
+  EXPIRED
+}
+
+enum OwnershipChangeReason {
+  INITIAL_ISSUE
+  RESALE
+  TRANSFER
+  REFUND
+  ADMIN
+}
+
+// ============================================================
+// イベント・公演
+// ============================================================
+
+model Event {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  name        String
+  description String?
+
+  performances Performance[]
+  saleWindows  SaleWindow[]
+  ticketTypes  TicketType[]
+}
+
+model Performance {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  eventId String
+  venueId String?
+
+  name     String
+  startsAt DateTime
+  endsAt   DateTime?
+
+  event Event  @relation(fields: [eventId], references: [id])
+  venue Venue? @relation(fields: [venueId], references: [id])
+
+  seatCategories     SeatCategory[]
+  inventoryPools     InventoryPool[]
+  offerEntitlements  SaleOfferEntitlement[]
+  ticketEntitlements TicketEntitlement[]
+  inventoryUnits     InventoryUnit[]
+  inventoryHoldItems InventoryHoldItem[]
+
+  @@index([eventId, startsAt])
+  @@index([venueId])
+}
+
+// ============================================================
+// 会場・座席マスタ
+// ============================================================
+
+model Venue {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  name String
+
+  address String?
+
+  seatMaps     SeatMap[]
+  performances Performance[]
+}
+
+model SeatMap {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  venueId String
+
+  name String
+
+  venue Venue  @relation(fields: [venueId], references: [id])
+  seats Seat[]
+
+  @@index([venueId])
+}
+
+model Seat {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  seatMapId String
+
+  section String?
+  block   String?
+  row     String?
+  number  String
+  label   String
+
+  seatMap SeatMap @relation(fields: [seatMapId], references: [id])
+
+  inventoryUnits InventoryUnit[]
+
+  @@unique([seatMapId, section, block, row, number])
+  @@index([seatMapId])
+}
+
+// ============================================================
+// 席種
+// ============================================================
+
+model SeatCategory {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  performanceId String
+
+  name         String
+  description  String?
+  displayOrder Int     @default(0)
+
+  performance Performance @relation(fields: [performanceId], references: [id])
+
+  inventoryPools InventoryPool[]
+
+  @@unique([performanceId, name])
+  @@index([performanceId, displayOrder])
+}
+
+// ============================================================
+// 販売受付
+// ============================================================
+
+model SaleWindow {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  eventId String
+
+  name   String
+  method SaleMethod
+
+  applicationStartsAt DateTime
+  applicationEndsAt   DateTime
+
+  paymentStartsAt DateTime?
+  paymentEndsAt   DateTime?
+
+  lotteryResultAt DateTime?
+
+  active Boolean @default(true)
+
+  event Event @relation(fields: [eventId], references: [id])
+
+  offers       SaleOffer[]
+  applications Application[]
+
+  @@index([eventId, applicationStartsAt])
+}
+
+// ============================================================
+// 券種
+//
+// 大人・子供などの商品区分。
+// 価格は販売受付や商品によって変えられるため、
+// SaleOfferTicketType側に保持する。
+// ============================================================
+
+model TicketType {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  eventId String
+
+  name        String
+  description String?
+
+  active       Boolean @default(true)
+  displayOrder Int     @default(0)
+
+  event Event @relation(fields: [eventId], references: [id])
+
+  offerTicketTypes SaleOfferTicketType[]
+  benefitTemplates TicketTypeBenefitTemplate[]
+
+  @@unique([eventId, name])
+  @@index([eventId, active, displayOrder])
+}
+
+// ============================================================
+// 販売商品
+//
+// 通常券:
+//   9/1公演 S席
+//
+// 通し券:
+//   9/1公演 S席
+//   9/2公演 S席
+//   9/3公演 A席
+//
+// SaleOfferEntitlementによって、商品が必要とする
+// 公演・席種・在庫を複数設定する。
+// ============================================================
+
+model SaleOffer {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  saleWindowId String
+
+  name        String
+  description String?
+
+  maxQuantityPerOrder Int
+  active              Boolean @default(true)
+  displayOrder        Int     @default(0)
+
+  saleWindow SaleWindow @relation(fields: [saleWindowId], references: [id])
+
+  ticketTypes  SaleOfferTicketType[]
+  entitlements SaleOfferEntitlement[]
+  choices      ApplicationChoice[]
+
+  @@index([saleWindowId, active, displayOrder])
+}
+
+model SaleOfferTicketType {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  saleOfferId  String
+  ticketTypeId String
+
+  price Int
+
+  minQuantity Int  @default(0)
+  maxQuantity Int?
+
+  active       Boolean @default(true)
+  displayOrder Int     @default(0)
+
+  saleOffer  SaleOffer  @relation(fields: [saleOfferId], references: [id])
+  ticketType TicketType @relation(fields: [ticketTypeId], references: [id])
+
+  applicationChoiceItems ApplicationChoiceItem[]
+  orderItems             OrderItem[]
+
+  @@unique([saleOfferId, ticketTypeId])
+  @@index([saleOfferId, active, displayOrder])
+  @@index([ticketTypeId])
+}
+
+// ============================================================
+// 販売商品が付与する公演利用権
+//
+// 通常券では1件。
+// 通し券では複数件。
+// ============================================================
+
+model SaleOfferEntitlement {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  saleOfferId     String
+  performanceId   String
+  inventoryPoolId String
+
+  quantityPerTicket Int @default(1)
+
+  saleOffer     SaleOffer     @relation(fields: [saleOfferId], references: [id])
+  performance   Performance   @relation(fields: [performanceId], references: [id])
+  inventoryPool InventoryPool @relation(fields: [inventoryPoolId], references: [id])
+
+  @@unique([saleOfferId, performanceId])
+  @@index([performanceId])
+  @@index([inventoryPoolId])
+}
+
+// ============================================================
+// 在庫
+// ============================================================
+
+model InventoryPool {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  performanceId  String
+  seatCategoryId String
+
+  admissionMethod      AdmissionMethod
+  seatAllocationMethod SeatAllocationMethod
+
+  capacity      Int
+  reservedCount Int @default(0)
+  soldCount     Int @default(0)
+
+  performance  Performance  @relation(fields: [performanceId], references: [id])
+  seatCategory SeatCategory @relation(fields: [seatCategoryId], references: [id])
+
+  units             InventoryUnit[]
+  offerEntitlements SaleOfferEntitlement[]
+  holds             InventoryHold[]
+
+  @@unique([performanceId, seatCategoryId])
+  @@index([performanceId])
+  @@index([seatCategoryId])
+}
+
+model InventoryUnit {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  inventoryPoolId String
+  performanceId   String
+  seatId          String?
+
+  type   InventoryUnitType
+  status InventoryUnitStatus @default(AVAILABLE)
+
+  entryNumber Int?
+  label       String?
+
+  inventoryPool InventoryPool @relation(fields: [inventoryPoolId], references: [id])
+  performance   Performance   @relation(fields: [performanceId], references: [id])
+  seat          Seat?         @relation(fields: [seatId], references: [id])
+
+  ticketEntitlements TicketEntitlement[]
+  holdItems          InventoryHoldItem[]
+
+  @@unique([inventoryPoolId, seatId])
+  @@unique([inventoryPoolId, entryNumber])
+  @@index([inventoryPoolId, status])
+  @@index([performanceId])
+  @@index([seatId])
+}
+
+// ============================================================
+// 在庫の一時確保
+// ============================================================
+
+model InventoryHold {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  inventoryPoolId String
+
+  userId String
+
+  quantity Int
+
+  status    InventoryHoldStatus @default(ACTIVE)
+  expiresAt DateTime
+
+  inventoryPool InventoryPool       @relation(fields: [inventoryPoolId], references: [id])
+  items         InventoryHoldItem[]
+
+  orderItemId String?    @unique
+  orderItem   OrderItem? @relation(fields: [orderItemId], references: [id])
+
+  @@index([inventoryPoolId, status])
+  @@index([userId])
+  @@index([expiresAt, status])
+}
+
+model InventoryHoldItem {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  inventoryHoldId String
+  inventoryUnitId String
+  performanceId   String
+
+  inventoryHold InventoryHold @relation(fields: [inventoryHoldId], references: [id])
+  inventoryUnit InventoryUnit @relation(fields: [inventoryUnitId], references: [id])
+  performance   Performance   @relation(fields: [performanceId], references: [id])
+
+  @@unique([inventoryHoldId, inventoryUnitId])
+  @@index([inventoryUnitId])
+  @@index([performanceId])
+}
+
+// ============================================================
+// 希望制応募
+//
+// Application
+// ├─ 第1希望: 9/1 S席
+// │  ├─ 大人 × 2
+// │  └─ 子供 × 1
+// ├─ 第2希望: 9/1 A席
+// │  ├─ 大人 × 2
+// │  └─ 子供 × 1
+// └─ 第3希望: 9/2 S席
+//    ├─ 大人 × 2
+//    └─ 子供 × 1
+// ============================================================
+
+model Application {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  saleWindowId String
+
+  userId String
+
+  status ApplicationStatus @default(APPLIED)
+
+  saleWindow SaleWindow          @relation(fields: [saleWindowId], references: [id])
+  choices    ApplicationChoice[]
+
+  @@index([saleWindowId, status])
+  @@index([userId])
+}
+
+model ApplicationChoice {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  applicationId String
+  saleOfferId   String
+
+  priority Int
+  result   ApplicationChoiceResult @default(PENDING)
+
+  application Application @relation(fields: [applicationId], references: [id])
+  saleOffer   SaleOffer   @relation(fields: [saleOfferId], references: [id])
+
+  items ApplicationChoiceItem[]
+  award ApplicationChoiceAward?
+
+  @@unique([applicationId, priority])
+  @@unique([applicationId, saleOfferId])
+  @@index([saleOfferId])
+}
+
+model ApplicationChoiceItem {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  applicationChoiceId   String
+  saleOfferTicketTypeId String
+
+  quantity Int
+
+  applicationChoice   ApplicationChoice   @relation(fields: [applicationChoiceId], references: [id])
+  saleOfferTicketType SaleOfferTicketType @relation(fields: [saleOfferTicketTypeId], references: [id])
+
+  awardItem ApplicationChoiceAwardItem?
+  orderItem OrderItem?
+
+  @@unique([applicationChoiceId, saleOfferTicketTypeId])
+  @@index([saleOfferTicketTypeId])
+}
+
+// ============================================================
+// 当選結果
+//
+// 基本的にはChoice単位で全券種をまとめて当落させる。
+// ============================================================
+
+model ApplicationChoiceAward {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  applicationChoiceId String @unique
+
+  result ApplicationChoiceResult
+
+  applicationChoice ApplicationChoice            @relation(fields: [applicationChoiceId], references: [id])
+  items             ApplicationChoiceAwardItem[]
+}
+
+model ApplicationChoiceAwardItem {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  applicationChoiceAwardId String
+  applicationChoiceItemId  String @unique
+
+  awardedQuantity Int
+
+  applicationChoiceAward ApplicationChoiceAward @relation(fields: [applicationChoiceAwardId], references: [id])
+
+  applicationChoiceItem ApplicationChoiceItem @relation(fields: [applicationChoiceItemId], references: [id])
+
+  @@index([applicationChoiceAwardId])
+}
+
+// ============================================================
+// 注文・決済
+// ============================================================
+
+model Order {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String
+
+  status OrderStatus @default(PENDING)
+
+  subtotalAmount Int
+  feeAmount      Int @default(0)
+  totalAmount    Int
+
+  items    OrderItem[]
+  payments Payment[]
+
+  @@index([userId, createdAt])
+  @@index([status])
+}
+
+model OrderItem {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orderId                 String
+  saleOfferTicketTypeId   String
+  applicationChoiceItemId String? @unique
+
+  quantity  Int
+  unitPrice Int
+
+  order               Order               @relation(fields: [orderId], references: [id])
+  saleOfferTicketType SaleOfferTicketType @relation(fields: [saleOfferTicketTypeId], references: [id])
+
+  applicationChoiceItem ApplicationChoiceItem? @relation(fields: [applicationChoiceItemId], references: [id])
+
+  tickets       Ticket[]
+  inventoryHold InventoryHold?
+
+  @@index([orderId])
+  @@index([saleOfferTicketTypeId])
+}
+
+model Payment {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orderId String
+
+  provider          String
+  providerPaymentId String?
+
+  amount Int
+  status PaymentStatus @default(PENDING)
+
+  order Order @relation(fields: [orderId], references: [id])
+
+  @@index([orderId])
+  @@index([provider, providerPaymentId])
+}
+
+// ============================================================
+// 発券済みチケット
+// ============================================================
+
+model Ticket {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orderItemId String
+
+  ownerUserId String
+
+  status TicketStatus @default(ACTIVE)
+
+  serialNumber String @unique
+  qrToken      String @unique
+
+  orderItem OrderItem @relation(fields: [orderItemId], references: [id])
+
+  entitlements       TicketEntitlement[]
+  benefits           TicketBenefit[]
+  resaleListings     ResaleListing[]
+  ownershipHistories TicketOwnershipHistory[]
+
+  @@index([orderItemId])
+  @@index([ownerUserId, status])
+}
+
+// ============================================================
+// チケットの公演利用権
+//
+// 通常券なら1件。
+// 通し券なら公演数分作成される。
+// ============================================================
+
+model TicketEntitlement {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ticketId        String
+  performanceId   String
+  inventoryUnitId String?
+
+  usedAt DateTime?
+
+  ticket        Ticket         @relation(fields: [ticketId], references: [id])
+  performance   Performance    @relation(fields: [performanceId], references: [id])
+  inventoryUnit InventoryUnit? @relation(fields: [inventoryUnitId], references: [id])
+
+  @@unique([ticketId, performanceId])
+  @@unique([inventoryUnitId])
+  @@index([performanceId])
+}
+
+// ============================================================
+// 副券テンプレート
+// ============================================================
+
+model TicketTypeBenefitTemplate {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ticketTypeId String
+
+  type BenefitType
+  name String
+
+  description String?
+  quantity    Int     @default(1)
+
+  ticketType TicketType @relation(fields: [ticketTypeId], references: [id])
+
+  @@index([ticketTypeId])
+}
+
+// ============================================================
+// 発行済み副券
+// ============================================================
+
+model TicketBenefit {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ticketId String
+
+  type BenefitType
+  name String
+
+  status BenefitStatus @default(ACTIVE)
+
+  quantity      Int
+  redeemedCount Int @default(0)
+
+  qrToken String? @unique
+
+  ticket Ticket @relation(fields: [ticketId], references: [id])
+
+  redemptions TicketBenefitRedemption[]
+
+  @@index([ticketId, status])
+}
+
+model TicketBenefitRedemption {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ticketBenefitId String
+
+  quantity Int
+  usedAt   DateTime @default(now())
+  usedBy   String?
+
+  ticketBenefit TicketBenefit @relation(fields: [ticketBenefitId], references: [id])
+
+  @@index([ticketBenefitId, usedAt])
+}
+
+// ============================================================
+// リセール
+// ============================================================
+
+model ResaleListing {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ticketId String
+
+  sellerUserId String
+  buyerUserId  String?
+
+  price Int
+
+  status ResaleListingStatus @default(LISTED)
+
+  listedAt    DateTime  @default(now())
+  expiresAt   DateTime?
+  completedAt DateTime?
+
+  ticket Ticket @relation(fields: [ticketId], references: [id])
+
+  @@index([ticketId])
+  @@index([sellerUserId, status])
+  @@index([status, expiresAt])
+}
+
+// ============================================================
+// チケット所有者履歴
+// ============================================================
+
+model TicketOwnershipHistory {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ticketId String
+
+  fromUserId String?
+  toUserId   String?
+
+  reason OwnershipChangeReason
+
+  ticket Ticket @relation(fields: [ticketId], references: [id])
+
+  @@index([ticketId, createdAt])
+  @@index([fromUserId])
+  @@index([toUserId])
+}
+
+// ============================================================
+// 認証
+// ============================================================
+
+model User {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  name          String
+  email         String  @unique
+  emailVerified Boolean @default(false) @map("email_verified")
+  image         String?
+
+  sessions Session[]
+  accounts Account[]
+
+  @@map("user")
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  expiresAt DateTime @map("expires_at")
+  token     String   @unique
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  userId    String   @map("user_id")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "session_userId_idx")
+  @@map("session")
+}
+
+model Account {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  accountId             String    @map("account_id")
+  providerId            String    @map("provider_id")
+  userId                String    @map("user_id")
+  accessToken           String?   @map("access_token")
+  refreshToken          String?   @map("refresh_token")
+  idToken               String?   @map("id_token")
+  accessTokenExpiresAt  DateTime? @map("access_token_expires_at")
+  refreshTokenExpiresAt DateTime? @map("refresh_token_expires_at")
+  scope                 String?
+  password              String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "account_userId_idx")
+  @@map("account")
+}
+
+model Verification {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  identifier String
+  value      String
+  expiresAt  DateTime @map("expires_at")
+
+  @@index([identifier], map: "verification_identifier_idx")
+  @@map("verification")
+}
