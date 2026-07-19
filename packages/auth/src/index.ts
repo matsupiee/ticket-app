@@ -3,6 +3,8 @@ import { env } from "@ticket-app/env/server";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 
+import { parseTrustedOrigins } from "./origins";
+
 export function createAuth() {
   const db = createDb();
 
@@ -10,9 +12,12 @@ export function createAuth() {
     database: prismaAdapter(db, {
       provider: "postgresql",
     }),
-    trustedOrigins: [env.CORS_ORIGIN],
+    trustedOrigins: parseTrustedOrigins(env.CORS_ORIGIN),
     emailAndPassword: {
       enabled: true,
+      sendResetPassword: async ({ user, url }) => {
+        console.info(`Password reset URL for ${user.email}: ${url}`);
+      },
     },
     // uncomment cookieCache setting when ready to deploy to Cloudflare using *.workers.dev domains
     // session: {

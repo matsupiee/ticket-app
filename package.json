@@ -33,8 +33,18 @@
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",
+    "lint": "oxlint",
+    "format": "oxfmt --write",
+    "format:check": "oxfmt --check",
+    "typecheck": "bun run check-types",
     "check-types": "turbo run check-types",
+    "test": "bun run test:unit && bun run test:int",
+    "test:unit": "vitest run --config apps/web/vitest.unit.config.ts && vitest run --config apps/web-admin-organizer/vitest.unit.config.ts && vitest run --config apps/web-admin-platform/vitest.unit.config.ts",
+    "test:int": "vitest run --config apps/web/vitest.integration.config.ts && vitest run --config apps/web-admin-organizer/vitest.integration.config.ts && vitest run --config apps/web-admin-platform/vitest.integration.config.ts",
+    "test:e2e": "playwright test --config apps/web/playwright.config.ts && playwright test --config apps/web-admin-organizer/playwright.config.ts && playwright test --config apps/web-admin-platform/playwright.config.ts",
     "dev:web": "turbo run dev -F web",
+    "dev:web-admin-organizer": "turbo run dev -F web-admin-organizer",
+    "dev:web-admin-platform": "turbo run dev -F web-admin-platform",
     "dev:server": "turbo run dev -F server",
     "db:push": "turbo run db:push -F @ticket-app/db",
     "db:studio": "turbo run db:studio -F @ticket-app/db",
@@ -42,7 +52,7 @@
     "db:migrate": "turbo run db:migrate -F @ticket-app/db",
     "deploy": "turbo run deploy -F @ticket-app/infra",
     "destroy": "turbo run destroy -F @ticket-app/infra",
-    "check": "oxlint && oxfmt --write"
+    "check": "bun run lint && bun run format"
   },
   "dependencies": {
     "@ticket-app/env": "workspace:*",
@@ -51,13 +61,19 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "catalog:",
+    "@playwright/test": "^1.61.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
     "@ticket-app/config": "workspace:*",
     "@types/node": "catalog:",
+    "jsdom": "^29.1.1",
     "lefthook": "^2.1.9",
     "oxfmt": "^0.57.0",
     "oxlint": "^1.72.0",
     "turbo": "^2.10.2",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "^4.1.10"
   },
   "packageManager": "bun@1.3.11"
 }

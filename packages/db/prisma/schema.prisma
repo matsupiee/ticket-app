@@ -115,14 +115,14 @@ model User {
   emailVerified Boolean @default(false) @map("email_verified")
   image         String?
 
-  sessions                  Session[]
-  accounts                  Account[]
-  inventoryHolds            InventoryHold[]
-  orders                    Order[]
-  tickets                   Ticket[]
-  eventOrganizerMembers     EventOrganizerMember[]
-  eventOrganizerInvitations EventOrganizerInvitation[]
-  applications              Application[]
+  sessions             Session[]
+  accounts             Account[]
+  inventoryHolds       InventoryHold[]
+  orders               Order[]
+  tickets              Ticket[]
+  organizerMembers     OrganizerMember[]
+  organizerInvitations OrganizerInvitation[]
+  applications         Application[]
 
   @@map("user")
 }
@@ -183,7 +183,7 @@ model Verification {
 // 1イベント主催者に複数ユーザーが所属できる
 // better-auth の organization テーブルを参考にしている
 // @see https://www.better-auth.com/docs/plugins/organization#organization
-model EventOrganizer {
+model Organizer {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
@@ -198,20 +198,18 @@ model EventOrganizer {
   inquiryEmail       String?
   inquiryPhoneNumber String?
 
-  /// @HideField()
-  eventOrganizerMembers     EventOrganizerMember[]
-  /// @HideField()
-  eventOrganizerInvitations EventOrganizerInvitation[]
-  /// @HideField()
-  eventOrganizerFeatures    EventOrganizerFeature[]
+  organizerMembers OrganizerMember[]
 
-  /// @HideField()
-  events  Event[]
-  /// @HideField()
+  organizerInvitations OrganizerInvitation[]
+
+  organizerFeatures OrganizerFeature[]
+
+  events Event[]
+
   company Company @relation(fields: [companyId], references: [id])
 }
 
-enum EventOrganizerMemberRole {
+enum OrganizerMemberRole {
   VIEWER
   EDITOR
 }
@@ -219,46 +217,42 @@ enum EventOrganizerMemberRole {
 // ユーザーがどのイベント主催者に所属しているかを管理するテーブル
 // better-auth の invitation テーブルを参考にしている
 // @see https://www.better-auth.com/docs/plugins/organization#member
-model EventOrganizerMember {
+model OrganizerMember {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  userId           String
-  eventOrganizerId String
-  role             EventOrganizerMemberRole
+  userId      String
+  organizerId String
+  role        OrganizerMemberRole
 
-  /// @HideField()
-  user           User           @relation(fields: [userId], references: [id])
-  /// @HideField()
-  eventOrganizer EventOrganizer @relation(fields: [eventOrganizerId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
+  organizer Organizer @relation(fields: [organizerId], references: [id])
 
-  @@unique([userId, eventOrganizerId])
+  @@unique([userId, organizerId])
 }
 
 // 他のユーザーをイベント主催者として招待する
 // better-auth の invitation テーブルを参考にしている
 // @see https://www.better-auth.com/docs/plugins/organization#invitation
-model EventOrganizerInvitation {
+model OrganizerInvitation {
   // #region better-authで必要なカラム
 
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  email            String // このメールアドレスに招待リンクが送られる
-  inviterId        String // 招待を行ったユーザーのID
-  eventOrganizerId String
-  role             EventOrganizerMemberRole
-  status           String
-  expiresAt        DateTime?
+  email       String // このメールアドレスに招待リンクが送られる
+  inviterId   String // 招待を行ったユーザーのID
+  organizerId String
+  role        OrganizerMemberRole
+  status      String
+  expiresAt   DateTime?
 
   // #endregion
 
-  /// @HideField()
-  eventOrganizer EventOrganizer @relation(fields: [eventOrganizerId], references: [id])
-  /// @HideField()
-  invitedByUser  User           @relation(fields: [inviterId], references: [id])
+  organizer     Organizer @relation(fields: [organizerId], references: [id])
+  invitedByUser User      @relation(fields: [inviterId], references: [id])
 }
 
 // イベント主催者：会社 = 多:1
@@ -271,11 +265,8 @@ model Company {
 
   name String @unique
 
-  /// @HideField()
-  eventOrganizers    EventOrganizer[]
-  /// @HideField()
+  organizers         Organizer[]
   companyBankAccount CompanyBankAccount?
-  /// @HideField()
   companySettlement  CompanySettlement[]
 }
 
@@ -297,7 +288,6 @@ model CompanyBankAccount {
   branchCode    String          @db.Char(3)
   holderName    String
 
-  /// @HideField()
   company Company @relation(fields: [companyId], references: [id])
 }
 
@@ -337,27 +327,25 @@ model CompanySettlement {
   branchCode    String          @db.Char(3)
   holderName    String
 
-  /// @HideField()
   company Company @relation(fields: [companyId], references: [id])
 
   @@index([companyId, periodStart, periodEnd])
 }
 
 // 主催者ごとに使える機能を制御する
-model EventOrganizerFeature {
+model OrganizerFeature {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  eventOrganizerId String
+  organizerId String
 
   // 機能が割と頻繁に増えるという想定でstring型にしている
   // 増える頻度が低い(3ヶ月に1回くらい)ならenumでいいかもしれない
   key       String
   isEnabled Boolean @default(false)
 
-  /// @HideField()
-  eventOrganizer EventOrganizer @relation(fields: [eventOrganizerId], references: [id])
+  organizer Organizer @relation(fields: [organizerId], references: [id])
 }
 
 // ============================================================
@@ -369,15 +357,17 @@ model Event {
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
+  organizerId String
+
   name        String
   description String // 何もない場合は空文字
+
+  organizer Organizer @relation(fields: [organizerId], references: [id])
 
   performances     Performance[]
   saleWindows      SaleWindow[]
   seatCategories   SeatCategory[]
   rateTypes        RateType[]
-  eventOrganizer   EventOrganizer?   @relation(fields: [eventOrganizerId], references: [id])
-  eventOrganizerId String?
   voucherTemplates VoucherTemplate[]
   feeRules         FeeRule[]
 }

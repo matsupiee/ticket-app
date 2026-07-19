@@ -4,8 +4,8 @@ import { HeadContent, Outlet, createRootRouteWithContext } from "@tanstack/react
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { Toaster } from "@ticket-app/ui/components/sonner";
 
-import Header from "@/components/header";
-import { ThemeProvider } from "@/components/theme-provider";
+import Header from "@/shared/_components/header";
+import { ThemeProvider } from "@/shared/_components/theme-provider";
 import { orpc } from "@/utils/orpc";
 
 import "../index.css";
@@ -37,6 +37,8 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 });
 
 function RootComponent() {
+  const showDevtools = import.meta.env.DEV && import.meta.env.VITE_ENABLE_DEVTOOLS === "true";
+
   return (
     <>
       <HeadContent />
@@ -46,14 +48,18 @@ function RootComponent() {
         disableTransitionOnChange
         storageKey="vite-ui-theme"
       >
-        <div className="grid grid-rows-[auto_1fr] h-svh">
+        <div className="grid min-h-svh grid-rows-[auto_1fr]">
           <Header />
           <Outlet />
         </div>
         <Toaster richColors />
       </ThemeProvider>
-      <TanStackRouterDevtools position="bottom-left" />
-      <ReactQueryDevtools position="bottom" buttonPosition="bottom-right" />
+      {showDevtools ? (
+        <>
+          <TanStackRouterDevtools position="bottom-left" />
+          <ReactQueryDevtools position="bottom" buttonPosition="bottom-right" />
+        </>
+      ) : null}
     </>
   );
 }

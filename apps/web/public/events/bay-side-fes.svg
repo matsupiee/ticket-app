@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" role="img" aria-label="Outdoor music festival stage near the bay">
+  <rect width="1600" height="1000" fill="#061013"/>
+  <path d="M0 0h1600v540H0z" fill="#102a31"/>
+  <path d="M0 340c220 64 396 84 540 61 198-32 321-128 520-112 190 15 344 129 540 84v267H0z" fill="#ecfeff" opacity=".12"/>
+  <path d="M0 480c258-46 457-52 598-18 218 52 354 158 610 120 134-20 263-76 392-168v268H0z" fill="#22d3ee" opacity=".22"/>
+  <path d="M0 640h1600v360H0z" fill="#111318"/>
+  <circle cx="1260" cy="188" r="92" fill="#fbbf24" opacity=".9"/>
+  <path d="M352 710h896l-86 144H438z" fill="#252a32"/>
+  <path d="M472 414h656v312H472z" fill="#16191f"/>
+  <path d="M530 470h540v176H530z" fill="#0c1118"/>
+  <path d="M448 414h704l-86-86H534z" fill="#303642"/>
+  <path d="M348 726 506 328h62L414 726z" fill="#94a3b8" opacity=".55"/>
+  <path d="M1252 726 1094 328h-62l154 398z" fill="#94a3b8" opacity=".55"/>
+  <path d="M594 512 382 724h104l182-212z" fill="#fb7185" opacity=".42"/>
+  <path d="M1006 512 1218 724h-104L932 512z" fill="#38bdf8" opacity=".45"/>
+  <g fill="#0b0c10">
+    <circle cx="250" cy="810" r="38"/>
+    <circle cx="338" cy="822" r="28"/>
+    <circle cx="1236" cy="812" r="36"/>
+    <circle cx="1324" cy="830" r="26"/>
+  </g>
+  <g fill="#f8fafc" opacity=".75">
+    <rect x="604" y="680" width="56" height="8"/>
+    <rect x="718" y="680" width="56" height="8"/>
+    <rect x="832" y="680" width="56" height="8"/>
+    <rect x="946" y="680" width="56" height="8"/>
+  </g>
+</svg>

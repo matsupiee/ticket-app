@@ -10,6 +10,7 @@
 
 # Testing
 /coverage
+/test-results
 
 # Build outputs
 /.next/

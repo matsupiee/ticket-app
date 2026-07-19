@@ -37,3 +37,43 @@
 - ログイン
 - 主催者一覧
 - 月別売上一覧
+
+# 開発状況
+
+## 管理画面: 主催者・プラットフォーム管理の初期縦切り
+
+2026-07-19 時点で、管理画面の初期縦切りとして以下を実装済み。
+
+- `apps/web-admin-organizer`
+  - better-auth を使う主催者ログイン・登録・パスワードリセット導線
+  - イベント一覧
+  - イベント詳細 / イベント設定
+  - 売上ダッシュボード
+  - 精算一覧
+  - アカウント設定
+- `apps/web-admin-platform`
+  - better-auth を使う平台管理者ログイン導線
+  - 主催者一覧
+  - 主催者詳細
+  - 月別売上一覧
+
+現段階では、DB/API 連携前の画面検証として各 admin app の `src/features/**/_utils/` に置いたモックドメインデータを使う。
+admin 画面の初期アクセス制御は、better-auth のログイン済みセッションに加えて、各 app の `VITE_ORGANIZER_ADMIN_EMAILS` / `VITE_PLATFORM_ADMIN_EMAILS` によるメールアドレス allowlist で判定する。
+ローカル開発では `CORS_ORIGIN` が localhost 系の場合に `localhost:3001` / `3002` / `3003` を trusted origin として扱う。
+パスワードリセットは better-auth の reset API を有効化し、現時点では開発用にリセット URL をサーバログへ出力する。
+
+次に進める場合は、主催者イベント・精算・平台月次売上を `packages/api` 経由の読み取り API に置き換え、権限ロールを DB 上の `EventOrganizerMember` と平台管理者ロールに紐づけてサーバ側でも強制する。
+
+## ユーザー画面: イベント申し込み導線
+
+2026-07-19 時点で、ユーザー向けの初期縦切りとして以下を実装済み。
+
+- イベント一覧
+- イベント詳細
+- チケット申し込み
+- チケット申し込み完了
+
+現段階では、DB/API 連携前の画面検証として `apps/web/src/features/event/_utils/ticketing.ts` のモックドメインデータを使う。
+手数料計算は ADR 0002 に合わせ、購入者負担手数料を支払予定額に加算し、主催者負担手数料は精算側の金額として分けて扱う。
+
+次に進める場合は、このモックデータを `packages/api` 経由の読み取り API に置き換え、申し込み確定時に `Application` / `Order` / `OrderFeeLine` 相当へ保存する。

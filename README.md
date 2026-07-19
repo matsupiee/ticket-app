@@ -108,9 +108,15 @@ ticket-app/
 - `bun run build`: Build all applications
 - `bun run dev:web`: Start only the web application
 - `bun run dev:server`: Start only the server
+- `bun run typecheck`: Check TypeScript types across all apps
 - `bun run check-types`: Check TypeScript types across all apps
+- `bun run lint`: Run Oxlint
+- `bun run format:check`: Check formatting with Oxfmt
+- `bun run test`: Run unit and integration tests
 - `bun run db:push`: Push schema changes to database
 - `bun run db:generate`: Generate database client/types
 - `bun run db:migrate`: Run database migrations
 - `bun run db:studio`: Open database studio UI
 - `bun run check`: Run Oxlint and Oxfmt
+
+Lefthook runs `typecheck`, `lint`, `format:check`, and `test` on `git push`.

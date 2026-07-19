@@ -1,0 +1,31 @@
+# Dependencies
+/node_modules
+/.pnp
+.pnp.*
+
+# Testing
+/coverage
+/test-results
+
+# Build outputs
+/build/
+/dist/
+.tanstack/
+
+# Environment & local files
+.env*
+!.env.example
+.DS_Store
+*.local
+
+# Logs
+*.log
+.pnpm-debug.log*
+
+# TypeScript
+*.tsbuildinfo
+
+# IDE
+.vscode/*
+!.vscode/extensions.json
+.idea

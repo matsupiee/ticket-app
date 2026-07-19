@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" role="img" aria-label="Concert stage with sharp orbital lights">
+  <rect width="1600" height="1000" fill="#08090b"/>
+  <path d="M0 700h1600v300H0z" fill="#121318"/>
+  <path d="M0 0h1600v1000H0z" fill="url(#noise)" opacity=".22"/>
+  <circle cx="800" cy="470" r="320" fill="none" stroke="#d8f7ff" stroke-width="4" opacity=".55"/>
+  <circle cx="800" cy="470" r="238" fill="none" stroke="#ff6ad5" stroke-width="3" opacity=".58"/>
+  <path d="M214 706c212-86 401-130 586-130s374 44 586 130" fill="none" stroke="#f7f8ff" stroke-width="6" opacity=".4"/>
+  <path d="M190 732c218-67 422-101 610-101s392 34 610 101" fill="none" stroke="#67e8f9" stroke-width="3" opacity=".5"/>
+  <path d="M444 90 742 704h-92L252 90z" fill="#67e8f9" opacity=".3"/>
+  <path d="M1156 90 858 704h92l398-614z" fill="#ff6ad5" opacity=".28"/>
+  <path d="M725 90h150l-38 626h-74z" fill="#f7f8ff" opacity=".18"/>
+  <rect x="486" y="684" width="628" height="62" fill="#20232b"/>
+  <rect x="560" y="624" width="480" height="78" fill="#171a21"/>
+  <g fill="#f7f8ff">
+    <circle cx="574" cy="724" r="10"/>
+    <circle cx="686" cy="724" r="10"/>
+    <circle cx="800" cy="724" r="10"/>
+    <circle cx="914" cy="724" r="10"/>
+    <circle cx="1026" cy="724" r="10"/>
+  </g>
+  <g fill="#67e8f9" opacity=".8">
+    <rect x="224" y="780" width="72" height="12"/>
+    <rect x="330" y="812" width="120" height="12"/>
+    <rect x="1160" y="812" width="120" height="12"/>
+    <rect x="1304" y="780" width="72" height="12"/>
+  </g>
+  <defs>
+    <pattern id="noise" width="80" height="80" patternUnits="userSpaceOnUse">
+      <path d="M0 79h80M79 0v80" stroke="#fff" stroke-opacity=".09"/>
+      <circle cx="18" cy="22" r="2" fill="#fff" fill-opacity=".12"/>
+      <circle cx="61" cy="44" r="1.5" fill="#fff" fill-opacity=".1"/>
+    </pattern>
+  </defs>
+</svg>
