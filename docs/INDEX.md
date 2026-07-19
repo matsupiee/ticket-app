@@ -9,3 +9,4 @@
 ## ADR
 
 - [adr/0001-ticket-domain-schema.md](./adr/0001-ticket-domain-schema.md): チケット販売ドメインのDBスキーマ整理。
+- [adr/0002-ticket-fee-schema.md](./adr/0002-ticket-fee-schema.md): チケット手数料の設定と注文時明細のDBスキーマ整理。

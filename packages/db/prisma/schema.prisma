@@ -90,6 +90,17 @@ enum InventoryHoldStatus {
   EXPIRED
 }
 
+enum FeePayer {
+  // 購入者が負担する
+  // 購入者の支払総額に加算される
+  // チケット購入画面上に表示される
+  BUYER
+  // イベント主催者が負担する
+  // 購入者の支払総額には影響しない。主催者の精算額から差し引く
+  // チケット購入画面には表示されない
+  EVENT_ORGANIZER
+}
+
 // ============================================================
 // 認証
 // ============================================================
@@ -368,6 +379,7 @@ model Event {
   eventOrganizer   EventOrganizer?   @relation(fields: [eventOrganizerId], references: [id])
   eventOrganizerId String?
   voucherTemplates VoucherTemplate[]
+  feeRules         FeeRule[]
 }
 
 model Performance {
@@ -693,6 +705,7 @@ model SaleWindow {
 
   saleOffers   SaleOffer[]
   applications Application[]
+  feeRules     FeeRule[]
 }
 
 // ============================================================
@@ -737,6 +750,7 @@ model SaleOffer {
   applicationPreferenceItems ApplicationPreferenceItem[]
   applicationPreferences     ApplicationPreference[]
   saleOfferVouchers          SaleOfferVoucher[]
+  feeRules                   FeeRule[]
 }
 
 // ============================================================
@@ -769,6 +783,54 @@ model SaleOfferRate {
   orderItems                 OrderItem[]
 
   @@unique([saleOfferId, rateTypeId])
+}
+
+// ============================================================
+// 手数料設定ルール
+// ============================================================
+
+model FeeRule {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  // eventId は所属 Event を表す。saleWindowId / saleOfferId が NULL の場合は
+  // Event 全体の手数料として扱い、saleWindowId がある場合は販売受付単位、
+  // saleOfferId がある場合は販売商品単位の手数料として扱う。
+  // ただし、「saleWindowId と saleOfferId が両方設定される」「saleOfferId が別イベントに属している」
+  // というような不整合が起きないように気をつける必要がある
+  eventId      String
+  saleWindowId String?
+  saleOfferId  String?
+
+  name         String
+  displayOrder Int    @default(0)
+
+  // ミスが発覚して無効化した場合、その日時を記録する
+  disabledAt DateTime
+
+  payer FeePayer
+
+  currency String @default("JPY")
+
+  // 例1: 5% → rateBasisPoints=500, flatAmount=0
+  // 例2: 300円 → rateBasisPoints=0, flatAmount=300
+  // 例3: 3% + 100円  → rateBasisPoints=300, flatAmount=100
+  rateBasisPoints Int // 割合
+  flatAmount      Int // 固定額
+
+  // 最初は切り下げで固定する
+  // roundingMode    FeeRoundingMode // 切り上げ / 切り下げ / 四捨五入
+
+  // 以下のような設定をすることも考えられるが必要性が低いので、一旦1チケットごとの扱いにする
+  // - PER_TICKET: 1チケットごと
+  // - PER_ORDER: 1注文ごと
+
+  event      Event       @relation(fields: [eventId], references: [id])
+  saleWindow SaleWindow? @relation(fields: [saleWindowId], references: [id])
+  saleOffer  SaleOffer?  @relation(fields: [saleOfferId], references: [id])
+
+  orderFeeLines OrderFeeLine[]
 }
 
 // ============================================================
@@ -1008,16 +1070,19 @@ model Order {
 
   status OrderStatus @default(PENDING)
 
-  subtotalAmount Int
-  feeAmount      Int    @default(0)
-  totalAmount    Int
-  currency       String @default("JPY")
+  subtotalAmount     Int
+  feeAmount          Int    @default(0)
+  buyerFeeAmount     Int    @default(0)
+  organizerFeeAmount Int    @default(0)
+  totalAmount        Int
+  currency           String @default("JPY")
 
   user User @relation(fields: [userId], references: [id])
 
-  orderItems OrderItem[]
-  payments   Payment[]
-  refunds    Refund[]
+  orderItems    OrderItem[]
+  orderFeeLines OrderFeeLine[]
+  payments      Payment[]
+  refunds       Refund[]
 }
 
 model OrderItem {
@@ -1040,6 +1105,48 @@ model OrderItem {
   tickets       Ticket[]
   inventoryHold InventoryHold?
   refundItems   RefundItem[]
+  orderFeeLines OrderFeeLine[]
+}
+
+// ============================================================
+// 注文時に適用された手数料明細
+//
+// 注文後に FeeRule が変更されても購入者請求・主催者精算・返金判断を
+// 監査できるように、計算条件と計算結果をスナップショットとして保持する。
+// ============================================================
+
+model OrderFeeLine {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  orderId     String
+  orderItemId String
+  feeRuleId   String
+
+  name         String
+  displayOrder Int
+
+  payer FeePayer
+
+  rateBasisPoints Int // 割合
+  flatAmount      Int // 固定額
+
+  currency       String
+  unitBaseAmount Int // 1チケットあたりの割合計算対象金額
+  quantity       Int // 手数料が適用される枚数
+
+  // orderItem に対して実際に適用される手数料金額
+  // (Math.floor(unitBaseAmount * rateBasisPoints / 10000) + flatAmount) * quantity
+  feeAmount Int
+
+  order     Order     @relation(fields: [orderId], references: [id])
+  orderItem OrderItem @relation(fields: [orderItemId], references: [id])
+  feeRule   FeeRule?  @relation(fields: [feeRuleId], references: [id])
+
+  @@index([orderId])
+  @@index([orderItemId])
+  @@index([feeRuleId])
 }
 
 // order : payment = 1 : N
