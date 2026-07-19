@@ -4,7 +4,7 @@ import ReactDOM from "react-dom/client";
 
 import Loader from "./shared/_components/loader";
 import { routeTree } from "./routeTree.gen";
-import { orpc, queryClient } from "./utils/orpc";
+import { orpc, queryClient } from "./lib/orpc";
 
 const router = createRouter({
   routeTree,

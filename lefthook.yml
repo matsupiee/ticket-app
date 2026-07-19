@@ -15,11 +15,13 @@ pre-push:
   parallel: false
   files: git ls-files
   jobs:
+    - name: directory-patterns
+      run: sh -c 'bun run check:patterns' -- {files}
     - name: typecheck
-      run: bun run typecheck
+      run: sh -c 'bun run typecheck' -- {files}
     - name: lint
-      run: bun run lint
+      run: bun oxlint {files}
     - name: format
-      run: bun run format:check
+      run: bun oxfmt --check {files}
     - name: test
-      run: bun run test
+      run: sh -c 'bun run test' -- {files}

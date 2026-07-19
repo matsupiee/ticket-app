@@ -5,6 +5,7 @@
 ## 入口
 
 - [requirement.md](./requirement.md): 現時点のプロダクト要件。
+- [db-seed-data.md](./db-seed-data.md): 開発用DB seedデータのパターンと実行方法。
 
 ## ADR
 

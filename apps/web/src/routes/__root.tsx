@@ -6,7 +6,7 @@ import { Toaster } from "@ticket-app/ui/components/sonner";
 
 import Header from "@/shared/_components/header";
 import { ThemeProvider } from "@/shared/_components/theme-provider";
-import { orpc } from "@/utils/orpc";
+import { orpc } from "@/lib/orpc";
 
 import "../index.css";
 
