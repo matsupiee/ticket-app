@@ -4,26 +4,29 @@ import { ApplicationCompletePage } from "@/features/event/detail/apply-complete/
 import {
   type ApplicationSelection,
   getDefaultApplicationSelection,
-  getEventById,
 } from "@/features/event/_utils/ticketing";
+import { client } from "@/lib/orpc";
 
 export const Route = createFileRoute("/events/$eventId/application-complete")({
   component: RouteComponent,
-  validateSearch: (search): Partial<ApplicationSelection> => ({
+  validateSearch: (search): Partial<ApplicationSelection> & { orderId?: string } => ({
     saleWindowId: parseOptionalString(search.saleWindowId),
     performanceId: parseOptionalString(search.performanceId),
     offerId: parseOptionalString(search.offerId),
     rateTypeId: parseOptionalString(search.rateTypeId),
     quantity: parseOptionalNumber(search.quantity),
+    orderId: parseOptionalString(search.orderId),
   }),
-  loader: ({ params }) => {
-    const event = getEventById(params.eventId);
+  loader: async ({ params }) => {
+    try {
+      const event = await client.fan.event.get({
+        eventId: params.eventId,
+      });
 
-    if (!event) {
+      return { event };
+    } catch {
       throw notFound();
     }
-
-    return { event };
   },
 });
 

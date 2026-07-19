@@ -1,4 +1,5 @@
 export const admissionMethodLabels = {
+  GENERAL_ADMISSION: "自由席",
   NUMBERED_ENTRY: "整理番号",
   RESERVED_SEAT: "指定席",
 } as const;

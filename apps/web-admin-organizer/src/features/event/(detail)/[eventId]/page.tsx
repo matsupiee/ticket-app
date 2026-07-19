@@ -11,8 +11,15 @@ import {
   formatDate,
   saleMethodLabels,
 } from "../../_utils/operations";
+import { client } from "@/lib/orpc";
 
-export function EventDetailPage({ event }: { event: OrganizerEvent }) {
+export function EventDetailPage({
+  event,
+  eventOrganizerId,
+}: {
+  event: OrganizerEvent;
+  eventOrganizerId: string;
+}) {
   return (
     <main className="overflow-y-auto bg-background">
       <section className="border-b">
@@ -38,7 +45,14 @@ export function EventDetailPage({ event }: { event: OrganizerEvent }) {
           <SectionHeading title="基本設定" />
           <EventSettingsForm
             event={event}
-            onSave={(settings) => {
+            onSave={async (settings) => {
+              await client.organizer.event.update({
+                eventOrganizerId,
+                eventId: event.id,
+                name: settings.name,
+                description: event.description,
+                status: settings.status,
+              });
               toast.success(`${settings.name} の設定を保存しました`);
             }}
           />

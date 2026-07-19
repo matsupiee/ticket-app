@@ -1,14 +1,36 @@
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@ticket-app/ui/components/empty";
 import { Input } from "@ticket-app/ui/components/input";
 import { Search } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 
-import { filterEvents } from "../_utils/ticketing";
+import { client } from "@/lib/orpc";
+
+import { type TicketEventListItem } from "../_utils/ticketing";
 import { EventListItem } from "./_components/event-list-item";
 
 export function EventListPage() {
   const [query, setQuery] = useState("");
-  const events = useMemo(() => filterEvents(query), [query]);
+  const [events, setEvents] = useState<TicketEventListItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const loadEvents = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const result = await client.fan.event.list({
+        query: query.trim() || undefined,
+      });
+      setEvents(result.items);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "イベント一覧の取得に失敗しました");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [query]);
+
+  useEffect(() => {
+    loadEvents();
+  }, [loadEvents]);
+
   const featuredEvent = events[0];
 
   return (
@@ -45,7 +67,9 @@ export function EventListPage() {
       </section>
 
       <section className="mx-auto max-w-6xl px-4 py-8 md:px-6">
-        {events.length > 0 ? (
+        {isLoading ? (
+          <div className="border-y py-8 text-sm text-muted-foreground">読み込み中</div>
+        ) : events.length > 0 ? (
           <div className="divide-y border-y">
             {events.map((event) => (
               <EventListItem key={event.id} event={event} />

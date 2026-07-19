@@ -1,18 +1,20 @@
 import { Outlet, createFileRoute, notFound, useRouterState } from "@tanstack/react-router";
 
 import { EventDetailPage } from "@/features/event/detail/page";
-import { getEventById } from "@/features/event/_utils/ticketing";
+import { client } from "@/lib/orpc";
 
 export const Route = createFileRoute("/events/$eventId")({
   component: RouteComponent,
-  loader: ({ params }) => {
-    const event = getEventById(params.eventId);
+  loader: async ({ params }) => {
+    try {
+      const event = await client.fan.event.get({
+        eventId: params.eventId,
+      });
 
-    if (!event) {
+      return { event };
+    } catch {
       throw notFound();
     }
-
-    return { event };
   },
 });
 

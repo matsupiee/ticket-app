@@ -1,6 +1,7 @@
-import { getAccountRoute } from "./account/get/route";
 import { inviteMemberRoute } from "./account/invite-member/route";
+import { getMyOrganizerAccountRoute } from "./account/me/route";
 import { removeMemberRoute } from "./account/remove-member/route";
+import { signUpOrganizerAccountRoute } from "./account/sign-up/route";
 import { updateMemberRoleRoute } from "./account/update-member-role/route";
 import { updateProfileRoute } from "./account/update-profile/route";
 import { upsertBankAccountRoute } from "./account/upsert-bank-account/route";
@@ -22,9 +23,10 @@ import { listSettlementsRoute } from "./settlement/list/route";
 
 export const organizerRouter = {
   account: {
-    get: getAccountRoute,
     inviteMember: inviteMemberRoute,
+    me: getMyOrganizerAccountRoute,
     removeMember: removeMemberRoute,
+    signUp: signUpOrganizerAccountRoute,
     updateMemberRole: updateMemberRoleRoute,
     updateProfile: updateProfileRoute,
     upsertBankAccount: upsertBankAccountRoute,

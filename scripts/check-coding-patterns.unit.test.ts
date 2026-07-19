@@ -13,12 +13,16 @@ describe("checkCodingPatterns", () => {
         "packages/api/src/routers/organizer/index.ts",
         "packages/api/src/routers/platform/index.ts",
         "apps/web/src/features/event/_components/event-card.tsx",
+        "apps/web/src/features/event/_components/event-card.unit.test.tsx",
         "apps/web/src/features/event/_utils/ticketing.ts",
         "apps/web/src/features/event/detail/page.tsx",
         "apps/web/src/lib/orpc.ts",
         "apps/web/src/main.tsx",
         "apps/web/src/routes/index.tsx",
+        "apps/web/src/routes/events.$eventId.apply.tsx",
         "apps/web/src/shared/_components/header.tsx",
+        "packages/db/src/generated/prisma/models/ApplicationPreference.ts",
+        "scripts/check-coding-patterns.unit.test.ts",
       ],
     });
 
@@ -119,6 +123,44 @@ describe("checkCodingPatterns", () => {
         expect.objectContaining({
           path: "apps/web/src/utils",
           rule: "frontend src directory",
+        }),
+      ]),
+    );
+  });
+
+  it("reports implementation files that are not kebab-case", () => {
+    const issues = checkCodingPatterns({
+      files: [
+        "packages/api/src/routers/index.ts",
+        "packages/api/src/routers/fan/index.ts",
+        "packages/api/src/routers/fan/event/get/handler.ts",
+        "packages/api/src/routers/fan/event/get/route.ts",
+        "packages/api/src/routers/organizer/index.ts",
+        "packages/api/src/routers/platform/index.ts",
+        "apps/web/src/features/event/_components/eventCard.tsx",
+        "apps/web/src/features/event/_utils/eventLabels.unit.test.ts",
+        "apps/web/src/lib/authClient.ts",
+        "scripts/checkCodingPatterns.ts",
+      ],
+    });
+
+    expect(issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          path: "apps/web/src/features/event/_components/eventCard.tsx",
+          rule: "file naming",
+        }),
+        expect.objectContaining({
+          path: "apps/web/src/features/event/_utils/eventLabels.unit.test.ts",
+          rule: "file naming",
+        }),
+        expect.objectContaining({
+          path: "apps/web/src/lib/authClient.ts",
+          rule: "file naming",
+        }),
+        expect.objectContaining({
+          path: "scripts/checkCodingPatterns.ts",
+          rule: "file naming",
         }),
       ]),
     );

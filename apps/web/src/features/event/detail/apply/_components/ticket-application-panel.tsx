@@ -3,17 +3,18 @@ import { Label } from "@ticket-app/ui/components/label";
 import { cn } from "@ticket-app/ui/lib/utils";
 import { WalletCards } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 
 import { admissionMethodLabels, saleMethodLabels } from "../../../_utils/labels";
 import {
   type ApplicationSelection,
   type TicketEvent,
-  calculateTicketQuote,
+  calculateTicketQuoteForEvent,
   formatCurrency,
   formatDateTime,
 } from "../../../_utils/ticketing";
 
-type CompletionHandler = (selection: ApplicationSelection) => void;
+type CompletionHandler = (selection: ApplicationSelection) => void | Promise<void>;
 
 export function TicketApplicationPanel({
   event,
@@ -25,7 +26,8 @@ export function TicketApplicationPanel({
   onComplete: CompletionHandler;
 }) {
   const [selection, setSelection] = useState(initialSelection);
-  const quote = calculateTicketQuote(selection);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const quote = calculateTicketQuoteForEvent(event, selection);
   const selectedSaleWindow = event.saleWindows.find(
     (saleWindow) => saleWindow.id === selection.saleWindowId,
   );
@@ -66,7 +68,12 @@ export function TicketApplicationPanel({
       className="space-y-6 border-y py-6"
       onSubmit={(submitEvent) => {
         submitEvent.preventDefault();
-        onComplete(selection);
+        setIsSubmitting(true);
+        Promise.resolve(onComplete(selection))
+          .catch((error) => {
+            toast.error(error instanceof Error ? error.message : "申し込みに失敗しました");
+          })
+          .finally(() => setIsSubmitting(false));
       }}
     >
       <div className="grid gap-4">
@@ -174,8 +181,8 @@ export function TicketApplicationPanel({
         </p>
       </section>
 
-      <Button type="submit" size="lg" className="w-full text-sm">
-        申し込み内容を確定
+      <Button type="submit" size="lg" className="w-full text-sm" disabled={isSubmitting}>
+        {isSubmitting ? "処理中" : "申し込み内容を確定"}
       </Button>
     </form>
   );

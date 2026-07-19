@@ -96,9 +96,11 @@
       "version": "0.0.0",
       "dependencies": {
         "@hookform/resolvers": "^5.4.0",
+        "@orpc/client": "catalog:",
         "@tailwindcss/vite": "^4.3.2",
         "@tanstack/react-form": "^1.33.0",
         "@tanstack/react-router": "^1.170.17",
+        "@ticket-app/api": "workspace:*",
         "@ticket-app/ui": "workspace:*",
         "better-auth": "catalog:",
         "lucide-react": "catalog:",

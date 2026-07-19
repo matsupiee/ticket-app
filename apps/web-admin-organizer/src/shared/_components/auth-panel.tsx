@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import z from "zod";
 
 import { authClient } from "@/lib/auth-client";
+import { client } from "@/lib/orpc";
 
 type AuthMode = "signIn" | "signUp" | "reset";
 
@@ -113,6 +114,7 @@ function SignUpForm() {
   const form = useForm({
     defaultValues: {
       name: "",
+      organizerName: "",
       email: "",
       password: "",
     },
@@ -124,7 +126,10 @@ function SignUpForm() {
           password: value.password,
         },
         {
-          onSuccess: () => {
+          onSuccess: async () => {
+            await client.organizer.account.signUp({
+              organizerName: value.organizerName,
+            });
             toast.success("主催者アカウントを作成しました");
             navigate({ to: "/" });
           },
@@ -137,6 +142,7 @@ function SignUpForm() {
     validators: {
       onSubmit: z.object({
         name: z.string().min(2, "名前は2文字以上で入力してください"),
+        organizerName: z.string().min(2, "主催者名は2文字以上で入力してください"),
         email: z.email("メールアドレスを入力してください"),
         password: z.string().min(8, "パスワードは8文字以上で入力してください"),
       }),
@@ -156,6 +162,25 @@ function SignUpForm() {
         {(field) => (
           <div className="space-y-2">
             <Label htmlFor={field.name}>名前</Label>
+            <Input
+              id={field.name}
+              name={field.name}
+              value={field.state.value}
+              onBlur={field.handleBlur}
+              onChange={(event) => field.handleChange(event.target.value)}
+            />
+            {field.state.meta.errors.map((error) => (
+              <p key={error?.message} className="text-xs text-destructive">
+                {error?.message}
+              </p>
+            ))}
+          </div>
+        )}
+      </form.Field>
+      <form.Field name="organizerName">
+        {(field) => (
+          <div className="space-y-2">
+            <Label htmlFor={field.name}>主催者名</Label>
             <Input
               id={field.name}
               name={field.name}

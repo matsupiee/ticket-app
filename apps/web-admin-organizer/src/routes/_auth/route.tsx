@@ -1,7 +1,7 @@
 import { Outlet, createFileRoute, redirect } from "@tanstack/react-router";
 
 import { authClient } from "@/lib/auth-client";
-import { hasOrganizerAdminAccess } from "@/lib/admin-access";
+import { client } from "@/lib/orpc";
 
 export const Route = createFileRoute("/_auth")({
   component: AuthLayout,
@@ -14,13 +14,15 @@ export const Route = createFileRoute("/_auth")({
       });
     }
 
-    if (!hasOrganizerAdminAccess(session.data)) {
+    try {
+      const organizerAccount = await client.organizer.account.me({});
+
+      return { session, organizerAccount };
+    } catch {
       throw redirect({
         to: "/forbidden",
       });
     }
-
-    return { session };
   },
 });
 

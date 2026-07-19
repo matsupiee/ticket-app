@@ -38,6 +38,8 @@
 bun test:unit
 bun test:int
 bun test:e2e
+
+bun run dev # apiサーバー、web、web-admin-organizer、web-admin-platform がエラーなく立ち上がることを確認する
 ```
 
 テスト失敗は根本原因を修正する。テストの無効化や、例外を握りつぶす回避は禁止する。

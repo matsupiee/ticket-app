@@ -5,6 +5,32 @@
     "correctness": "error"
   },
   "rules": {},
+  "overrides": [
+    {
+      "files": [
+        "apps/web/**/*.ts",
+        "apps/web/**/*.tsx",
+        "apps/web-admin-organizer/**/*.ts",
+        "apps/web-admin-organizer/**/*.tsx",
+        "apps/web-admin-platform/**/*.ts",
+        "apps/web-admin-platform/**/*.tsx"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["@ticket-app/api", "@ticket-app/api/*"],
+                "allowTypeImports": true,
+                "message": "frontend apps から @ticket-app/api は型 import のみ許可します。実装値はブラウザバンドルに入れないでください。"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
   "env": {
     "builtin": true
   }

@@ -8,7 +8,7 @@ import {
 } from "../../_utils/ticketing";
 import { TicketApplicationPanel } from "./_components/ticket-application-panel";
 
-type CompletionHandler = (selection: ApplicationSelection) => void;
+type CompletionHandler = (selection: ApplicationSelection) => void | Promise<void>;
 
 export function TicketApplicationPage({
   event,

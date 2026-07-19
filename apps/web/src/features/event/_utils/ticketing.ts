@@ -1,6 +1,6 @@
 export type SaleMethod = "FIRST_COME" | "LOTTERY";
 
-export type AdmissionMethod = "NUMBERED_ENTRY" | "RESERVED_SEAT";
+export type AdmissionMethod = "GENERAL_ADMISSION" | "NUMBERED_ENTRY" | "RESERVED_SEAT";
 
 export type FeePayer = "BUYER" | "EVENT_ORGANIZER";
 
@@ -63,6 +63,19 @@ export type TicketEvent = {
   rateTypes: RateType[];
   performances: Performance[];
   saleWindows: SaleWindow[];
+};
+
+export type TicketEventListItem = {
+  id: string;
+  name: string;
+  description: string;
+  eventOrganizerName: string;
+  location: string;
+  imageUrl: string;
+  tags: string[];
+  firstPerformanceStartsAt?: string;
+  saleMethods: SaleMethod[];
+  minPrice?: number;
 };
 
 export type ApplicationSelection = {
@@ -406,6 +419,13 @@ export function calculateTicketQuote(selection: ApplicationSelection): TicketQuo
     throw new Error("イベントが見つかりません");
   }
 
+  return calculateTicketQuoteForEvent(event, selection);
+}
+
+export function calculateTicketQuoteForEvent(
+  event: TicketEvent,
+  selection: ApplicationSelection,
+): TicketQuote {
   const saleWindow = event.saleWindows.find((window) => window.id === selection.saleWindowId);
   if (!saleWindow) {
     throw new Error("販売受付が見つかりません");

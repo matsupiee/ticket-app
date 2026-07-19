@@ -4,17 +4,9 @@ import { CalendarClock, MapPin, Ticket } from "lucide-react";
 
 import { EventTagList } from "../../_components/event-tag-list";
 import { saleMethodLabels } from "../../_utils/labels";
-import { type TicketEvent, formatCurrency, formatDateTime } from "../../_utils/ticketing";
+import { type TicketEventListItem, formatCurrency, formatDateTime } from "../../_utils/ticketing";
 
-export function EventListItem({ event }: { event: TicketEvent }) {
-  const firstPerformance = event.performances[0];
-  const firstSaleWindow = event.saleWindows[0];
-  const minimumPrice = Math.min(
-    ...event.saleWindows.flatMap((saleWindow) =>
-      saleWindow.offers.flatMap((offer) => offer.rates.map((rate) => rate.price)),
-    ),
-  );
-
+export function EventListItem({ event }: { event: TicketEventListItem }) {
   return (
     <article className="grid gap-4 py-5 md:grid-cols-[160px_1fr_auto] md:items-center">
       <img
@@ -33,20 +25,25 @@ export function EventListItem({ event }: { event: TicketEvent }) {
         <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs text-muted-foreground">
           <span className="flex items-center gap-1.5">
             <CalendarClock className="size-3.5" aria-hidden="true" />
-            {firstPerformance ? formatDateTime(firstPerformance.startsAt) : "日程未定"}
+            {event.firstPerformanceStartsAt
+              ? formatDateTime(event.firstPerformanceStartsAt)
+              : "日程未定"}
           </span>
           <span className="flex items-center gap-1.5">
             <MapPin className="size-3.5" aria-hidden="true" />
-            {firstPerformance?.venueName ?? event.location}
+            {event.location}
           </span>
           <span className="flex items-center gap-1.5">
             <Ticket className="size-3.5" aria-hidden="true" />
-            {firstSaleWindow ? saleMethodLabels[firstSaleWindow.saleMethod] : "販売未定"}
+            {event.saleMethods.map((saleMethod) => saleMethodLabels[saleMethod]).join(" / ") ||
+              "販売未定"}
           </span>
         </div>
       </div>
       <div className="flex flex-col gap-3 md:items-end">
-        <div className="text-sm font-medium">{formatCurrency(minimumPrice)}から</div>
+        <div className="text-sm font-medium">
+          {event.minPrice !== undefined ? `${formatCurrency(event.minPrice)}から` : "価格未定"}
+        </div>
         <Link
           to="/events/$eventId"
           params={{ eventId: event.id }}

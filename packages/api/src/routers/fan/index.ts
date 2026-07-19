@@ -4,6 +4,7 @@ import { getEventRoute } from "./event/get/route";
 import { listEventsRoute } from "./event/list/route";
 import { quoteApplicationRoute } from "./event/quote-application/route";
 import { listTicketsRoute } from "./ticket/list/route";
+import { useTicketRoute } from "./ticket/use/route";
 import { privateDataRoute } from "./user/private-data/route";
 import { getProfileRoute } from "./user/profile/get/route";
 import { updateProfileRoute } from "./user/profile/update/route";
@@ -22,6 +23,7 @@ export const fanRouter = {
   },
   ticket: {
     list: listTicketsRoute,
+    use: useTicketRoute,
   },
   user: {
     privateData: privateDataRoute,

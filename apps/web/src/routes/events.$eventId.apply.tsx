@@ -1,18 +1,21 @@
 import { createFileRoute, notFound, useNavigate } from "@tanstack/react-router";
+import { toast } from "sonner";
 
 import { TicketApplicationPage } from "@/features/event/detail/apply/page";
-import { getEventById } from "@/features/event/_utils/ticketing";
+import { client } from "@/lib/orpc";
 
 export const Route = createFileRoute("/events/$eventId/apply")({
   component: RouteComponent,
-  loader: ({ params }) => {
-    const event = getEventById(params.eventId);
+  loader: async ({ params }) => {
+    try {
+      const event = await client.fan.event.get({
+        eventId: params.eventId,
+      });
 
-    if (!event) {
+      return { event };
+    } catch {
       throw notFound();
     }
-
-    return { event };
   },
 });
 
@@ -24,11 +27,32 @@ function RouteComponent() {
   return (
     <TicketApplicationPage
       event={event}
-      onComplete={(selection) => {
+      onComplete={async (selection) => {
+        const result = await client.fan.application.submit({
+          eventId: selection.eventId,
+          saleWindowId: selection.saleWindowId,
+          preferences: [
+            {
+              preferenceRank: 1,
+              performanceId: selection.performanceId,
+              offerId: selection.offerId,
+              items: [
+                {
+                  rateTypeId: selection.rateTypeId,
+                  quantity: selection.quantity,
+                },
+              ],
+            },
+          ],
+        });
+        toast.success(result.status === "ORDER_CREATED" ? "購入が完了しました" : "申し込みました");
         navigate({
           to: "/events/$eventId/application-complete",
           params: { eventId },
-          search: selection,
+          search: {
+            ...selection,
+            orderId: result.orderId,
+          },
         });
       }}
     />

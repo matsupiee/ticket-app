@@ -1,4 +1,4 @@
-export type EventStatus = "DRAFT" | "ON_SALE" | "PAUSED" | "ENDED";
+export type EventStatus = "DRAFT" | "ON_SALE" | "PAUSED" | "ENDED" | "CANCELED";
 
 export type SaleMethod = "FIRST_COME" | "LOTTERY";
 
@@ -9,7 +9,7 @@ export type OrganizerPerformance = {
   name: string;
   venueName: string;
   startsAt: string;
-  admissionMethod: "RESERVED_SEAT" | "NUMBERED_ENTRY";
+  admissionMethod: "GENERAL_ADMISSION" | "RESERVED_SEAT" | "NUMBERED_ENTRY";
 };
 
 export type OrganizerSaleWindow = {
@@ -77,6 +77,7 @@ export const eventStatusLabels = {
   ON_SALE: "販売中",
   PAUSED: "一時停止",
   ENDED: "終了",
+  CANCELED: "キャンセル",
 } as const satisfies Record<EventStatus, string>;
 
 export const saleMethodLabels = {

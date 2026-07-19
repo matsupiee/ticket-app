@@ -38,6 +38,22 @@ const ignoredDirectoryNames = new Set([
   "test-results",
 ]);
 
+const fileNamePattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const fileNameSuffixes = [
+  ".integration.test.tsx",
+  ".integration.test.ts",
+  ".unit.test.tsx",
+  ".unit.test.ts",
+  ".test.tsx",
+  ".test.ts",
+  ".spec.tsx",
+  ".spec.ts",
+  ".d.ts",
+  ".tsx",
+  ".ts",
+  ".css",
+];
+
 export function checkCodingPatterns(snapshot: ProjectSnapshot): CheckIssue[] {
   const files = uniqueSorted(snapshot.files.map(normalizeProjectPath));
   const directories = uniqueSorted([
@@ -48,6 +64,7 @@ export function checkCodingPatterns(snapshot: ProjectSnapshot): CheckIssue[] {
   return sortIssues([
     ...checkBackendPatterns(files, directories),
     ...checkFrontendPatterns(files, directories),
+    ...checkFileNamePatterns(files),
   ]);
 }
 
@@ -71,11 +88,11 @@ export function collectProjectFiles(cwd = process.cwd()): string[] {
 
 export function formatIssues(issues: CheckIssue[]) {
   if (issues.length === 0) {
-    return "docs/coding-pattern directory rules: OK";
+    return "docs/coding-pattern directory/file rules: OK";
   }
 
   return [
-    "docs/coding-pattern のディレクトリ規約違反が見つかりました。",
+    "docs/coding-pattern のディレクトリ/ファイル名規約違反が見つかりました。",
     "",
     ...issues.map((issue) => `- ${issue.path}\n  ${issue.rule}: ${issue.message}`),
   ].join("\n");
@@ -214,6 +231,54 @@ function checkBackendPatterns(files: string[], directories: string[]): CheckIssu
   }
 
   return dedupeIssues(issues);
+}
+
+function checkFileNamePatterns(files: string[]): CheckIssue[] {
+  const issues: CheckIssue[] = [];
+
+  for (const file of files) {
+    if (!shouldCheckFileName(file) || hasKebabCaseFileName(file)) {
+      continue;
+    }
+
+    issues.push({
+      path: file,
+      rule: "file naming",
+      message:
+        "実装ファイル名は kebab-case にしてください。例: event-card.tsx / event-card.unit.test.ts",
+    });
+  }
+
+  return issues;
+}
+
+function shouldCheckFileName(file: string) {
+  if (!isSourceFile(file)) {
+    return false;
+  }
+
+  if (
+    file.includes("/generated/") ||
+    /^apps\/[^/]+\/src\/routes\//.test(file) ||
+    /^apps\/[^/]+\/src\/routeTree\.gen\.ts$/.test(file)
+  ) {
+    return false;
+  }
+
+  return (
+    /^apps\/[^/]+\/src\//.test(file) ||
+    /^packages\/[^/]+\/src\//.test(file) ||
+    /^scripts\/.+/.test(file)
+  );
+}
+
+function hasKebabCaseFileName(file: string) {
+  return fileNamePattern.test(stripKnownFileSuffixes(basename(file)));
+}
+
+function stripKnownFileSuffixes(fileName: string) {
+  const suffix = fileNameSuffixes.find((fileSuffix) => fileName.endsWith(fileSuffix));
+  return suffix ? fileName.slice(0, -suffix.length) : fileName;
 }
 
 function checkFrontendPatterns(files: string[], directories: string[]): CheckIssue[] {
@@ -367,6 +432,10 @@ function isTypeScriptFile(path: string) {
   return path.endsWith(".ts") || path.endsWith(".tsx");
 }
 
+function isSourceFile(path: string) {
+  return path.endsWith(".ts") || path.endsWith(".tsx") || path.endsWith(".css");
+}
+
 function basename(path: string) {
   return path.split("/").at(-1) ?? path;
 }
@@ -413,7 +482,7 @@ function sortIssues(issues: CheckIssue[]) {
 
 function isDirectRun() {
   const scriptPath = process.argv[1];
-  return Boolean(scriptPath) && resolve(scriptPath) === fileURLToPath(import.meta.url);
+  return !!scriptPath && resolve(scriptPath) === fileURLToPath(import.meta.url);
 }
 
 if (isDirectRun()) {

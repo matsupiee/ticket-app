@@ -6,7 +6,7 @@ import { SectionHeading } from "../../_components/section-heading";
 import {
   type ApplicationSelection,
   type TicketEvent,
-  calculateTicketQuote,
+  calculateTicketQuoteForEvent,
   formatCurrency,
   formatDateTime,
 } from "../../_utils/ticketing";
@@ -18,7 +18,7 @@ export function ApplicationCompletePage({
   event: TicketEvent;
   selection: ApplicationSelection;
 }) {
-  const quote = calculateTicketQuote(selection);
+  const quote = calculateTicketQuoteForEvent(event, selection);
 
   return (
     <main className="overflow-y-auto bg-background">
@@ -30,7 +30,7 @@ export function ApplicationCompletePage({
             <p className="text-sm leading-7 text-muted-foreground">
               {quote.saleWindow.saleMethod === "LOTTERY"
                 ? "抽選結果はマイページの申し込み一覧で確認できます。"
-                : "申し込み内容を受け付けました。支払いと発券の状態はマイページで確認できます。"}
+                : "モック決済が完了し、電子チケットを発券しました。マイページから入場操作に進めます。"}
             </p>
           </div>
         </div>
@@ -57,7 +57,7 @@ export function ApplicationCompletePage({
             to="/dashboard"
             className={buttonVariants({ variant: "outline", size: "lg", className: "text-sm" })}
           >
-            マイページへ
+            発券されたチケットを見る
           </Link>
         </div>
       </section>
