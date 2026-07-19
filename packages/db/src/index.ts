@@ -13,8 +13,7 @@ const adapter = new PrismaPg({
   connectionString: env.DATABASE_URL,
 });
 
-export const db =
-  globalForPrisma.__ticketAppPrisma ?? new PrismaClient({ adapter });
+export const db = globalForPrisma.__ticketAppPrisma ?? new PrismaClient({ adapter });
 
 if (typeof process === "undefined" || process.env.NODE_ENV !== "production") {
   globalForPrisma.__ticketAppPrisma = db;
