@@ -51,7 +51,6 @@ export function EventDetailPage({
                 eventId: event.id,
                 name: settings.name,
                 description: event.description,
-                status: settings.status,
               });
               toast.success(`${settings.name} の設定を保存しました`);
             }}

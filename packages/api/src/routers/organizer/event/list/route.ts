@@ -7,7 +7,7 @@ const eventSummarySchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
   description: z.string(),
-  status: z.enum(["DRAFT", "ON_SALE", "PAUSED", "ENDED", "CANCELED"]),
+  status: z.enum(["DRAFT", "ON_SALE", "ENDED", "CANCELED"]),
   location: z.string().min(1),
   tags: z.array(z.string().min(1)),
   performances: z.array(
@@ -56,7 +56,7 @@ const listEventsInputSchema = z.object({
   cursor: z.string().min(1).optional(),
   limit: z.number().int().min(1).max(100).optional(),
   query: z.string().trim().min(1).optional(),
-  status: z.enum(["DRAFT", "ON_SALE", "PAUSED", "ENDED", "CANCELED"]).optional(),
+  status: z.enum(["DRAFT", "ON_SALE", "ENDED", "CANCELED"]).optional(),
 });
 
 const listEventsOutputSchema = z.object({

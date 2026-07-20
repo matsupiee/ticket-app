@@ -8,16 +8,6 @@ export async function getEventHandler({ input }: { input: { eventId: string } })
   const event = await db.event.findFirst({
     where: {
       id: input.eventId,
-      OR: [
-        {
-          status: null,
-        },
-        {
-          status: {
-            in: ["ON_SALE" as const, "ENDED" as const],
-          },
-        },
-      ],
       saleWindows: {
         some: {
           canceledAt: null,

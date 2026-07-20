@@ -22,7 +22,7 @@ const getDashboardOutputSchema = z.object({
     z.object({
       eventId: z.string().min(1),
       eventName: z.string().min(1),
-      status: z.enum(["DRAFT", "ON_SALE", "PAUSED", "ENDED", "CANCELED"]),
+      status: z.enum(["DRAFT", "ON_SALE", "ENDED", "CANCELED"]),
       grossSales: z.number().int().min(0),
       ticketsSold: z.number().int().min(0),
       buyerFeeAmount: z.number().int().min(0),

@@ -12,7 +12,7 @@ const getEventOutputSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
   description: z.string(),
-  status: z.enum(["DRAFT", "ON_SALE", "PAUSED", "ENDED", "CANCELED"]),
+  status: z.enum(["DRAFT", "ON_SALE", "ENDED", "CANCELED"]),
   location: z.string().min(1),
   tags: z.array(z.string().min(1)),
   performances: z.array(

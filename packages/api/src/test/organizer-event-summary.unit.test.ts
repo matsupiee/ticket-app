@@ -7,26 +7,6 @@ vi.mock("@ticket-app/db", () => ({
 import { toOrganizerEventSummary } from "../routers/organizer/event/list/handler";
 
 describe("toOrganizerEventSummary", () => {
-  it("手動で設定されたイベント状態を販売受付の期間計算より優先する", () => {
-    const event = buildOrganizerEvent({
-      status: "PAUSED",
-      saleWindows: [
-        {
-          id: "sale-window-1",
-          name: "一般販売",
-          publishesAt: null,
-          applicationStartsAt: new Date("2000-01-01T00:00:00.000Z"),
-          applicationEndsAt: new Date("2999-01-01T00:00:00.000Z"),
-          canceledAt: null,
-          method: "FIRST_COME",
-          saleOffers: [],
-        },
-      ],
-    });
-
-    expect(toOrganizerEventSummary(event).status).toBe("PAUSED");
-  });
-
   it("販売数と売上は在庫プールではなく支払い済み注文明細から集計する", () => {
     const event = buildOrganizerEvent({
       saleWindows: [
@@ -137,7 +117,6 @@ function buildOrganizerEvent(
     id: "event-1",
     name: "テストイベント",
     description: "",
-    status: null,
     performances: [
       {
         id: "performance-1",

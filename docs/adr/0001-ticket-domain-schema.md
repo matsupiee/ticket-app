@@ -24,7 +24,7 @@ Accepted
 - `eventId` / `saleWindowId` / `saleOfferId` / `performanceId` を必要箇所に持たせ、複合外部キーで所属の混線を防ぐ。
 - `InventoryUnit` を在庫の最小消費単位とし、発券時の `TicketEntitlement` は必ず `InventoryUnit` を参照する。
 - `InventoryHoldItem` は現在確保中の在庫ユニットを表す。解放・期限切れ時は対応する hold item を削除し、`InventoryUnit.status` を戻す。
-- `Event.status` はnullableな手動状態として持つ。未設定の場合は販売受付の公開日時・申込期間・キャンセル状態からAPIで表示状態を算出し、`PAUSED` / `CANCELED` / `DRAFT` など主催者が明示した状態は `Event.status` を優先する。
+- イベントの表示状態は `Event` に保存せず、販売受付の公開日時・申込期間・キャンセル状態からAPIで算出する。
 - 返金は `Refund` / `RefundItem` で、注文・決済・注文明細と対応付ける。
 - リセールの同時出品は `ResaleListing.activeTicketId` の一意制約で防ぐ。出品中だけ `ticketId` と同じ値を入れ、終了時は `NULL` に戻す。
 
@@ -32,7 +32,7 @@ Accepted
 
 - ツアー共通の席種・料金種別を `Event` 単位で管理できる。
 - 公演ごとに扱わない席種は `InventoryPool` を作らなければよい。
-- 既存イベントや自動判定したいイベントは `Event.status = NULL` のまま運用できる。主催者が一時停止などを明示した場合だけ、APIの表示状態とfan向け公開可否に反映できる。
+- イベント状態をDBで二重管理しないため、販売受付の日時やキャンセル状態と表示状態が不整合になりにくい。
 - Prismaだけではチェック制約や部分一意制約を表現しにくい箇所があるため、以下はアプリケーション層または将来のSQL migrationで補強する。
   - `InventoryUnit.type = SEAT` のとき `seatId` 必須。
   - `InventoryUnit.type = ENTRY_NUMBER` のとき `entryNumber` 必須。

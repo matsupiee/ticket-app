@@ -8,7 +8,6 @@ const updateEventInputSchema = z.object({
   eventId: z.string().min(1),
   name: z.string().min(1),
   description: z.string(),
-  status: z.enum(["DRAFT", "ON_SALE", "PAUSED", "ENDED", "CANCELED"]),
   location: z.string().min(1).optional(),
   tags: z.array(z.string().min(1)).optional(),
 });

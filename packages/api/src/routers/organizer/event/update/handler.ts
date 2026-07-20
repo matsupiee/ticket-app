@@ -12,7 +12,6 @@ export async function updateEventHandler({
     eventId: string;
     name: string;
     description: string;
-    status: "DRAFT" | "ON_SALE" | "PAUSED" | "ENDED" | "CANCELED";
   };
   context: {
     session: {
@@ -48,7 +47,6 @@ export async function updateEventHandler({
     data: {
       name: input.name,
       description: input.description,
-      status: input.status,
     },
   });
 

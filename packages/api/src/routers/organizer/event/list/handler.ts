@@ -11,7 +11,7 @@ export async function listOrganizerEventsHandler({
     cursor?: string;
     limit?: number;
     query?: string;
-    status?: "DRAFT" | "ON_SALE" | "PAUSED" | "ENDED" | "CANCELED";
+    status?: "DRAFT" | "ON_SALE" | "ENDED" | "CANCELED";
   };
   context: {
     session: {
@@ -152,7 +152,7 @@ export function organizerEventInclude() {
 
 type AdmissionMethod = "GENERAL_ADMISSION" | "NUMBERED_ENTRY" | "RESERVED_SEAT";
 type SaleMethod = "FIRST_COME" | "LOTTERY";
-type OrganizerEventStatus = "DRAFT" | "ON_SALE" | "PAUSED" | "ENDED" | "CANCELED";
+type OrganizerEventStatus = "DRAFT" | "ON_SALE" | "ENDED" | "CANCELED";
 type FeePayer = "BUYER" | "EVENT_ORGANIZER";
 
 type OrderItemForSales = {
@@ -168,7 +168,6 @@ type OrganizerEventForResponse = {
   id: string;
   name: string;
   description: string;
-  status?: OrganizerEventStatus | null;
   performances: {
     id: string;
     name: string;
@@ -287,10 +286,6 @@ function summarizeOrganizerEvents(events: OrganizerEventForResponse[]) {
 }
 
 function getEventStatus(event: OrganizerEventForResponse): OrganizerEventStatus {
-  if (event.status) {
-    return event.status;
-  }
-
   const now = new Date();
   const activeSaleWindows = event.saleWindows.filter((saleWindow) => !saleWindow.canceledAt);
 

@@ -7,7 +7,6 @@ import { useState } from "react";
 import {
   type OrganizerEvent,
   type OrganizerEventSettings,
-  eventStatusLabels,
   saleMethodLabels,
 } from "../_utils/operations";
 
@@ -22,7 +21,6 @@ export function EventSettingsForm({
   const firstSaleWindow = event.saleWindows[0];
   const [settings, setSettings] = useState<OrganizerEventSettings>({
     name: event.name,
-    status: event.status,
     venueName: firstPerformance?.venueName ?? "",
     saleMethod: firstSaleWindow?.saleMethod ?? "FIRST_COME",
   });
@@ -45,27 +43,6 @@ export function EventSettingsForm({
               setSettings((current) => ({ ...current, name: eventNameChange.target.value }))
             }
           />
-        </div>
-
-        <div className="grid gap-2">
-          <Label htmlFor="eventStatus">販売状態</Label>
-          <select
-            id="eventStatus"
-            value={settings.status}
-            onChange={(statusChange) =>
-              setSettings((current) => ({
-                ...current,
-                status: statusChange.target.value as OrganizerEventSettings["status"],
-              }))
-            }
-            className={selectClassName}
-          >
-            {Object.entries(eventStatusLabels).map(([status, label]) => (
-              <option key={status} value={status}>
-                {label}
-              </option>
-            ))}
-          </select>
         </div>
 
         <div className="grid gap-2">

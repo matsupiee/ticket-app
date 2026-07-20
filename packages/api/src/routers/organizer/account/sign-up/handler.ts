@@ -1,6 +1,14 @@
+import { ORPCError } from "@orpc/server";
 import { db } from "@ticket-app/db";
 
 import { getFirstOrganizerMembership } from "../../../../shared/organizer-access";
+
+type CreatedOrganizerAccountRow = {
+  eventOrganizerId: string;
+  name: string;
+  slug: string;
+  role: "VIEWER" | "EDITOR";
+};
 
 export async function signUpOrganizerAccountHandler({
   input,
@@ -30,39 +38,74 @@ export async function signUpOrganizerAccountHandler({
   }
 
   const slug = await buildUniqueOrganizerSlug(input.organizerName, context.session.user.email);
-  const result = await db.$transaction(async (tx) => {
-    const company = await tx.company.create({
-      data: {
-        name: `${input.organizerName} 運営会社 (${slug})`,
-      },
-    });
-    const organizer = await tx.organizer.create({
-      data: {
-        name: input.organizerName,
+  const companyId = crypto.randomUUID();
+  const organizerId = crypto.randomUUID();
+  const memberId = crypto.randomUUID();
+  // Keep this as one raw SQL statement: Miniflare hangs on Prisma model writes for these tables.
+  const [account] = await db.$queryRaw<CreatedOrganizerAccountRow[]>`
+    WITH new_company AS (
+      INSERT INTO "Company" (id, name, "createdAt", "updatedAt")
+      VALUES (${companyId}, ${`${input.organizerName} 運営会社 (${slug})`}, now(), now())
+      RETURNING id
+    ),
+    new_organizer AS (
+      INSERT INTO "Organizer" (
+        id,
+        name,
         slug,
-        companyId: company.id,
-        inquiryEmail: context.session.user.email,
-      },
-    });
-    const member = await tx.organizerMember.create({
-      data: {
-        userId: context.session.user.id,
-        organizerId: organizer.id,
-        role: "EDITOR",
-      },
-    });
+        "companyId",
+        "inquiryEmail",
+        "createdAt",
+        "updatedAt"
+      )
+      SELECT
+        ${organizerId},
+        ${input.organizerName},
+        ${slug},
+        id,
+        ${context.session.user.email},
+        now(),
+        now()
+      FROM new_company
+      RETURNING id, name, slug
+    ),
+    new_member AS (
+      INSERT INTO "OrganizerMember" (
+        id,
+        "userId",
+        "organizerId",
+        role,
+        "createdAt",
+        "updatedAt"
+      )
+      SELECT
+        ${memberId},
+        ${context.session.user.id},
+        id,
+        'EDITOR'::"OrganizerMemberRole",
+        now(),
+        now()
+      FROM new_organizer
+      RETURNING role
+    )
+    SELECT
+      o.id AS "eventOrganizerId",
+      o.name,
+      o.slug,
+      m.role
+    FROM new_organizer o
+    CROSS JOIN new_member m
+  `;
 
-    return {
-      organizer,
-      member,
-    };
-  });
+  if (!account) {
+    throw new ORPCError("INTERNAL_SERVER_ERROR");
+  }
 
   return {
-    eventOrganizerId: result.organizer.id,
-    name: result.organizer.name,
-    slug: result.organizer.slug,
-    role: result.member.role,
+    eventOrganizerId: account.eventOrganizerId,
+    name: account.name,
+    slug: account.slug,
+    role: account.role,
   };
 }
 
@@ -71,14 +114,12 @@ async function buildUniqueOrganizerSlug(name: string, email: string) {
 
   for (let attempt = 0; attempt < 20; attempt += 1) {
     const slug = attempt === 0 ? baseSlug : `${baseSlug}-${attempt + 1}`;
-    const existing = await db.organizer.findUnique({
-      where: {
-        slug,
-      },
-      select: {
-        id: true,
-      },
-    });
+    const [existing] = await db.$queryRaw<{ id: string }[]>`
+      SELECT id
+      FROM "Organizer"
+      WHERE slug = ${slug}
+      LIMIT 1
+    `;
 
     if (!existing) {
       return slug;

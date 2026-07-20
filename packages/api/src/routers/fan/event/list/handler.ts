@@ -13,16 +13,6 @@ export async function listEventsHandler({
   const limit = input.limit ?? 20;
   const events = await db.event.findMany({
     where: {
-      OR: [
-        {
-          status: null,
-        },
-        {
-          status: {
-            in: ["ON_SALE" as const, "ENDED" as const],
-          },
-        },
-      ],
       saleWindows: {
         some: {
           canceledAt: null,

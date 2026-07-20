@@ -1,4 +1,4 @@
-export type EventStatus = "DRAFT" | "ON_SALE" | "PAUSED" | "ENDED" | "CANCELED";
+export type EventStatus = "DRAFT" | "ON_SALE" | "ENDED" | "CANCELED";
 
 export type SaleMethod = "FIRST_COME" | "LOTTERY";
 
@@ -67,7 +67,6 @@ export type EventSettlement = {
 
 export type OrganizerEventSettings = {
   name: string;
-  status: EventStatus;
   venueName: string;
   saleMethod: SaleMethod;
 };
@@ -75,7 +74,6 @@ export type OrganizerEventSettings = {
 export const eventStatusLabels = {
   DRAFT: "下書き",
   ON_SALE: "販売中",
-  PAUSED: "一時停止",
   ENDED: "終了",
   CANCELED: "キャンセル",
 } as const satisfies Record<EventStatus, string>;

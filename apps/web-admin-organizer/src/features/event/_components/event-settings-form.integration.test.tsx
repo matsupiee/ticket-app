@@ -21,13 +21,11 @@ describe("EventSettingsForm", () => {
 
     await user.clear(screen.getByLabelText("イベント名"));
     await user.type(screen.getByLabelText("イベント名"), "TOKYO ORBIT 2026 追加公演");
-    await user.selectOptions(screen.getByLabelText("販売状態"), "PAUSED");
     await user.click(screen.getByRole("button", { name: "設定を保存" }));
 
     expect(handleSave).toHaveBeenCalledWith(
       expect.objectContaining({
         name: "TOKYO ORBIT 2026 追加公演",
-        status: "PAUSED",
       }),
     );
   });
