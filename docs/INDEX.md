@@ -5,6 +5,7 @@
 ## 入口
 
 - [requirement.md](./requirement.md): 現時点のプロダクト要件。
+- [development-setup.md](./development-setup.md): ローカル開発環境のセットアップ手順。
 - [db-seed-data.md](./db-seed-data.md): 開発用DB seedデータのパターンと実行方法。
 
 ## コーディング規約
