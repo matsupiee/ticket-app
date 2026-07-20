@@ -40,7 +40,7 @@
     "check-types": "turbo run check-types",
     "check:patterns": "bun scripts/check-coding-patterns.ts",
     "test": "bun run test:unit && bun run test:int",
-    "test:unit": "vitest run --config vitest.unit.config.ts && vitest run --config packages/db/vitest.unit.config.ts && vitest run --config apps/web/vitest.unit.config.ts && vitest run --config apps/web-admin-organizer/vitest.unit.config.ts && vitest run --config apps/web-admin-platform/vitest.unit.config.ts",
+    "test:unit": "vitest run --config vitest.unit.config.ts && vitest run --config packages/db/vitest.unit.config.ts && vitest run --config packages/api/vitest.unit.config.ts && vitest run --config apps/web/vitest.unit.config.ts && vitest run --config apps/web-admin-organizer/vitest.unit.config.ts && vitest run --config apps/web-admin-platform/vitest.unit.config.ts",
     "test:int": "vitest run --config apps/web/vitest.integration.config.ts && vitest run --config apps/web-admin-organizer/vitest.integration.config.ts && vitest run --config apps/web-admin-platform/vitest.integration.config.ts",
     "test:e2e": "playwright test --config apps/web/playwright.config.ts && playwright test --config apps/web-admin-organizer/playwright.config.ts && playwright test --config apps/web-admin-platform/playwright.config.ts",
     "dev:web": "turbo run dev -F web",

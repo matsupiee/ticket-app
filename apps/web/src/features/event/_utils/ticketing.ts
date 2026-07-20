@@ -40,6 +40,7 @@ export type SaleOffer = {
   availableQuantity: number;
   performanceIds: string[];
   rates: SaleOfferRate[];
+  feeRules?: FeeRule[];
 };
 
 export type SaleWindow = {
@@ -458,7 +459,8 @@ export function calculateTicketQuoteForEvent(
   }
 
   const subtotalAmount = offerRate.price * selection.quantity;
-  const feeLines = saleWindow.feeRules.map((feeRule) => ({
+  const feeRules = offer.feeRules ?? saleWindow.feeRules;
+  const feeLines = feeRules.map((feeRule) => ({
     id: feeRule.id,
     name: feeRule.name,
     payer: feeRule.payer,

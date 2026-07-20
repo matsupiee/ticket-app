@@ -1,7 +1,5 @@
 import { db } from "@ticket-app/db";
 
-import { toFanEventListItem } from "../../../../shared/event-presenter";
-
 export async function listEventsHandler({
   input,
 }: {
@@ -15,6 +13,16 @@ export async function listEventsHandler({
   const limit = input.limit ?? 20;
   const events = await db.event.findMany({
     where: {
+      OR: [
+        {
+          status: null,
+        },
+        {
+          status: {
+            in: ["ON_SALE" as const, "ENDED" as const],
+          },
+        },
+      ],
       saleWindows: {
         some: {
           canceledAt: null,
@@ -83,9 +91,137 @@ export async function listEventsHandler({
   };
 }
 
+type AdmissionMethod = "GENERAL_ADMISSION" | "NUMBERED_ENTRY" | "RESERVED_SEAT";
+type SaleMethod = "FIRST_COME" | "LOTTERY";
+
+type EventForListResponse = {
+  id: string;
+  name: string;
+  description: string;
+  organizer?: {
+    name: string;
+  } | null;
+  performances: {
+    startsAt: Date;
+    venue: {
+      name: string;
+    };
+    inventoryPools: {
+      admissionMethod: AdmissionMethod;
+    }[];
+  }[];
+  saleWindows: {
+    method: SaleMethod;
+    saleOffers: {
+      saleOfferRates: {
+        price: number;
+      }[];
+    }[];
+  }[];
+};
+
+function toFanEventListItem(event: EventForListResponse) {
+  const firstPerformance = getEarliestPerformance(event.performances);
+  const saleMethods = unique(event.saleWindows.map((saleWindow) => saleWindow.method));
+  const prices = event.saleWindows.flatMap((saleWindow) =>
+    saleWindow.saleOffers.flatMap((offer) => offer.saleOfferRates.map((rate) => rate.price)),
+  );
+
+  return {
+    id: event.id,
+    name: event.name,
+    description: event.description,
+    eventOrganizerName: event.organizer?.name ?? "主催者未設定",
+    location: getEventLocation(event.performances),
+    imageUrl: getEventImageUrl(event),
+    tags: getEventTags(event),
+    firstPerformanceStartsAt: firstPerformance?.startsAt.toISOString(),
+    saleMethods,
+    minPrice: prices.length > 0 ? Math.min(...prices) : undefined,
+  };
+}
+
+function getEarliestPerformance<T extends { startsAt: Date }>(performances: T[]) {
+  return [...performances].sort(
+    (first, second) => first.startsAt.getTime() - second.startsAt.getTime(),
+  )[0];
+}
+
+function getEventLocation(performances: EventForListResponse["performances"]) {
+  const venueNames = unique(
+    [...performances]
+      .sort((first, second) => first.startsAt.getTime() - second.startsAt.getTime())
+      .map((performance) => performance.venue.name),
+  );
+
+  const primaryVenueName = venueNames[0];
+
+  if (!primaryVenueName) {
+    return "会場未定";
+  }
+
+  return venueNames.length === 1 ? primaryVenueName : `${primaryVenueName} ほか`;
+}
+
+function getEventImageUrl(event: Pick<EventForListResponse, "performances">) {
+  const admissionMethods = event.performances.flatMap((performance) =>
+    performance.inventoryPools.map((pool) => pool.admissionMethod),
+  );
+
+  if (admissionMethods.includes("NUMBERED_ENTRY")) {
+    return "/events/bay-side-fes.svg";
+  }
+
+  if (admissionMethods.includes("RESERVED_SEAT")) {
+    return "/events/tokyo-orbit.svg";
+  }
+
+  return "/events/kyoto-classic-night.svg";
+}
+
+function getEventTags(event: Pick<EventForListResponse, "performances" | "saleWindows">) {
+  const admissionLabels = unique(
+    event.performances.flatMap((performance) =>
+      performance.inventoryPools.map((pool) => admissionMethodLabels[pool.admissionMethod]),
+    ),
+  );
+  const saleMethodLabelsForEvent = unique(
+    event.saleWindows.map((saleWindow) => saleMethodLabels[saleWindow.method]),
+  );
+
+  return [...admissionLabels, ...saleMethodLabelsForEvent, "電子チケット"];
+}
+
+function unique<T>(items: T[]) {
+  return Array.from(new Set(items));
+}
+
+const admissionMethodLabels = {
+  GENERAL_ADMISSION: "自由席",
+  NUMBERED_ENTRY: "整理番号",
+  RESERVED_SEAT: "指定席",
+} as const satisfies Record<AdmissionMethod, string>;
+
+const saleMethodLabels = {
+  FIRST_COME: "先着",
+  LOTTERY: "抽選",
+} as const satisfies Record<SaleMethod, string>;
+
 export function fanEventInclude(now: Date) {
   return {
     organizer: true,
+    feeRules: {
+      where: {
+        disabledAt: {
+          gt: now,
+        },
+        saleWindowId: null,
+        saleOfferId: null,
+      },
+      orderBy: {
+        displayOrder: "asc" as const,
+      },
+    },
     performances: {
       orderBy: {
         startsAt: "asc" as const,
@@ -123,6 +259,7 @@ export function fanEventInclude(now: Date) {
             disabledAt: {
               gt: now,
             },
+            saleOfferId: null,
           },
           orderBy: {
             displayOrder: "asc" as const,
@@ -133,6 +270,16 @@ export function fanEventInclude(now: Date) {
             displayOrder: "asc" as const,
           },
           include: {
+            feeRules: {
+              where: {
+                disabledAt: {
+                  gt: now,
+                },
+              },
+              orderBy: {
+                displayOrder: "asc" as const,
+              },
+            },
             saleOfferRates: {
               orderBy: {
                 displayOrder: "asc" as const,

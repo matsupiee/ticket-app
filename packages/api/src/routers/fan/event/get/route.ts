@@ -48,6 +48,19 @@ const eventOutputSchema = z.object({
           description: z.string(),
           maxQuantityPerOrder: z.number().int().min(1),
           availableQuantity: z.number().int().min(0),
+          feeRules: z
+            .array(
+              z.object({
+                id: z.string().min(1),
+                name: z.string().min(1),
+                payer: z.enum(["BUYER", "EVENT_ORGANIZER"]),
+                currency: z.string().length(3),
+                rateBasisPoints: z.number().int().min(0),
+                flatAmount: z.number().int().min(0),
+                displayOrder: z.number().int().min(0),
+              }),
+            )
+            .optional(),
           performanceIds: z.array(z.string().min(1)).min(1),
           rates: z.array(
             z.object({

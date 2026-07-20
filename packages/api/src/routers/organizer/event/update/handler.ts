@@ -48,6 +48,7 @@ export async function updateEventHandler({
     data: {
       name: input.name,
       description: input.description,
+      status: input.status,
     },
   });
 

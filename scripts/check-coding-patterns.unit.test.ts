@@ -9,6 +9,7 @@ describe("checkCodingPatterns", () => {
         "packages/api/src/routers/index.ts",
         "packages/api/src/routers/fan/index.ts",
         "packages/api/src/routers/fan/event/get/handler.ts",
+        "packages/api/src/routers/fan/event/get/handler.integration.test.ts",
         "packages/api/src/routers/fan/event/get/route.ts",
         "packages/api/src/routers/organizer/index.ts",
         "packages/api/src/routers/platform/index.ts",
@@ -55,11 +56,12 @@ describe("checkCodingPatterns", () => {
     );
   });
 
-  it("reports backend route directories missing route.ts or handler.ts", () => {
+  it("reports backend route directories missing required files", () => {
     const issues = checkCodingPatterns({
       files: [
         "packages/api/src/routers/index.ts",
         "packages/api/src/routers/fan/index.ts",
+        "packages/api/src/routers/fan/application/submit/handler.ts",
         "packages/api/src/routers/fan/application/submit/route.ts",
         "packages/api/src/routers/organizer/index.ts",
         "packages/api/src/routers/platform/index.ts",
@@ -68,8 +70,52 @@ describe("checkCodingPatterns", () => {
 
     expect(issues).toContainEqual(
       expect.objectContaining({
-        path: "packages/api/src/routers/fan/application/submit/handler.ts",
-        rule: "backend route pair",
+        path: "packages/api/src/routers/fan/application/submit/handler.integration.test.ts",
+        rule: "backend route files",
+      }),
+    );
+  });
+
+  it("reports backend route directories that contain files outside the required three", () => {
+    const issues = checkCodingPatterns({
+      files: [
+        "packages/api/src/routers/index.ts",
+        "packages/api/src/routers/fan/index.ts",
+        "packages/api/src/routers/fan/event/list/handler.ts",
+        "packages/api/src/routers/fan/event/list/handler.integration.test.ts",
+        "packages/api/src/routers/fan/event/list/handler.unit.test.ts",
+        "packages/api/src/routers/fan/event/list/route.ts",
+        "packages/api/src/routers/organizer/index.ts",
+        "packages/api/src/routers/platform/index.ts",
+      ],
+    });
+
+    expect(issues).toContainEqual(
+      expect.objectContaining({
+        path: "packages/api/src/routers/fan/event/list/handler.unit.test.ts",
+        rule: "backend route file",
+      }),
+    );
+  });
+
+  it("reports backend index files outside routers root and router type roots", () => {
+    const issues = checkCodingPatterns({
+      files: [
+        "packages/api/src/routers/index.ts",
+        "packages/api/src/routers/fan/event/index.ts",
+        "packages/api/src/routers/fan/event/get/handler.ts",
+        "packages/api/src/routers/fan/event/get/handler.integration.test.ts",
+        "packages/api/src/routers/fan/event/get/route.ts",
+        "packages/api/src/routers/fan/index.ts",
+        "packages/api/src/routers/organizer/index.ts",
+        "packages/api/src/routers/platform/index.ts",
+      ],
+    });
+
+    expect(issues).toContainEqual(
+      expect.objectContaining({
+        path: "packages/api/src/routers/fan/event/index.ts",
+        rule: "backend route index",
       }),
     );
   });
@@ -134,6 +180,7 @@ describe("checkCodingPatterns", () => {
         "packages/api/src/routers/index.ts",
         "packages/api/src/routers/fan/index.ts",
         "packages/api/src/routers/fan/event/get/handler.ts",
+        "packages/api/src/routers/fan/event/get/handler.integration.test.ts",
         "packages/api/src/routers/fan/event/get/route.ts",
         "packages/api/src/routers/organizer/index.ts",
         "packages/api/src/routers/platform/index.ts",

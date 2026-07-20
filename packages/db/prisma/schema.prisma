@@ -17,6 +17,14 @@ enum SaleMethod {
   LOTTERY
 }
 
+enum EventStatus {
+  DRAFT
+  ON_SALE
+  PAUSED
+  ENDED
+  CANCELED
+}
+
 enum AdmissionMethod {
   GENERAL_ADMISSION
   NUMBERED_ENTRY
@@ -362,6 +370,7 @@ model Event {
 
   name        String
   description String // 何もない場合は空文字
+  status      EventStatus?
 
   organizer Organizer @relation(fields: [organizerId], references: [id])
 

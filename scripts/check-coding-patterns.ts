@@ -17,7 +17,18 @@ type ProjectSnapshot = {
 const backendRoutersRoot = "packages/api/src/routers";
 const backendLegacyHandlersRoot = "packages/api/src/handlers";
 const backendAllowedRouterRoots = new Set(["fan", "organizer", "platform"]);
-const backendAllowedRouterFiles = new Set(["index.ts", "route.ts", "handler.ts"]);
+const backendAllowedRouterIndexFiles = new Set([
+  `${backendRoutersRoot}/index.ts`,
+  ...[...backendAllowedRouterRoots].map(
+    (routerRoot) => `${backendRoutersRoot}/${routerRoot}/index.ts`,
+  ),
+]);
+const backendRequiredRouteDirectoryFiles = [
+  "route.ts",
+  "handler.ts",
+  "handler.integration.test.ts",
+];
+const backendAllowedRouteDirectoryFiles = new Set(backendRequiredRouteDirectoryFiles);
 
 const frontendAllowedSrcDirs = new Set(["features", "shared", "lib", "routes", "test"]);
 const frontendAllowedSharedDirs = new Set(["_components", "_hooks", "_utils"]);
@@ -176,16 +187,29 @@ function checkBackendPatterns(files: string[], directories: string[]): CheckIssu
       });
     }
 
-    if (isTypeScriptFile(file) && !backendAllowedRouterFiles.has(fileName)) {
+    if (fileName === "index.ts") {
+      if (!backendAllowedRouterIndexFiles.has(file)) {
+        issues.push({
+          path: file,
+          rule: "backend route index",
+          message:
+            "index.ts は packages/api/src/routers/index.ts と packages/api/src/routers/{fan|organizer|platform}/index.ts だけに置いてください。",
+        });
+      }
+
+      continue;
+    }
+
+    if (!backendAllowedRouteDirectoryFiles.has(fileName)) {
       issues.push({
         path: file,
         rule: "backend route file",
         message:
-          "API ルートの実装ファイルは route.ts / handler.ts、集約ファイルは index.ts にしてください。",
+          "各 API ルートディレクトリには route.ts / handler.ts / handler.integration.test.ts だけを置いてください。",
       });
     }
 
-    if (fileName === "route.ts" || fileName === "handler.ts") {
+    if (backendAllowedRouteDirectoryFiles.has(fileName)) {
       const routeDirectory = parentPath(file);
       const filesInRouteDirectory = routeFileNamesByDirectory.get(routeDirectory) ?? new Set();
       filesInRouteDirectory.add(fileName);
@@ -197,7 +221,7 @@ function checkBackendPatterns(files: string[], directories: string[]): CheckIssu
           path: file,
           rule: "backend route directory",
           message:
-            "1 API ルートごとに専用ディレクトリを作り、その中へ route.ts と handler.ts を置いてください。",
+            "1 API ルートごとに専用ディレクトリを作り、その中へ route.ts / handler.ts / handler.integration.test.ts を置いてください。",
         });
       }
     }
@@ -217,15 +241,16 @@ function checkBackendPatterns(files: string[], directories: string[]): CheckIssu
   }
 
   for (const [routeDirectory, routeFiles] of routeFileNamesByDirectory) {
-    for (const requiredFile of ["route.ts", "handler.ts"]) {
+    for (const requiredFile of backendRequiredRouteDirectoryFiles) {
       if (routeFiles.has(requiredFile)) {
         continue;
       }
 
       issues.push({
         path: `${routeDirectory}/${requiredFile}`,
-        rule: "backend route pair",
-        message: "各 API ルートディレクトリには route.ts と handler.ts の両方を置いてください。",
+        rule: "backend route files",
+        message:
+          "各 API ルートディレクトリには route.ts / handler.ts / handler.integration.test.ts の3ファイルを置いてください。",
       });
     }
   }
@@ -426,10 +451,6 @@ function deriveDirectories(files: string[]) {
 
 function isExistingFile(path: string) {
   return existsSync(path) && statSync(path).isFile();
-}
-
-function isTypeScriptFile(path: string) {
-  return path.endsWith(".ts") || path.endsWith(".tsx");
 }
 
 function isSourceFile(path: string) {
