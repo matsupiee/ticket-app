@@ -172,6 +172,7 @@ type OrganizerEventForResponse = {
     id: string;
     name: string;
     startsAt: Date;
+    doorsOpenAt: Date;
     venue: {
       name: string;
     };
@@ -190,6 +191,7 @@ type OrganizerEventForResponse = {
     saleOffers: {
       id: string;
       name: string;
+      maxQuantityPerOrder: number;
       saleOfferRates: {
         price: number;
         displayOrder: number;
@@ -232,6 +234,7 @@ export function toOrganizerEventSummary(event: OrganizerEventForResponse) {
       name: performance.name,
       venueName: performance.venue.name,
       startsAt: performance.startsAt.toISOString(),
+      doorsOpenAt: performance.doorsOpenAt.toISOString(),
       admissionMethod: getPerformanceAdmissionMethod(performance.inventoryPools),
     })),
     saleWindows: event.saleWindows.map((saleWindow) => ({
@@ -250,6 +253,7 @@ export function toOrganizerEventSummary(event: OrganizerEventForResponse) {
           soldQuantity: offerSales.ticketsSold,
           availableQuantity: calculateOfferAvailableQuantity(offer),
           minPrice: calculateOfferMinPrice(offer),
+          maxQuantityPerOrder: offer.maxQuantityPerOrder,
         };
       }),
     })),
