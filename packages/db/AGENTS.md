@@ -72,3 +72,10 @@ saleOfferRates SaleOfferRate[]
 - クエリや更新処理が過度に複雑にならない
 
 重要でない関連は、アプリケーション側の検証に任せる
+
+## Prisma Clientのライフサイクル
+
+APIサーバーはCloud RunのNode.js互換コンテナで動かす。
+Prisma Clientは `packages/db/src/index.ts` のmodule-level singletonに集約し、handlerやauth実装で `new PrismaClient()` や `pg` / `postgres` を直接使わない。
+
+DBアクセス方針を変える場合は、先に `docs/adr/` と `docs/coding-pattern/backend.md` を更新する。

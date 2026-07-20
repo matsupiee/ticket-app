@@ -109,7 +109,7 @@ routers/fan/event/get/index.ts
         └── handler.integration.test.ts
 ```
 
-APIの主要な振る舞いは、実際のDBやそれに近い環境を使用した統合テストで保証する。
+APIの主要な振る舞いは、実際のDBを使用した統合テストで保証する。
 
 最低限、次の観点を確認する。
 
@@ -118,6 +118,8 @@ APIの主要な振る舞いは、実際のDBやそれに近い環境を使用し
 - 必要なデータが正しく作成・更新・削除される
 - 権限のないユーザーが処理を実行できない
 - 関連データとの整合性が維持される
+
+API統合テストでは、Prismaクライアントをモック化しないように注意する。
 
 ## `shared`の役割
 
@@ -297,6 +299,32 @@ const targetInventoryPool = performance.inventoryPools.find(
 - 配列が必ず1件であることをschemaまたはDB制約で保証する
 
 「たまたま最初に入っていた要素」を業務上の代表値として使用しない。
+
+## DBアクセス
+
+DBアクセスは `@ticket-app/db` のPrismaクライアントに集約する。
+
+APIサーバーはCloud RunのNode.js互換コンテナで動かす。
+Prisma Clientは `@ticket-app/db` のmodule-level singletonとして生成し、コンテナインスタンス内で再利用する。
+
+`db.model.method()` の通常操作を基本とする。
+複数操作を1つのtransactionにまとめる必要がある場合も、handler側でDBドライバや別のPrisma Clientを生成せず、`@ticket-app/db` の `db.$transaction` を使う。
+
+`pg`や`postgres`などの生のPostgreSQLクライアントを、アプリケーションコードの直接依存やimportに追加しない。
+これは `bun run lint` 内の `check:dependency-policy` で検出する。
+`@ticket-app/db` 外からDB client factoryをimportすることも同じlintで検出する。
+
+`$queryRaw`や`$executeRaw`は、PrismaのモデルAPIで表現できないDB機能が必要な場合に限定する。
+通常のCRUDや、ローカル実行環境の不具合を迂回する目的では使用しない。
+
+## 環境起因の不具合対応
+
+Cloud Run、ローカルdevサーバー、Prisma adapterなどの環境差分で不具合が起きた場合でも、handlerの業務ロジックへドライバ差し替えや生SQL化を恒久対応として入れない。
+
+まず再現手順、対象runtime、ログ、関連する設定値を残し、設定・adapter・ライブラリバージョンの問題として切り分ける。
+
+やむを得ず暫定回避を入れる場合は、削除条件、追跡issueまたはADR、回帰を検出するテストを同じPRに含める。
+DBアクセス方針やruntime方針を変える場合は、実装前に `docs/adr/` へADRを追加または更新する。
 
 ## 判断に迷った場合
 

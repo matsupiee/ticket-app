@@ -98,6 +98,35 @@ describe("checkCodingPatterns", () => {
     );
   });
 
+  it("reports API test files placed under src/test", () => {
+    const issues = checkCodingPatterns({
+      files: [
+        "packages/api/src/routers/index.ts",
+        "packages/api/src/routers/fan/index.ts",
+        "packages/api/src/routers/fan/event/get/handler.ts",
+        "packages/api/src/routers/fan/event/get/handler.integration.test.ts",
+        "packages/api/src/routers/fan/event/get/route.ts",
+        "packages/api/src/routers/organizer/index.ts",
+        "packages/api/src/routers/platform/index.ts",
+        "packages/api/src/test/global-setup.ts",
+        "packages/api/src/test/organizer-event-summary.unit.test.ts",
+      ],
+    });
+
+    expect(issues).toContainEqual(
+      expect.objectContaining({
+        path: "packages/api/src/test/organizer-event-summary.unit.test.ts",
+        rule: "api test placement",
+      }),
+    );
+    expect(issues).not.toContainEqual(
+      expect.objectContaining({
+        path: "packages/api/src/test/global-setup.ts",
+        rule: "api test placement",
+      }),
+    );
+  });
+
   it("reports backend index files outside routers root and router type roots", () => {
     const issues = checkCodingPatterns({
       files: [

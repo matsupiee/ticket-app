@@ -1,5 +1,25 @@
-/// <reference types="@cloudflare/workers-types" />
-// For Cloudflare Workers, env is accessed via cloudflare:workers module
-// Types are defined in env.d.ts based on your alchemy.run.ts bindings
-export type { CloudflareEnv } from "../env";
-export { env } from "cloudflare:workers";
+import { fileURLToPath } from "node:url";
+
+import { createEnv } from "@t3-oss/env-core";
+import { config } from "dotenv";
+import { z } from "zod";
+
+config({ path: fileURLToPath(new URL("../../../.env", import.meta.url).toString()) });
+config({
+  path: fileURLToPath(new URL("../../../apps/server/.env", import.meta.url).toString()),
+});
+config();
+
+export const env = createEnv({
+  server: {
+    DATABASE_URL: z.string().min(1),
+    DIRECT_URL: z.string().min(1).optional(),
+    CORS_ORIGIN: z.string().min(1),
+    BETTER_AUTH_SECRET: z.string().min(1),
+    BETTER_AUTH_URL: z.url(),
+    PORT: z.string().min(1).optional(),
+  },
+  runtimeEnv: process.env,
+  skipValidation: !!process.env.SKIP_ENV_VALIDATION,
+  emptyStringAsUndefined: true,
+});

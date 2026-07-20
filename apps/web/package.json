@@ -5,10 +5,11 @@
   "type": "module",
   "scripts": {
     "build": "vite build",
-    "serve": "vite preview",
-    "start": "vite",
     "check-types": "vite build && tsc --noEmit",
-    "dev:bare": "vite dev"
+    "dev": "vite",
+    "dev:bare": "vite dev",
+    "serve": "vite preview",
+    "start": "vite"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",

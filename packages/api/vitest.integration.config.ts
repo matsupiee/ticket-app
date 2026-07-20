@@ -9,7 +9,9 @@ export default defineConfig({
   root: rootDir,
   test: {
     environment: "node",
-    include: ["src/**/*.unit.test.ts"],
-    passWithNoTests: true,
+    globalSetup: ["./src/test/global-setup.ts"],
+    hookTimeout: 120_000,
+    include: ["src/**/*.integration.test.ts"],
+    testTimeout: 120_000,
   },
 });

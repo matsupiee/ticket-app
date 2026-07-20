@@ -1,4 +1,4 @@
-import { createDb } from "@ticket-app/db";
+import { db } from "@ticket-app/db";
 import { env } from "@ticket-app/env/server";
 import { betterAuth, type SecondaryStorage } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
@@ -16,7 +16,6 @@ const localAuthStorage =
 globalForLocalAuthStorage.__ticketAppLocalAuthStorage = localAuthStorage;
 
 export function createAuth() {
-  const db = createDb();
   const trustedOrigins = parseTrustedOrigins(env.CORS_ORIGIN);
   const useLocalSessionStorage = trustedOrigins.some(isLocalDevelopmentOrigin);
 
@@ -48,11 +47,10 @@ export function createAuth() {
         secure: true,
         httpOnly: true,
       },
-      // uncomment crossSubDomainCookies setting when ready to deploy and replace <your-workers-subdomain> with your actual workers subdomain
-      // https://developers.cloudflare.com/workers/wrangler/configuration/#workersdev
+      // Enable this when the API and frontends share a parent production domain.
       // crossSubDomainCookies: {
       //   enabled: true,
-      //   domain: "<your-workers-subdomain>",
+      //   domain: "<your-domain>",
       // },
     },
   });

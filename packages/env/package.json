@@ -14,7 +14,6 @@
   },
   "devDependencies": {
     "@ticket-app/config": "workspace:*",
-    "@ticket-app/infra": "workspace:*",
     "@types/node": "catalog:",
     "typescript": "catalog:"
   }

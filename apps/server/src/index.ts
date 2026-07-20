@@ -1,80 +1,77 @@
-import { OpenAPIHandler } from "@orpc/openapi/fetch";
-import { OpenAPIReferencePlugin } from "@orpc/openapi/plugins";
-import { onError } from "@orpc/server";
-import { RPCHandler } from "@orpc/server/fetch";
-import { ZodToJsonSchemaConverter } from "@orpc/zod/zod4";
-import { createContext } from "@ticket-app/api/context";
-import { appRouter } from "@ticket-app/api/routers/index";
-import { createAuth } from "@ticket-app/auth";
-import { parseTrustedOrigins } from "@ticket-app/auth/origins";
+import { serve } from "@hono/node-server"; // Cloud Run を使う場合、このパッケージが必要
+import { disconnectDb } from "@ticket-app/db";
 import { env } from "@ticket-app/env/server";
-import { Hono } from "hono";
-import { cors } from "hono/cors";
-import { logger } from "hono/logger";
 
-const app = new Hono();
-const corsOrigins = parseTrustedOrigins(env.CORS_ORIGIN);
+import app from "./app";
 
-app.use(logger());
-app.use(
-  "/*",
-  cors({
-    origin: corsOrigins,
-    allowMethods: ["GET", "POST", "OPTIONS"],
-    allowHeaders: ["Content-Type", "Authorization"],
-    credentials: true,
-  }),
+function parsePort(port: string) {
+  const parsed = Number.parseInt(port, 10);
+
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    throw new Error(`Invalid PORT: ${port}`);
+  }
+
+  return parsed;
+}
+const port = parsePort(env.PORT ?? "3000");
+
+let isServerListening = false;
+const server = serve(
+  {
+    fetch: app.fetch,
+    hostname: "0.0.0.0", // 0.0.0.0にすることで、Cloud Runのコンテナ外部からアクセス可能になる
+    port,
+  },
+  (info) => {
+    isServerListening = true;
+    console.info(`API server listening on http://0.0.0.0:${info.port}`);
+  },
 );
 
-app.on(["POST", "GET"], "/api/auth/*", (c) => createAuth().handler(c.req.raw));
-
-export const apiHandler = new OpenAPIHandler(appRouter, {
-  plugins: [
-    new OpenAPIReferencePlugin({
-      schemaConverters: [new ZodToJsonSchemaConverter()],
-    }),
-  ],
-  interceptors: [
-    onError((error) => {
-      console.error(error);
-    }),
-  ],
-});
-
-export const rpcHandler = new RPCHandler(appRouter, {
-  interceptors: [
-    onError((error) => {
-      console.error(error);
-    }),
-  ],
-});
-
-app.use("/*", async (c, next) => {
-  const context = await createContext({ context: c });
-
-  const rpcResult = await rpcHandler.handle(c.req.raw, {
-    prefix: "/rpc",
-    context: context,
+// Cloud Run インスタンスの終了シグナルを監視して、シャットダウンを行う
+// Cloud Run がインスタンスを終了するときは、基本的に SIGTERM が送られてくる
+for (const signal of ["SIGINT", "SIGTERM"] as const) {
+  process.once(signal, () => {
+    void shutdown(signal);
   });
+}
 
-  if (rpcResult.matched) {
-    return c.newResponse(rpcResult.response.body, rpcResult.response);
+async function shutdown(signal: NodeJS.Signals) {
+  console.info(`Received ${signal}. Closing API server.`);
+
+  let exitCode = 0;
+
+  if (isServerListening) {
+    try {
+      await new Promise<void>((resolve, reject) => {
+        // 8秒経って成功しなければエラーをスローする
+        const timeoutId = setTimeout(() => {
+          reject(new Error("API server close timed out."));
+        }, 8_000);
+
+        server.close((error) => {
+          clearTimeout(timeoutId);
+
+          if (error) {
+            reject(error);
+            return;
+          }
+
+          resolve();
+        });
+      });
+    } catch (error) {
+      console.error(error);
+      exitCode = 1;
+    }
   }
 
-  const apiResult = await apiHandler.handle(c.req.raw, {
-    prefix: "/api-reference",
-    context: context,
-  });
-
-  if (apiResult.matched) {
-    return c.newResponse(apiResult.response.body, apiResult.response);
+  try {
+    await disconnectDb();
+  } catch (error) {
+    console.error(error);
+    exitCode = 1;
   }
 
-  await next();
-});
-
-app.get("/", (c) => {
-  return c.text("OK");
-});
-
-export default app;
+  process.exit(exitCode);
+}

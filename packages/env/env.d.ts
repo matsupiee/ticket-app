@@ -1,16 +1,14 @@
-import { type server } from "@ticket-app/infra/alchemy.run";
-
-// This file infers types for the cloudflare:workers environment from your Alchemy Worker.
-// @see https://alchemy.run/concepts/bindings/#type-safe-bindings
-
-export type CloudflareEnv = typeof server.Env;
-
 declare global {
-  type Env = CloudflareEnv;
-}
-
-declare module "cloudflare:workers" {
-  namespace Cloudflare {
-    export interface Env extends CloudflareEnv {}
+  namespace NodeJS {
+    interface ProcessEnv {
+      DATABASE_URL?: string;
+      DIRECT_URL?: string;
+      CORS_ORIGIN?: string;
+      BETTER_AUTH_SECRET?: string;
+      BETTER_AUTH_URL?: string;
+      PORT?: string;
+    }
   }
 }
+
+export {};

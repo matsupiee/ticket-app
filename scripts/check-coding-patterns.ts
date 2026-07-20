@@ -16,6 +16,7 @@ type ProjectSnapshot = {
 
 const backendRoutersRoot = "packages/api/src/routers";
 const backendLegacyHandlersRoot = "packages/api/src/handlers";
+const apiTestSupportRoot = "packages/api/src/test";
 const backendAllowedRouterRoots = new Set(["fan", "organizer", "platform"]);
 const backendAllowedRouterIndexFiles = new Set([
   `${backendRoutersRoot}/index.ts`,
@@ -64,6 +65,16 @@ const fileNameSuffixes = [
   ".ts",
   ".css",
 ];
+const testFileSuffixes = [
+  ".integration.test.tsx",
+  ".integration.test.ts",
+  ".unit.test.tsx",
+  ".unit.test.ts",
+  ".test.tsx",
+  ".test.ts",
+  ".spec.tsx",
+  ".spec.ts",
+];
 
 export function checkCodingPatterns(snapshot: ProjectSnapshot): CheckIssue[] {
   const files = uniqueSorted(snapshot.files.map(normalizeProjectPath));
@@ -74,6 +85,7 @@ export function checkCodingPatterns(snapshot: ProjectSnapshot): CheckIssue[] {
 
   return sortIssues([
     ...checkBackendPatterns(files, directories),
+    ...checkApiTestPlacementPatterns(files),
     ...checkFrontendPatterns(files, directories),
     ...checkFileNamePatterns(files),
   ]);
@@ -258,6 +270,25 @@ function checkBackendPatterns(files: string[], directories: string[]): CheckIssu
   return dedupeIssues(issues);
 }
 
+function checkApiTestPlacementPatterns(files: string[]): CheckIssue[] {
+  const issues: CheckIssue[] = [];
+
+  for (const file of files) {
+    if (!file.startsWith(`${apiTestSupportRoot}/`) || !isTestFile(file)) {
+      continue;
+    }
+
+    issues.push({
+      path: file,
+      rule: "api test placement",
+      message:
+        "packages/api/src/test には global-setup などの共通基盤だけを置き、テストは実装ファイルの近くに置いてください。",
+    });
+  }
+
+  return issues;
+}
+
 function checkFileNamePatterns(files: string[]): CheckIssue[] {
   const issues: CheckIssue[] = [];
 
@@ -295,6 +326,10 @@ function shouldCheckFileName(file: string) {
     /^packages\/[^/]+\/src\//.test(file) ||
     /^scripts\/.+/.test(file)
   );
+}
+
+function isTestFile(file: string) {
+  return testFileSuffixes.some((suffix) => file.endsWith(suffix));
 }
 
 function hasKebabCaseFileName(file: string) {

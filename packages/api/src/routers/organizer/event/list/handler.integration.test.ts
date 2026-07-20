@@ -1,10 +1,6 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
-vi.mock("@ticket-app/db", () => ({
-  db: {},
-}));
-
-import { toOrganizerEventSummary } from "../routers/organizer/event/list/handler";
+import { toOrganizerEventSummary } from "./handler";
 
 describe("toOrganizerEventSummary", () => {
   it("販売数と売上は在庫プールではなく支払い済み注文明細から集計する", () => {

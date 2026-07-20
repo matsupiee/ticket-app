@@ -5,9 +5,12 @@
   "scripts": {
     "build": "tsdown",
     "check-types": "tsc -b",
-    "compile": "bun build --compile --minify --sourcemap --bytecode ./src/index.ts --outfile server"
+    "compile": "bun build --compile --minify --sourcemap --bytecode ./src/index.ts --outfile server",
+    "dev": "bun --env-file=.env --watch src/index.ts",
+    "start": "node dist/index.mjs"
   },
   "dependencies": {
+    "@hono/node-server": "catalog:",
     "@orpc/openapi": "catalog:",
     "@orpc/server": "catalog:",
     "@orpc/zod": "catalog:",
@@ -21,13 +24,10 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "catalog:",
     "@ticket-app/config": "workspace:*",
     "@types/node": "catalog:",
-    "alchemy": "catalog:",
     "tsdown": "^0.22.3",
-    "typescript": "catalog:",
-    "wrangler": "^4.107.0"
+    "typescript": "catalog:"
   },
   "trustedDependencies": [
     "supabase"

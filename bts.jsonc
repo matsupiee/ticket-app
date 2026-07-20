@@ -13,11 +13,12 @@
   "$schema": "https://r2.better-t-stack.dev/schema.json",
   "version": "3.36.3",
   "createdAt": "2026-07-16T15:44:41.858Z",
-  "reproducibleCommand": "bun create better-t-stack@latest ticket-app --frontend tanstack-router --backend hono --runtime workers --database postgres --orm prisma --api orpc --auth better-auth --payments none --addons lefthook oxlint turborepo --examples none --db-setup supabase --web-deploy cloudflare --server-deploy cloudflare --git --package-manager bun --install",
+  "reproducibleCommand": "bun create better-t-stack@latest ticket-app --frontend tanstack-router --backend hono --runtime node --database postgres --orm prisma --api orpc --auth better-auth --payments none --addons lefthook oxlint turborepo --examples none --db-setup supabase --web-deploy cloudflare --server-deploy none --git --package-manager bun --install",
   "database": "postgres",
   "orm": "prisma",
   "backend": "hono",
-  "runtime": "workers",
+  // Scaffolded as Workers, but the API server is intentionally deployed to Cloud Run.
+  "runtime": "node",
   "frontend": ["tanstack-router"],
   "addons": ["lefthook", "oxlint", "turborepo"],
   "examples": [],
@@ -27,5 +28,5 @@
   "dbSetup": "supabase",
   "api": "orpc",
   "webDeploy": "cloudflare",
-  "serverDeploy": "cloudflare",
+  "serverDeploy": "cloud-run",
 }
