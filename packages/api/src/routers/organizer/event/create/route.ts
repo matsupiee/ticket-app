@@ -21,6 +21,7 @@ const createEventInputSchema = z.object({
       saleWindowName: z.string().min(1),
       saleStartsAt: z.string().min(1),
       saleEndsAt: z.string().min(1),
+      saleMethod: z.enum(["FIRST_COME", "LOTTERY"]),
     })
     .optional(),
 });

@@ -1,8 +1,7 @@
 import { Link } from "@tanstack/react-router";
-import { Button, buttonVariants } from "@ticket-app/ui/components/button";
+import { buttonVariants } from "@ticket-app/ui/components/button";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@ticket-app/ui/components/empty";
 import { Input } from "@ticket-app/ui/components/input";
-import { Label } from "@ticket-app/ui/components/label";
 import { CalendarClock, Search, Ticket } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -22,8 +21,6 @@ export function OrganizerDashboardPage({ eventOrganizerId }: { eventOrganizerId:
   const [events, setEvents] = useState<OrganizerEvent[]>([]);
   const [summary, setSummary] = useState<OrganizerPortfolioSummary>(emptySummary);
   const [isLoading, setIsLoading] = useState(true);
-  const [isCreating, setIsCreating] = useState(false);
-  const [draft, setDraft] = useState(() => buildDefaultEventDraft());
   const loadEvents = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -43,38 +40,6 @@ export function OrganizerDashboardPage({ eventOrganizerId }: { eventOrganizerId:
   useEffect(() => {
     loadEvents();
   }, [loadEvents]);
-
-  async function createPublicNumberedEntryEvent() {
-    setIsCreating(true);
-    try {
-      await client.organizer.event.create({
-        eventOrganizerId,
-        name: draft.name,
-        description: draft.description,
-        publicTicketing: {
-          venueName: draft.venueName,
-          performanceName: "本公演",
-          doorsOpenAt: draft.doorsOpenAt,
-          startsAt: draft.startsAt,
-          seatCategoryName: draft.seatCategoryName,
-          rateTypeName: draft.rateTypeName,
-          price: Number(draft.price),
-          capacity: Number(draft.capacity),
-          maxQuantityPerOrder: Number(draft.maxQuantityPerOrder),
-          saleWindowName: "一般販売",
-          saleStartsAt: draft.saleStartsAt,
-          saleEndsAt: draft.saleEndsAt,
-        },
-      });
-      toast.success("イベントを作成して公開しました");
-      setDraft(buildDefaultEventDraft());
-      await loadEvents();
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "イベント作成に失敗しました");
-    } finally {
-      setIsCreating(false);
-    }
-  }
 
   return (
     <main className="overflow-y-auto bg-background">
@@ -105,95 +70,11 @@ export function OrganizerDashboardPage({ eventOrganizerId }: { eventOrganizerId:
       </section>
 
       <section className="mx-auto max-w-6xl space-y-5 px-4 py-8 md:px-6">
-        <form
-          aria-label="公開イベント作成"
-          className="grid gap-4 border-y py-5"
-          onSubmit={(event) => {
-            event.preventDefault();
-            createPublicNumberedEntryEvent();
-          }}
-        >
-          <div className="grid gap-2">
-            <h2 className="text-lg font-medium">整理番号・先着イベントを作成</h2>
-            <p className="text-sm leading-6 text-muted-foreground">
-              1公演・1席種・1料金種別の整理番号方式イベントを作成し、すぐ販売ページに公開します。
-            </p>
-          </div>
-          <div className="grid gap-4 md:grid-cols-3">
-            <TextField
-              id="newEventName"
-              label="イベント名"
-              value={draft.name}
-              onChange={(value) => setDraft((current) => ({ ...current, name: value }))}
-            />
-            <TextField
-              id="newVenueName"
-              label="会場"
-              value={draft.venueName}
-              onChange={(value) => setDraft((current) => ({ ...current, venueName: value }))}
-            />
-            <TextField
-              id="newSeatCategoryName"
-              label="席種"
-              value={draft.seatCategoryName}
-              onChange={(value) => setDraft((current) => ({ ...current, seatCategoryName: value }))}
-            />
-            <TextField
-              id="newRateTypeName"
-              label="料金種別"
-              value={draft.rateTypeName}
-              onChange={(value) => setDraft((current) => ({ ...current, rateTypeName: value }))}
-            />
-            <TextField
-              id="newPrice"
-              label="価格"
-              type="number"
-              value={draft.price}
-              onChange={(value) => setDraft((current) => ({ ...current, price: value }))}
-            />
-            <TextField
-              id="newCapacity"
-              label="販売枚数"
-              type="number"
-              value={draft.capacity}
-              onChange={(value) => setDraft((current) => ({ ...current, capacity: value }))}
-            />
-            <TextField
-              id="newStartsAt"
-              label="開演日時"
-              type="datetime-local"
-              value={draft.startsAt}
-              onChange={(value) => setDraft((current) => ({ ...current, startsAt: value }))}
-            />
-            <TextField
-              id="newDoorsOpenAt"
-              label="開場日時"
-              type="datetime-local"
-              value={draft.doorsOpenAt}
-              onChange={(value) => setDraft((current) => ({ ...current, doorsOpenAt: value }))}
-            />
-            <TextField
-              id="newSaleEndsAt"
-              label="販売終了日時"
-              type="datetime-local"
-              value={draft.saleEndsAt}
-              onChange={(value) => setDraft((current) => ({ ...current, saleEndsAt: value }))}
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="newDescription">説明</Label>
-            <Input
-              id="newDescription"
-              value={draft.description}
-              onChange={(event) =>
-                setDraft((current) => ({ ...current, description: event.target.value }))
-              }
-            />
-          </div>
-          <Button type="submit" className="w-fit text-sm" disabled={isCreating}>
-            {isCreating ? "作成中" : "作成して公開"}
-          </Button>
-        </form>
+        <div className="flex justify-end">
+          <Link to="/events/new" className={buttonVariants()}>
+            イベントを作成
+          </Link>
+        </div>
 
         <label className="flex max-w-xl items-center gap-2 border bg-background px-3 py-2">
           <Search className="size-4 text-muted-foreground" aria-hidden="true" />
@@ -282,57 +163,6 @@ function Kpi({ label, value }: { label: string; value: string }) {
       <div className="mt-2 text-2xl font-semibold tracking-normal">{value}</div>
     </section>
   );
-}
-
-function TextField({
-  id,
-  label,
-  value,
-  type = "text",
-  onChange,
-}: {
-  id: string;
-  label: string;
-  value: string;
-  type?: string;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <div className="grid gap-2">
-      <Label htmlFor={id}>{label}</Label>
-      <Input id={id} type={type} value={value} onChange={(event) => onChange(event.target.value)} />
-    </div>
-  );
-}
-
-function buildDefaultEventDraft() {
-  const now = new Date();
-  const startsAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-  startsAt.setHours(18, 0, 0, 0);
-  const doorsOpenAt = new Date(startsAt.getTime() - 60 * 60 * 1000);
-  const saleEndsAt = new Date(startsAt.getTime() - 60 * 60 * 1000);
-  const saleStartsAt = new Date(now.getTime() - 60 * 1000);
-
-  return {
-    name: "整理番号ライブ",
-    description: "整理番号順に入場する先着販売イベントです。",
-    venueName: "新宿ライブホール",
-    seatCategoryName: "スタンディング",
-    rateTypeName: "一般",
-    price: "5000",
-    capacity: "30",
-    maxQuantityPerOrder: "4",
-    startsAt: toDateTimeLocalValue(startsAt),
-    doorsOpenAt: toDateTimeLocalValue(doorsOpenAt),
-    saleStartsAt: toDateTimeLocalValue(saleStartsAt),
-    saleEndsAt: toDateTimeLocalValue(saleEndsAt),
-  };
-}
-
-function toDateTimeLocalValue(date: Date) {
-  const offset = date.getTimezoneOffset() * 60_000;
-
-  return new Date(date.getTime() - offset).toISOString().slice(0, 16);
 }
 
 const emptySummary: OrganizerPortfolioSummary = {

@@ -24,6 +24,7 @@ export async function createEventHandler({
       saleWindowName: string;
       saleStartsAt: string;
       saleEndsAt: string;
+      saleMethod: "FIRST_COME" | "LOTTERY";
     };
   };
   context: {
@@ -130,7 +131,7 @@ export async function createEventHandler({
         applicationStartsAt: publicTicketing.saleStartsAt,
         applicationEndsAt: publicTicketing.saleEndsAt,
         isSmsAuthRequired: false,
-        method: "FIRST_COME",
+        method: publicTicketing.saleMethod,
         lotteryMode: "AUTO",
       },
     });

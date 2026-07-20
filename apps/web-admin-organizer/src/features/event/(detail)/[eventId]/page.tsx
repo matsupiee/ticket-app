@@ -2,7 +2,10 @@ import { Link } from "@tanstack/react-router";
 import { buttonVariants } from "@ticket-app/ui/components/button";
 import { toast } from "sonner";
 
-import { EventSettingsForm } from "../../_components/event-settings-form";
+import {
+  EventSettingsForm,
+  buildEventFormValues,
+} from "../../_components/event-settings-form";
 import { SectionHeading } from "../../_components/section-heading";
 import { EventStatusBadge } from "../../_components/status-badge";
 import {
@@ -44,15 +47,39 @@ export function EventDetailPage({
         <div className="space-y-5">
           <SectionHeading title="基本設定" />
           <EventSettingsForm
-            event={event}
+            key={event.id}
+            defaultValues={buildEventFormValues(event)}
+            submitLabel="設定を保存"
+            pendingLabel="保存中"
             onSave={async (settings) => {
-              await client.organizer.event.update({
-                eventOrganizerId,
-                eventId: event.id,
-                name: settings.name,
-                description: event.description,
-              });
-              toast.success(`${settings.name} の設定を保存しました`);
+              try {
+                await client.organizer.event.update({
+                  eventOrganizerId,
+                  eventId: event.id,
+                  name: settings.name,
+                  description: settings.description,
+                  publicTicketing: {
+                    venueName: settings.venueName,
+                    performanceName: event.performances[0]?.name ?? "本公演",
+                    doorsOpenAt: settings.doorsOpenAt,
+                    startsAt: settings.startsAt,
+                    seatCategoryName: settings.seatCategoryName,
+                    rateTypeName: settings.rateTypeName,
+                    price: Number(settings.price),
+                    capacity: Number(settings.capacity),
+                    maxQuantityPerOrder: Number(settings.maxQuantityPerOrder),
+                    saleWindowName: event.saleWindows[0]?.name ?? "一般販売",
+                    saleStartsAt: settings.saleStartsAt,
+                    saleEndsAt: settings.saleEndsAt,
+                    saleMethod: settings.saleMethod,
+                  },
+                });
+                toast.success(`${settings.name} の設定を保存しました`);
+              } catch (error) {
+                toast.error(
+                  error instanceof Error ? error.message : "イベント設定の保存に失敗しました",
+                );
+              }
             }}
           />
         </div>

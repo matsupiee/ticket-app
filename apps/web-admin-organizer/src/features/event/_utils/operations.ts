@@ -9,6 +9,7 @@ export type OrganizerPerformance = {
   name: string;
   venueName: string;
   startsAt: string;
+  doorsOpenAt: string;
   admissionMethod: "GENERAL_ADMISSION" | "RESERVED_SEAT" | "NUMBERED_ENTRY";
 };
 
@@ -25,6 +26,7 @@ export type OrganizerSaleWindow = {
     soldQuantity: number;
     availableQuantity: number;
     minPrice: number;
+    maxQuantityPerOrder: number;
   }[];
 };
 
@@ -65,12 +67,6 @@ export type EventSettlement = {
   settlementAmount: number;
 };
 
-export type OrganizerEventSettings = {
-  name: string;
-  venueName: string;
-  saleMethod: SaleMethod;
-};
-
 export const eventStatusLabels = {
   DRAFT: "下書き",
   ON_SALE: "販売中",
@@ -104,6 +100,7 @@ export const organizerEvents: OrganizerEvent[] = [
         name: "DAY 1",
         venueName: "有明アリーナ",
         startsAt: "2026-09-12T18:00:00+09:00",
+        doorsOpenAt: "2026-09-12T17:00:00+09:00",
         admissionMethod: "RESERVED_SEAT",
       },
       {
@@ -111,6 +108,7 @@ export const organizerEvents: OrganizerEvent[] = [
         name: "DAY 2",
         venueName: "有明アリーナ",
         startsAt: "2026-09-13T17:00:00+09:00",
+        doorsOpenAt: "2026-09-13T16:00:00+09:00",
         admissionMethod: "RESERVED_SEAT",
       },
     ],
@@ -129,6 +127,7 @@ export const organizerEvents: OrganizerEvent[] = [
             soldQuantity: 420,
             availableQuantity: 128,
             minPrice: 12_000,
+            maxQuantityPerOrder: 4,
           },
           {
             id: "tokyo-orbit-a-seat",
@@ -137,6 +136,7 @@ export const organizerEvents: OrganizerEvent[] = [
             soldQuantity: 316,
             availableQuantity: 246,
             minPrice: 8_800,
+            maxQuantityPerOrder: 4,
           },
         ],
       },
@@ -166,6 +166,7 @@ export const organizerEvents: OrganizerEvent[] = [
         name: "SATURDAY",
         venueName: "横浜ベイホール",
         startsAt: "2026-10-03T11:00:00+09:00",
+        doorsOpenAt: "2026-10-03T10:00:00+09:00",
         admissionMethod: "NUMBERED_ENTRY",
       },
       {
@@ -173,6 +174,7 @@ export const organizerEvents: OrganizerEvent[] = [
         name: "SUNDAY",
         venueName: "横浜ベイホール",
         startsAt: "2026-10-04T11:00:00+09:00",
+        doorsOpenAt: "2026-10-04T10:00:00+09:00",
         admissionMethod: "NUMBERED_ENTRY",
       },
     ],
@@ -191,6 +193,7 @@ export const organizerEvents: OrganizerEvent[] = [
             soldQuantity: 136,
             availableQuantity: 400,
             minPrice: 9_900,
+            maxQuantityPerOrder: 4,
           },
           {
             id: "bay-side-two-day-pass",
@@ -199,6 +202,7 @@ export const organizerEvents: OrganizerEvent[] = [
             soldQuantity: 48,
             availableQuantity: 120,
             minPrice: 16_500,
+            maxQuantityPerOrder: 2,
           },
         ],
       },
@@ -228,6 +232,7 @@ export const organizerEvents: OrganizerEvent[] = [
         name: "本公演",
         venueName: "京都コンサートホール",
         startsAt: "2026-06-18T19:00:00+09:00",
+        doorsOpenAt: "2026-06-18T18:00:00+09:00",
         admissionMethod: "RESERVED_SEAT",
       },
     ],
@@ -246,6 +251,7 @@ export const organizerEvents: OrganizerEvent[] = [
             soldQuantity: 310,
             availableQuantity: 0,
             minPrice: 9_800,
+            maxQuantityPerOrder: 4,
           },
         ],
       },
