@@ -171,6 +171,50 @@ test("抽選方式と複数公演にまたがる通し券を設定できる", as
   expect(event.saleWindows[0]?.offers[0]?.entitlements).toHaveLength(2);
 });
 
+test("公演を追加するまでStep3へ進めない", async ({ page }) => {
+  const authState = {
+    user: { id: "organizer-user", name: "主催者ユーザー", email: "guard-e2e@example.com" },
+  };
+  const organizer = {
+    eventOrganizerId: "organizer-e2e",
+    name: "品川イベント制作",
+    slug: "shinagawa-events",
+    role: "EDITOR",
+  } as const;
+  const store = createEventStore();
+
+  await mockAuth(page, authState);
+  await mockRpc(page, organizer, store);
+
+  await page.goto("/events/new");
+  await expect(page.getByRole("heading", { name: "イベントを作成" })).toBeVisible();
+
+  await page.getByLabel("イベント名").fill("E2E公演必須イベント");
+  await page.getByLabel("説明").fill("公演を追加しないと席種へ進めないことを確認します。");
+  await page.getByRole("button", { name: "次へ" }).click();
+
+  await expect(page.getByRole("heading", { name: "公演" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "次へ" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: /席種/ })).toBeDisabled();
+
+  await page.getByRole("button", { name: "公演を追加" }).click();
+  await expect(page.getByRole("button", { name: "次へ" })).toBeEnabled();
+  await expect(page.getByRole("button", { name: /席種/ })).toBeEnabled();
+
+  await page.getByRole("button", { name: "公演1を削除" }).click();
+  await expect(page.getByRole("button", { name: "次へ" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: /席種/ })).toBeDisabled();
+
+  await page.getByRole("button", { name: "公演を追加" }).click();
+  await page.getByLabel("公演1の名称").fill("本公演");
+  await page.getByLabel("公演1の会場").fill("品川ホール");
+  await page.getByLabel("公演1の開場日時").fill("2026-09-10T17:00");
+  await page.getByLabel("公演1の開演日時").fill("2026-09-10T18:00");
+  await page.getByRole("button", { name: "次へ" }).click();
+
+  await expect(page.getByRole("heading", { name: "席種" })).toBeVisible();
+});
+
 test("既存イベントを開いて在庫を追加できる", async ({ page }) => {
   const authState = {
     user: { id: "organizer-user", name: "主催者ユーザー", email: "edit-e2e@example.com" },

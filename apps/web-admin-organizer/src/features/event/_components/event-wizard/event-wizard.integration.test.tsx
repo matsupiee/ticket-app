@@ -67,8 +67,12 @@ describe("EventWizard", () => {
     });
 
     expect(await screen.findByRole("heading", { name: "公演" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "次へ" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /席種/ })).toBeDisabled();
 
     await user.click(screen.getByRole("button", { name: "公演を追加" }));
+    expect(screen.getByRole("button", { name: "次へ" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: /席種/ })).toBeEnabled();
     await user.type(screen.getByLabelText("公演1の名称"), "DAY 1");
     await user.type(screen.getByLabelText("公演1の会場"), "有明アリーナ");
     await user.click(screen.getByRole("button", { name: "公演を追加" }));
@@ -96,6 +100,32 @@ describe("EventWizard", () => {
         }),
       );
     });
+  });
+
+  it("公演を追加しないとStep3へ直接移動できない", async () => {
+    const user = userEvent.setup();
+    vi.mocked(client.organizer.event.create).mockResolvedValue({
+      id: "event-123",
+      updatedAt: "2026-07-20T00:00:00.000Z",
+    });
+
+    render(<EventWizard mode="create" eventOrganizerId="organizer-1" />);
+
+    await user.type(screen.getByLabelText("イベント名"), "TOKYO ORBIT 2026");
+    await user.click(screen.getByRole("button", { name: "次へ" }));
+
+    expect(await screen.findByRole("heading", { name: "公演" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "次へ" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /席種/ })).toBeDisabled();
+
+    await user.click(screen.getByRole("button", { name: "公演を追加" }));
+    expect(screen.getByRole("button", { name: "次へ" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: /席種/ })).toBeEnabled();
+
+    await user.click(screen.getByRole("button", { name: "公演1を削除" }));
+    expect(screen.getByRole("button", { name: "次へ" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /席種/ })).toBeDisabled();
+    expect(screen.getByRole("heading", { name: "公演" })).toBeInTheDocument();
   });
 
   it("編集モードでは既存イベントの内容をStep1に反映する", () => {
