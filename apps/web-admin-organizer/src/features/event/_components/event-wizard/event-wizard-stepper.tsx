@@ -1,28 +1,110 @@
 import { CheckIcon } from "lucide-react";
 
+export type EventWizardStepKey =
+  | "basic"
+  | "performances"
+  | "seat-categories"
+  | "rate-types"
+  | "sale-windows"
+  | "simple-ticketing";
+
+export type EventWizardStep = {
+  num: number;
+  label: string;
+  title: string;
+  description: string;
+  stepKey: EventWizardStepKey;
+  saveSteps: readonly number[];
+};
+
 export const WIZARD_STEPS = [
-  { num: 1, label: "STEP 1", title: "基本情報" },
-  { num: 2, label: "STEP 2", title: "公演" },
-  { num: 3, label: "STEP 3", title: "席種" },
-  { num: 4, label: "STEP 4", title: "料金種別" },
-  { num: 5, label: "STEP 5", title: "販売受付" },
-] as const;
+  {
+    num: 1,
+    label: "STEP 1",
+    title: "基本情報",
+    description: "イベント名と説明を入力します。",
+    stepKey: "basic",
+    saveSteps: [1],
+  },
+  {
+    num: 2,
+    label: "STEP 2",
+    title: "公演",
+    description: "公演ごとに会場と日程を登録します。ツアーは公演を複数追加します。",
+    stepKey: "performances",
+    saveSteps: [2],
+  },
+  {
+    num: 3,
+    label: "STEP 3",
+    title: "席種",
+    description: "席種を定義し、公演ごとの在庫数を設定します。",
+    stepKey: "seat-categories",
+    saveSteps: [3],
+  },
+  {
+    num: 4,
+    label: "STEP 4",
+    title: "料金種別",
+    description: "料金種別を定義し、席種ごとの標準価格を設定します。",
+    stepKey: "rate-types",
+    saveSteps: [4],
+  },
+  {
+    num: 5,
+    label: "STEP 5",
+    title: "販売受付",
+    description:
+      "受付ごとに販売する券を1件ずつ登録します。価格は標準価格から引き継ぎ、受付・公演ごとに変更できます。",
+    stepKey: "sale-windows",
+    saveSteps: [5],
+  },
+] as const satisfies readonly EventWizardStep[];
+
+export const SIMPLE_WIZARD_STEPS = [
+  {
+    num: 1,
+    label: "STEP 1",
+    title: "基本情報",
+    description: "イベント名と説明を入力します。",
+    stepKey: "basic",
+    saveSteps: [1],
+  },
+  {
+    num: 2,
+    label: "STEP 2",
+    title: "公演・券種",
+    description: "1公演の会場・日程と、席種ごとの在庫数・価格を入力します。",
+    stepKey: "simple-ticketing",
+    saveSteps: [2, 3, 4],
+  },
+  {
+    num: 3,
+    label: "STEP 3",
+    title: "販売受付",
+    description: "受付期間と販売する券を登録します。",
+    stepKey: "sale-windows",
+    saveSteps: [5],
+  },
+] as const satisfies readonly EventWizardStep[];
 
 export function EventWizardStepper({
   currentStep,
   onGoToStep,
   isStepDisabled,
+  steps = WIZARD_STEPS,
 }: {
   currentStep: number;
   onGoToStep: (step: number) => void;
   isStepDisabled?: (step: number) => boolean;
+  steps?: readonly EventWizardStep[];
 }) {
   return (
     <nav className="sticky top-6 flex flex-col">
-      {WIZARD_STEPS.map((step, index) => {
+      {steps.map((step, index) => {
         const isDone = step.num < currentStep;
         const isActive = step.num === currentStep;
-        const isLast = index === WIZARD_STEPS.length - 1;
+        const isLast = index === steps.length - 1;
         const disabled = !isActive && (isStepDisabled?.(step.num) ?? false);
 
         return (

@@ -83,6 +83,8 @@ export type WizardDraft = {
 export type WizardDraftAction =
   | { type: "SET_BASIC_INFO"; name: string; description: string }
   | { type: "SET_EVENT_ID"; eventId: string }
+  | { type: "APPLY_SIMPLE_CREATION_PRESET" }
+  | { type: "RESET_DRAFT" }
   | { type: "ADD_PERFORMANCE" }
   | { type: "UPDATE_PERFORMANCE"; key: string; patch: Partial<DraftPerformance> }
   | { type: "REMOVE_PERFORMANCE"; key: string }
@@ -140,6 +142,10 @@ export function wizardDraftReducer(draft: WizardDraft, action: WizardDraftAction
       return { ...draft, name: action.name, description: action.description };
     case "SET_EVENT_ID":
       return { ...draft, eventId: action.eventId };
+    case "APPLY_SIMPLE_CREATION_PRESET":
+      return applySimpleCreationPreset(draft);
+    case "RESET_DRAFT":
+      return buildEmptyDraft();
     case "ADD_PERFORMANCE":
       return {
         ...draft,
@@ -395,6 +401,43 @@ export function wizardDraftReducer(draft: WizardDraft, action: WizardDraftAction
     default:
       return draft;
   }
+}
+
+function applySimpleCreationPreset(draft: WizardDraft): WizardDraft {
+  const performances =
+    draft.performances.length > 0
+      ? draft.performances
+      : [
+          {
+            key: crypto.randomUUID(),
+            name: "",
+            venueName: "",
+            ...getDefaultPerformanceSchedule(),
+          },
+        ];
+  const hasActiveSeatCategory = draft.seatCategories.some((seatCategory) => seatCategory.active);
+  const seatCategories = hasActiveSeatCategory
+    ? draft.seatCategories.map((seatCategory, index) =>
+        index === 0 && seatCategory.active && seatCategory.name === ""
+          ? { ...seatCategory, name: "一般" }
+          : seatCategory,
+      )
+    : [
+        ...draft.seatCategories,
+        {
+          key: crypto.randomUUID(),
+          name: "一般",
+          active: true,
+        },
+      ];
+  const rateTypes =
+    draft.rateTypes.length > 0
+      ? draft.rateTypes.map((rateType, index) =>
+          index === 0 && rateType.name === "" ? { ...rateType, name: "一般" } : rateType,
+        )
+      : [{ key: crypto.randomUUID(), name: "一般" }];
+
+  return { ...draft, performances, seatCategories, rateTypes };
 }
 
 export function buildEmptyDraft(): WizardDraft {

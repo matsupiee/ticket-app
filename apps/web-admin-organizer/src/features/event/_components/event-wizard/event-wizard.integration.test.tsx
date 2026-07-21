@@ -56,6 +56,7 @@ describe("EventWizard", () => {
 
     render(<EventWizard mode="create" eventOrganizerId="organizer-1" />);
 
+    await user.click(screen.getByRole("button", { name: /詳細イベント作成ではじめる/ }));
     await user.type(screen.getByLabelText("イベント名"), "TOKYO ORBIT 2026");
     await user.type(screen.getByLabelText("説明"), "テスト説明文");
     await user.click(screen.getByRole("button", { name: "次へ" }));
@@ -129,6 +130,7 @@ describe("EventWizard", () => {
 
     render(<EventWizard mode="create" eventOrganizerId="organizer-1" />);
 
+    await user.click(screen.getByRole("button", { name: /詳細イベント作成ではじめる/ }));
     await user.type(screen.getByLabelText("イベント名"), "TOKYO ORBIT 2026");
     await user.click(screen.getByRole("button", { name: "次へ" }));
 
@@ -144,6 +146,142 @@ describe("EventWizard", () => {
     expect(screen.getByRole("button", { name: "次へ" })).toBeDisabled();
     expect(screen.getByRole("button", { name: /席種/ })).toBeDisabled();
     expect(screen.getByRole("heading", { name: "公演" })).toBeInTheDocument();
+  });
+
+  it("作成方法を選び直すと未保存ドラフトを初期化し、詳細作成の公演必須ガードを維持する", async () => {
+    const user = userEvent.setup();
+    vi.mocked(client.organizer.event.create).mockResolvedValue({
+      id: "event-123",
+      updatedAt: "2026-07-20T00:00:00.000Z",
+    });
+
+    render(<EventWizard mode="create" eventOrganizerId="organizer-1" />);
+
+    await user.click(screen.getByRole("button", { name: /簡単イベント作成/ }));
+    await user.click(screen.getByRole("button", { name: "作成方法を変更" }));
+    await user.click(screen.getByRole("button", { name: /詳細イベント作成ではじめる/ }));
+    await user.type(screen.getByLabelText("イベント名"), "選び直しイベント");
+    await user.click(screen.getByRole("button", { name: "次へ" }));
+
+    expect(await screen.findByRole("heading", { name: "公演" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "次へ" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /席種/ })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: "作成方法を変更" })).not.toBeInTheDocument();
+  });
+
+  it("簡単作成は料金種別ステップを出さずに同じイベントAPIで保存する", async () => {
+    const user = userEvent.setup();
+    vi.mocked(client.organizer.event.create).mockResolvedValue({
+      id: "event-simple",
+      updatedAt: "2026-07-20T00:00:00.000Z",
+    });
+    vi.mocked(client.organizer.event.upsertPerformance).mockResolvedValue({
+      id: "performance-simple",
+      updatedAt: "2026-07-20T00:00:00.000Z",
+    });
+    vi.mocked(client.organizer.event.upsertSeatCategory).mockResolvedValue({
+      id: "seat-category-simple",
+      updatedAt: "2026-07-20T00:00:00.000Z",
+    });
+    vi.mocked(client.organizer.event.upsertRateType).mockResolvedValue({
+      id: "rate-type-simple",
+      updatedAt: "2026-07-20T00:00:00.000Z",
+    });
+    vi.mocked(client.organizer.event.adjustInventory).mockResolvedValue({
+      id: "pool-simple",
+      updatedAt: "2026-07-20T00:00:00.000Z",
+    });
+    vi.mocked(client.organizer.event.upsertSaleWindow).mockResolvedValue({
+      id: "sale-window-simple",
+      updatedAt: "2026-07-20T00:00:00.000Z",
+    });
+    vi.mocked(client.organizer.event.upsertSaleOffer).mockResolvedValue({
+      id: "offer-simple",
+      updatedAt: "2026-07-20T00:00:00.000Z",
+    });
+
+    render(<EventWizard mode="create" eventOrganizerId="organizer-1" />);
+
+    await user.click(screen.getByRole("button", { name: /簡単イベント作成/ }));
+    await user.type(screen.getByLabelText("イベント名"), "E2E簡単イベント");
+    await user.type(screen.getByLabelText("説明"), "簡単作成のテストです。");
+    await user.click(screen.getByRole("button", { name: "次へ" }));
+
+    expect(await screen.findByRole("heading", { name: "公演・券種" })).toBeInTheDocument();
+    await user.type(screen.getByLabelText("公演の名称"), "本公演");
+    await user.type(screen.getByLabelText("公演の会場"), "渋谷ホール");
+    await user.clear(screen.getByLabelText("席種1の在庫数"));
+    await user.type(screen.getByLabelText("席種1の在庫数"), "80");
+    await user.clear(screen.getByLabelText("席種1の価格"));
+    await user.type(screen.getByLabelText("席種1の価格"), "4500");
+    await user.click(screen.getByRole("button", { name: "次へ" }));
+
+    await waitFor(() => {
+      expect(client.organizer.event.upsertPerformance).toHaveBeenCalledWith(
+        expect.objectContaining({
+          eventOrganizerId: "organizer-1",
+          eventId: "event-simple",
+          name: "本公演",
+          venueName: "渋谷ホール",
+        }),
+      );
+      expect(client.organizer.event.upsertSeatCategory).toHaveBeenCalledWith(
+        expect.objectContaining({
+          eventOrganizerId: "organizer-1",
+          eventId: "event-simple",
+          name: "一般",
+        }),
+      );
+      expect(client.organizer.event.upsertRateType).toHaveBeenCalledWith(
+        expect.objectContaining({
+          eventOrganizerId: "organizer-1",
+          eventId: "event-simple",
+          name: "一般",
+        }),
+      );
+      expect(client.organizer.event.adjustInventory).toHaveBeenCalledWith(
+        expect.objectContaining({
+          eventOrganizerId: "organizer-1",
+          eventId: "event-simple",
+          performanceId: "performance-simple",
+          seatCategoryId: "seat-category-simple",
+          capacityDelta: 80,
+        }),
+      );
+    });
+
+    expect(await screen.findByRole("heading", { name: "販売受付" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "＋ 受付を追加（一般販売など）" }));
+    await user.type(screen.getByLabelText("受付名"), "一般販売");
+    await user.type(screen.getByLabelText("申込開始"), "2026-08-01T10:00");
+    await user.type(screen.getByLabelText("申込終了"), "2026-08-20T23:59");
+    await user.click(screen.getByRole("button", { name: "＋ 券を追加" }));
+
+    expect(screen.queryByRole("button", { name: "通し券（複数公演）" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "追加する" }));
+    await user.click(screen.getByRole("button", { name: "作成して公開" }));
+
+    await waitFor(() => {
+      expect(client.organizer.event.upsertSaleOffer).toHaveBeenCalledWith(
+        expect.objectContaining({
+          eventOrganizerId: "organizer-1",
+          eventId: "event-simple",
+          saleWindowId: "sale-window-simple",
+          rates: [
+            expect.objectContaining({
+              rateTypeId: "rate-type-simple",
+              price: 4500,
+            }),
+          ],
+          entitlements: [
+            {
+              performanceId: "performance-simple",
+              seatCategoryId: "seat-category-simple",
+            },
+          ],
+        }),
+      );
+    });
   });
 
   it("編集モードでは既存イベントの内容をStep1に反映する", () => {

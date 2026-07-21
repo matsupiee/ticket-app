@@ -236,33 +236,58 @@ export function useEventWizardDraft(input: {
     return map;
   }
 
-  async function saveStep(step: number) {
-    const eventId = step === 1 ? await saveBasicInfo() : draft.eventId;
+  function mergeIdMaps(...maps: Map<string, string>[]) {
+    const merged = new Map<string, string>();
+    for (const map of maps) {
+      for (const [key, id] of map) {
+        merged.set(key, id);
+      }
+    }
+    return merged;
+  }
+
+  async function saveSteps(steps: readonly number[]) {
+    let eventId = draft.eventId;
+    let performanceIdByKey = existingIdMap(draft.performances);
+    let seatCategoryIdByKey = existingIdMap(draft.seatCategories);
+    let rateTypeIdByKey = existingIdMap(draft.rateTypes);
+
+    const orderedSteps = [1, 2, 3, 4, 5].filter((candidate) => steps.includes(candidate));
+
+    for (const step of orderedSteps) {
+      if (step === 1) {
+        eventId = await saveBasicInfo();
+        continue;
+      }
+
+      if (!eventId) {
+        throw new Error("イベントの基本情報が未保存です");
+      }
+
+      if (step === 2) {
+        performanceIdByKey = mergeIdMaps(performanceIdByKey, await savePerformances(eventId));
+      } else if (step === 3) {
+        seatCategoryIdByKey = mergeIdMaps(seatCategoryIdByKey, await saveSeatCategories(eventId));
+        await saveInventory(eventId, performanceIdByKey, seatCategoryIdByKey);
+      } else if (step === 4) {
+        rateTypeIdByKey = mergeIdMaps(rateTypeIdByKey, await saveRateTypes(eventId));
+      } else if (step === 5) {
+        await saveSaleWindows(eventId, performanceIdByKey, seatCategoryIdByKey, rateTypeIdByKey);
+      }
+    }
 
     if (!eventId) {
       throw new Error("イベントの基本情報が未保存です");
     }
 
-    if (step === 2) {
-      await savePerformances(eventId);
-    } else if (step === 3) {
-      const seatCategoryIdByKey = await saveSeatCategories(eventId);
-      await saveInventory(eventId, existingIdMap(draft.performances), seatCategoryIdByKey);
-    } else if (step === 4) {
-      await saveRateTypes(eventId);
-    } else if (step === 5) {
-      await saveSaleWindows(
-        eventId,
-        existingIdMap(draft.performances),
-        existingIdMap(draft.seatCategories),
-        existingIdMap(draft.rateTypes),
-      );
-    }
-
     return eventId;
   }
 
-  return { draft, dispatch, saveStep };
+  async function saveStep(step: number) {
+    return saveSteps([step]);
+  }
+
+  return { draft, dispatch, saveStep, saveSteps };
 }
 
 function findSeatCategoryName(draft: WizardDraft, seatCategoryKey: string) {
