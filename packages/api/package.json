@@ -11,14 +11,9 @@
   },
   "scripts": {},
   "dependencies": {
-    "@orpc/client": "catalog:",
-    "@orpc/openapi": "catalog:",
     "@orpc/server": "catalog:",
-    "@orpc/zod": "catalog:",
     "@ticket-app/auth": "workspace:*",
     "@ticket-app/db": "workspace:*",
-    "@ticket-app/env": "workspace:*",
-    "dotenv": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {

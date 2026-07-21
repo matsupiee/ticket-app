@@ -1,6 +1,6 @@
 const devAllowedPlatformEmails = ["platform@example.com"];
 
-export type SessionDataWithEmail = {
+type SessionDataWithEmail = {
   user?: {
     email?: string | null;
   };

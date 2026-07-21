@@ -24,7 +24,7 @@ function getConfiguredServerUrl() {
     : "http://localhost:3000";
 }
 
-export const link = new RPCLink({
+const link = new RPCLink({
   url: `${getServerUrl(getConfiguredServerUrl())}/rpc`,
   fetch(url, options) {
     return fetch(url, {

@@ -1,8 +1,8 @@
 export type OrganizerStatus = "ACTIVE" | "UNDER_REVIEW" | "SUSPENDED";
 
-export type RiskLevel = "LOW" | "MEDIUM" | "HIGH";
+type RiskLevel = "LOW" | "MEDIUM" | "HIGH";
 
-export type PlatformOrganizerEvent = {
+type PlatformOrganizerEvent = {
   id: string;
   name: string;
   status: "DRAFT" | "ON_SALE" | "ENDED";

@@ -15,8 +15,7 @@
     "components": "@/shared/_components",
     "utils": "@ticket-app/ui/lib/utils",
     "ui": "@ticket-app/ui/components",
-    "lib": "@/lib",
-    "hooks": "@/hooks"
+    "lib": "@/lib"
   },
   "menuColor": "default",
   "menuAccent": "subtle",

@@ -6,7 +6,7 @@ import type { AppRouterClient } from "@ticket-app/api/routers/index";
 import { env } from "@ticket-app/env/web";
 import { toast } from "sonner";
 
-export function createQueryClient() {
+function createQueryClient() {
   return new QueryClient({
     queryCache: new QueryCache({
       onError: (error, query) => {
@@ -52,7 +52,7 @@ function getServerUrl(url: string) {
 
   return `http://localhost:3000${normalized}`;
 }
-export const link = new RPCLink({
+const link = new RPCLink({
   url: `${getServerUrl(env.VITE_SERVER_URL)}/rpc`,
   fetch(url, options) {
     return fetch(url, {
