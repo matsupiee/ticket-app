@@ -19,3 +19,4 @@
 - [adr/0001-ticket-domain-schema.md](./adr/0001-ticket-domain-schema.md): チケット販売ドメインのDBスキーマ整理。
 - [adr/0002-ticket-fee-schema.md](./adr/0002-ticket-fee-schema.md): チケット手数料の設定と注文時明細のDBスキーマ整理。
 - [adr/0003-api-runtime-cloud-run.md](./adr/0003-api-runtime-cloud-run.md): APIサーバーをCloud Runで動かす判断。
+- [adr/0004-event-wizard-granular-upsert-apis.md](./adr/0004-event-wizard-granular-upsert-apis.md): イベント編集をステップ単位の粒度の細かいupsert APIで構成する判断。
