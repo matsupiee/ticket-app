@@ -473,7 +473,7 @@ function buildExistingEvent(): MockEvent {
         saleMethod: "FIRST_COME",
         opensAt: "2026-10-01T10:00:00.000Z",
         closesAt: "2026-11-17T23:59:00.000Z",
-        publishesAt: "2026-09-20T10:00:00.000Z",
+        publishesAt: futureIso(),
         isSmsAuthRequired: false,
         lotteryMode: "AUTO",
         offers: [
@@ -847,6 +847,12 @@ function toIso(value: string) {
 
 function nowIso() {
   return new Date().toISOString();
+}
+
+function futureIso() {
+  const date = new Date();
+  date.setUTCFullYear(date.getUTCFullYear() + 1);
+  return date.toISOString();
 }
 
 function toEventSummary(event: MockEvent) {

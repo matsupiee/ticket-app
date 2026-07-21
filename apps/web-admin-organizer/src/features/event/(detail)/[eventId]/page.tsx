@@ -154,6 +154,7 @@ export function EventDetailPage({ event }: { event: EventDetail }) {
                 <SaleWindowPanel
                   key={saleWindow.id}
                   saleWindow={saleWindow}
+                  inventoryPools={event.inventoryPools}
                   grossSalesLabel={
                     event.saleWindows.length === 1
                       ? formatCurrency(event.sales.grossSales)
@@ -182,13 +183,15 @@ function DescriptionRow({ label, children }: { label: string; children: ReactNod
 
 function SaleWindowPanel({
   saleWindow,
+  inventoryPools,
   grossSalesLabel,
 }: {
   saleWindow: SaleWindow;
+  inventoryPools: EventDetail["inventoryPools"];
   grossSalesLabel: string;
 }) {
   const soldQuantity = getSaleWindowSoldQuantity(saleWindow);
-  const capacity = getSaleWindowCapacity(saleWindow);
+  const capacity = getSaleWindowCapacity(saleWindow, inventoryPools);
 
   return (
     <article className="overflow-hidden rounded-lg border">
@@ -315,7 +318,7 @@ function getEventCapacity(event: EventDetail) {
   }
 
   return event.saleWindows.reduce(
-    (total, saleWindow) => total + getSaleWindowCapacity(saleWindow),
+    (total, saleWindow) => total + getSaleWindowCapacity(saleWindow, event.inventoryPools),
     0,
   );
 }
@@ -324,12 +327,34 @@ function getSaleWindowSoldQuantity(saleWindow: SaleWindow) {
   return saleWindow.offers.reduce((total, offer) => total + offer.soldQuantity, 0);
 }
 
-function getSaleWindowCapacity(saleWindow: SaleWindow) {
+function getSaleWindowCapacity(
+  saleWindow: SaleWindow,
+  inventoryPools: EventDetail["inventoryPools"],
+) {
+  const entitlementKeys = new Set(
+    saleWindow.offers.flatMap((offer) =>
+      offer.entitlements.map((entitlement) =>
+        inventoryPoolKey(entitlement.performanceId, entitlement.seatCategoryId),
+      ),
+    ),
+  );
+  const matchingPools = inventoryPools.filter((pool) =>
+    entitlementKeys.has(inventoryPoolKey(pool.performanceId, pool.seatCategoryId)),
+  );
+
+  if (matchingPools.length > 0) {
+    return matchingPools.reduce((total, pool) => total + pool.capacity, 0);
+  }
+
   return saleWindow.offers.reduce((total, offer) => total + getOfferCapacity(offer), 0);
 }
 
 function getOfferCapacity(offer: SaleOffer) {
   return offer.soldQuantity + offer.availableQuantity;
+}
+
+function inventoryPoolKey(performanceId: string, seatCategoryId: string) {
+  return `${performanceId}:${seatCategoryId}`;
 }
 
 function getSellThroughRate(soldQuantity: number, capacity: number) {

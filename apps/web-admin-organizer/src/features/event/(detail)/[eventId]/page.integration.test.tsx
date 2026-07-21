@@ -97,6 +97,61 @@ describe("EventDetailPage", () => {
     expect(screen.getAllByText("受付別売上は未集計")).toHaveLength(2);
   });
 
+  it("販売受付ごとの販売分母は同じ在庫プールを重複計上しない", () => {
+    const event = buildEvent();
+    const baseOffer = event.saleWindows[0]!.offers[0]!;
+    event.inventoryPools = [
+      {
+        id: "shared-pool",
+        performanceId: "day-1",
+        seatCategoryId: "s-seat",
+        admissionMethod: "RESERVED_SEAT",
+        seatAllocationMethod: "IMMEDIATE",
+        capacity: 100,
+        heldCount: 0,
+        soldCount: 10,
+      },
+    ];
+    event.saleWindows = [
+      {
+        ...event.saleWindows[0]!,
+        offers: [
+          {
+            ...baseOffer,
+            id: "adult-offer",
+            name: "指定席 一般",
+            soldQuantity: 8,
+            availableQuantity: 92,
+            entitlements: [
+              { id: "adult-entitlement", performanceId: "day-1", seatCategoryId: "s-seat" },
+            ],
+          },
+          {
+            ...baseOffer,
+            id: "student-offer",
+            name: "指定席 学生",
+            soldQuantity: 2,
+            availableQuantity: 98,
+            entitlements: [
+              { id: "student-entitlement", performanceId: "day-1", seatCategoryId: "s-seat" },
+            ],
+          },
+        ],
+      },
+    ];
+    event.sales = {
+      grossSales: 100_000,
+      ticketsSold: 10,
+      buyerFeeAmount: 0,
+      organizerFeeAmount: 0,
+    };
+
+    render(<EventDetailPage event={event} />);
+
+    expect(screen.getByText("販売 10 / 100 枚")).toBeInTheDocument();
+    expect(screen.queryByText("販売 10 / 200 枚")).not.toBeInTheDocument();
+  });
+
   it("購入者向けに公開されていないイベントでは販売ページリンクを表示しない", () => {
     const event = buildEvent();
     event.saleWindows = [];
