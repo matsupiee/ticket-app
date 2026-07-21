@@ -4,6 +4,12 @@ import { Label } from "@ticket-app/ui/components/label";
 import { PlusIcon, XIcon } from "lucide-react";
 
 import type { DraftPerformance } from "./event-wizard-draft-reducer";
+import {
+  buildPerformanceSchedule,
+  getDoorsOpenTimeValue,
+  getPerformanceDateValue,
+  getStartsTimeValue,
+} from "./performance-schedule";
 
 export function StepPerformances({
   performances,
@@ -25,77 +31,115 @@ export function StepPerformances({
         </div>
 
         <div className="flex flex-col gap-3">
-          {performances.map((performance, index) => (
-            <div key={performance.key} className="rounded-md border p-4">
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <span className="text-xs font-semibold text-muted-foreground">
-                  公演 {String(index + 1).padStart(2, "0")}
-                </span>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-sm"
-                  aria-label={`公演${index + 1}を削除`}
-                  disabled={Boolean(performance.id)}
-                  title={
-                    performance.id ? "保存済みの公演の削除は現在サポートされていません" : undefined
-                  }
-                  onClick={() => onRemove(performance.key)}
-                >
-                  <XIcon />
-                </Button>
-              </div>
+          {performances.map((performance, index) => {
+            const performanceDate = getPerformanceDateValue(performance);
 
-              <div className="grid gap-3 md:grid-cols-2">
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor={`performance-name-${performance.key}`}>名称</Label>
-                  <Input
-                    id={`performance-name-${performance.key}`}
-                    aria-label={`公演${index + 1}の名称`}
-                    value={performance.name}
-                    placeholder="例：DAY 1"
-                    onChange={(event) => onUpdate(performance.key, { name: event.target.value })}
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor={`performance-venue-${performance.key}`}>会場</Label>
-                  <Input
-                    id={`performance-venue-${performance.key}`}
-                    aria-label={`公演${index + 1}の会場`}
-                    value={performance.venueName}
-                    placeholder="例：有明アリーナ"
-                    onChange={(event) =>
-                      onUpdate(performance.key, { venueName: event.target.value })
+            return (
+              <div key={performance.key} className="rounded-md border p-4">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <span className="text-xs font-semibold text-muted-foreground">
+                    公演 {String(index + 1).padStart(2, "0")}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    aria-label={`公演${index + 1}を削除`}
+                    disabled={Boolean(performance.id)}
+                    title={
+                      performance.id
+                        ? "保存済みの公演の削除は現在サポートされていません"
+                        : undefined
                     }
-                  />
+                    onClick={() => onRemove(performance.key)}
+                  >
+                    <XIcon />
+                  </Button>
                 </div>
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor={`performance-doors-open-${performance.key}`}>開場日時</Label>
-                  <Input
-                    id={`performance-doors-open-${performance.key}`}
-                    aria-label={`公演${index + 1}の開場日時`}
-                    type="datetime-local"
-                    value={performance.doorsOpenAt}
-                    onChange={(event) =>
-                      onUpdate(performance.key, { doorsOpenAt: event.target.value })
-                    }
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor={`performance-starts-${performance.key}`}>開演日時</Label>
-                  <Input
-                    id={`performance-starts-${performance.key}`}
-                    aria-label={`公演${index + 1}の開演日時`}
-                    type="datetime-local"
-                    value={performance.startsAt}
-                    onChange={(event) =>
-                      onUpdate(performance.key, { startsAt: event.target.value })
-                    }
-                  />
+
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor={`performance-name-${performance.key}`}>名称</Label>
+                    <Input
+                      id={`performance-name-${performance.key}`}
+                      aria-label={`公演${index + 1}の名称`}
+                      value={performance.name}
+                      placeholder="例：DAY 1"
+                      onChange={(event) => onUpdate(performance.key, { name: event.target.value })}
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor={`performance-venue-${performance.key}`}>会場</Label>
+                    <Input
+                      id={`performance-venue-${performance.key}`}
+                      aria-label={`公演${index + 1}の会場`}
+                      value={performance.venueName}
+                      placeholder="例：有明アリーナ"
+                      onChange={(event) =>
+                        onUpdate(performance.key, { venueName: event.target.value })
+                      }
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor={`performance-date-${performance.key}`}>月日</Label>
+                    <Input
+                      id={`performance-date-${performance.key}`}
+                      aria-label={`公演${index + 1}の月日`}
+                      type="date"
+                      value={performanceDate}
+                      onChange={(event) =>
+                        onUpdate(
+                          performance.key,
+                          buildPerformanceSchedule({
+                            schedule: performance,
+                            date: event.target.value,
+                          }),
+                        )
+                      }
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor={`performance-doors-open-${performance.key}`}>開場時刻</Label>
+                    <Input
+                      id={`performance-doors-open-${performance.key}`}
+                      aria-label={`公演${index + 1}の開場時刻`}
+                      type="time"
+                      value={getDoorsOpenTimeValue(performance)}
+                      disabled={!performanceDate}
+                      onChange={(event) =>
+                        onUpdate(
+                          performance.key,
+                          buildPerformanceSchedule({
+                            schedule: performance,
+                            doorsOpenTime: event.target.value,
+                          }),
+                        )
+                      }
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor={`performance-starts-${performance.key}`}>開始時刻</Label>
+                    <Input
+                      id={`performance-starts-${performance.key}`}
+                      aria-label={`公演${index + 1}の開始時刻`}
+                      type="time"
+                      value={getStartsTimeValue(performance)}
+                      disabled={!performanceDate}
+                      onChange={(event) =>
+                        onUpdate(
+                          performance.key,
+                          buildPerformanceSchedule({
+                            schedule: performance,
+                            startsTime: event.target.value,
+                          }),
+                        )
+                      }
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         <Button type="button" variant="outline" className="w-fit border-dashed" onClick={onAdd}>

@@ -1,10 +1,13 @@
 import type { GetEventOutput } from "@ticket-app/api/routers/organizer/event/get/route";
 
+import { getDefaultPerformanceSchedule, getPerformanceDateValue } from "./performance-schedule";
+
 export type DraftPerformance = {
   key: string;
   id?: string;
   name: string;
   venueName: string;
+  performanceDate: string;
   doorsOpenAt: string;
   startsAt: string;
 };
@@ -142,7 +145,12 @@ export function wizardDraftReducer(draft: WizardDraft, action: WizardDraftAction
         ...draft,
         performances: [
           ...draft.performances,
-          { key: crypto.randomUUID(), name: "", venueName: "", doorsOpenAt: "", startsAt: "" },
+          {
+            key: crypto.randomUUID(),
+            name: "",
+            venueName: "",
+            ...getDefaultPerformanceSchedule(),
+          },
         ],
       };
     case "UPDATE_PERFORMANCE":
@@ -408,14 +416,20 @@ export function buildDraftFromEvent(event: GetEventOutput): WizardDraft {
     eventId: event.id,
     name: event.name,
     description: event.description,
-    performances: event.performances.map((performance) => ({
-      key: performance.id,
-      id: performance.id,
-      name: performance.name,
-      venueName: performance.venueName,
-      doorsOpenAt: toDateTimeLocalValue(performance.doorsOpenAt),
-      startsAt: toDateTimeLocalValue(performance.startsAt),
-    })),
+    performances: event.performances.map((performance) => {
+      const doorsOpenAt = toDateTimeLocalValue(performance.doorsOpenAt);
+      const startsAt = toDateTimeLocalValue(performance.startsAt);
+
+      return {
+        key: performance.id,
+        id: performance.id,
+        name: performance.name,
+        venueName: performance.venueName,
+        performanceDate: getPerformanceDateValue({ doorsOpenAt, startsAt }),
+        doorsOpenAt,
+        startsAt,
+      };
+    }),
     seatCategories: event.seatCategories.map((seatCategory) => ({
       key: seatCategory.id,
       id: seatCategory.id,
