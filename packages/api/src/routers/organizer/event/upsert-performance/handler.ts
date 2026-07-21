@@ -45,8 +45,8 @@ export async function upsertPerformanceHandler({
   const doorsOpenAt = parseDate(input.doorsOpenAt);
   const startsAt = parseDate(input.startsAt);
 
-  if (doorsOpenAt >= startsAt) {
-    throw new ORPCError("BAD_REQUEST", { message: "開場日時は開演日時より前にしてください" });
+  if (doorsOpenAt > startsAt) {
+    throw new ORPCError("BAD_REQUEST", { message: "開場日時は開演日時より後にできません" });
   }
 
   const performance = await db.$transaction(async (tx) => {

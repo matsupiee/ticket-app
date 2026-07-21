@@ -1,13 +1,22 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+import type { GetEventOutput } from "@ticket-app/api/routers/organizer/event/get/route";
 
 import {
+  buildDraftFromEvent,
   buildEmptyDraft,
   wizardDraftReducer,
   type WizardDraft,
 } from "./event-wizard-draft-reducer";
 
 describe("wizardDraftReducer", () => {
-  it("ADD_PERFORMANCEで空の公演を追加し、一意なkeyを振る", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("ADD_PERFORMANCEでデフォルト日程入りの公演を追加し、一意なkeyを振る", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 6, 21, 10, 0));
     const draft = buildEmptyDraft();
 
     const next = wizardDraftReducer(draft, { type: "ADD_PERFORMANCE" });
@@ -18,8 +27,9 @@ describe("wizardDraftReducer", () => {
     expect(nextNext.performances[0]).toMatchObject({
       name: "",
       venueName: "",
-      doorsOpenAt: "",
-      startsAt: "",
+      performanceDate: "2026-07-28",
+      doorsOpenAt: "2026-07-28T18:00",
+      startsAt: "2026-07-28T18:00",
     });
   });
 
@@ -329,14 +339,52 @@ describe("wizardDraftReducer", () => {
 
     expect(next).toEqual(hydrated);
   });
+
+  it("buildDraftFromEventは日またぎ公演を開場日の月日と時刻に復元する", () => {
+    const draft = buildDraftFromEvent({
+      ...buildMinimalEvent(),
+      performances: [
+        {
+          id: "performance-overnight",
+          name: "深夜公演",
+          venueName: "有明アリーナ",
+          venueId: "venue-1",
+          doorsOpenAt: localIso(2026, 9, 12, 23, 30),
+          startsAt: localIso(2026, 9, 13, 0, 0),
+          admissionMethod: "NUMBERED_ENTRY",
+        },
+      ],
+    });
+
+    expect(draft.performances[0]).toMatchObject({
+      venueName: "有明アリーナ",
+      performanceDate: "2026-09-12",
+      doorsOpenAt: "2026-09-12T23:30",
+      startsAt: "2026-09-13T00:00",
+    });
+  });
 });
 
 function withTwoPerformances(): WizardDraft {
   return {
     ...buildEmptyDraft(),
     performances: [
-      { key: "perf-1", name: "", venueName: "", doorsOpenAt: "", startsAt: "" },
-      { key: "perf-2", name: "", venueName: "", doorsOpenAt: "", startsAt: "" },
+      {
+        key: "perf-1",
+        name: "",
+        venueName: "",
+        performanceDate: "",
+        doorsOpenAt: "",
+        startsAt: "",
+      },
+      {
+        key: "perf-2",
+        name: "",
+        venueName: "",
+        performanceDate: "",
+        doorsOpenAt: "",
+        startsAt: "",
+      },
     ],
   };
 }
@@ -354,4 +402,34 @@ function buildSaleWindow(key: string) {
     isSmsAuthRequired: false,
     offers: [],
   };
+}
+
+function buildMinimalEvent(): GetEventOutput {
+  return {
+    id: "event-1",
+    name: "既存イベント",
+    description: "既存イベントの説明",
+    status: "DRAFT",
+    location: "有明アリーナ",
+    tags: [],
+    seatCategories: [],
+    rateTypes: [],
+    inventoryPools: [],
+    performances: [],
+    saleWindows: [],
+    sales: {
+      grossSales: 0,
+      ticketsSold: 0,
+      buyerFeeAmount: 0,
+      organizerFeeAmount: 0,
+    },
+    settlement: {
+      status: "SCHEDULED",
+      scheduledAt: localIso(2026, 9, 20, 10, 0),
+    },
+  };
+}
+
+function localIso(year: number, month: number, day: number, hours: number, minutes: number) {
+  return new Date(year, month - 1, day, hours, minutes).toISOString();
 }

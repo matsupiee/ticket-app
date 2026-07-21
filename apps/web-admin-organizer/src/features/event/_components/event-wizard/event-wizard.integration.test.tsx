@@ -29,6 +29,7 @@ vi.mock("@/lib/orpc", () => ({
 
 const { client } = await import("@/lib/orpc");
 const { EventWizard } = await import("./event-wizard");
+const { getDefaultPerformanceSchedule } = await import("./performance-schedule");
 
 describe("EventWizard", () => {
   beforeEach(() => {
@@ -37,9 +38,12 @@ describe("EventWizard", () => {
 
   afterEach(() => {
     cleanup();
+    vi.useRealTimers();
   });
 
-  it("Step1を保存するとイベントを作成し、Step2で作成済みeventIdを使って公演ごとの会場を保存する", async () => {
+  it("Step1を保存するとイベントを作成し、Step2で作成済みeventIdを使って公演ごとの会場と日程を保存する", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date(2026, 6, 21, 10, 0));
     const user = userEvent.setup();
     vi.mocked(client.organizer.event.create).mockResolvedValue({
       id: "event-123",
@@ -73,8 +77,18 @@ describe("EventWizard", () => {
     await user.click(screen.getByRole("button", { name: "公演を追加" }));
     expect(screen.getByRole("button", { name: "次へ" })).toBeEnabled();
     expect(screen.getByRole("button", { name: /席種/ })).toBeEnabled();
+    const defaultSchedule = getDefaultPerformanceSchedule();
+    expect(screen.getByLabelText("公演1の月日")).toHaveValue(defaultSchedule.performanceDate);
+    expect(screen.getByLabelText("公演1の開場時刻")).toHaveValue("18:00");
+    expect(screen.getByLabelText("公演1の開始時刻")).toHaveValue("18:00");
     await user.type(screen.getByLabelText("公演1の名称"), "DAY 1");
     await user.type(screen.getByLabelText("公演1の会場"), "有明アリーナ");
+    await user.clear(screen.getByLabelText("公演1の月日"));
+    await user.type(screen.getByLabelText("公演1の月日"), "2026-09-12");
+    await user.clear(screen.getByLabelText("公演1の開場時刻"));
+    await user.type(screen.getByLabelText("公演1の開場時刻"), "23:30");
+    await user.clear(screen.getByLabelText("公演1の開始時刻"));
+    await user.type(screen.getByLabelText("公演1の開始時刻"), "00:00");
     await user.click(screen.getByRole("button", { name: "公演を追加" }));
     await user.type(screen.getByLabelText("公演2の名称"), "DAY 2");
     await user.type(screen.getByLabelText("公演2の会場"), "幕張メッセ");
@@ -88,6 +102,8 @@ describe("EventWizard", () => {
           eventId: "event-123",
           name: "DAY 1",
           venueName: "有明アリーナ",
+          doorsOpenAt: "2026-09-12T23:30",
+          startsAt: "2026-09-13T00:00",
         }),
       );
       expect(client.organizer.event.upsertPerformance).toHaveBeenNthCalledWith(
@@ -97,6 +113,8 @@ describe("EventWizard", () => {
           eventId: "event-123",
           name: "DAY 2",
           venueName: "幕張メッセ",
+          doorsOpenAt: "2026-07-28T18:00",
+          startsAt: "2026-07-28T18:00",
         }),
       );
     });

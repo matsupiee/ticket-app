@@ -128,7 +128,7 @@ describe("organizer event upsert-performance handler", () => {
     expect(performanceCount).toBe(1);
   });
 
-  it("開場日時が開演日時以降の場合はBAD_REQUESTを返す", async () => {
+  it("開場日時が開演日時より後の場合はBAD_REQUESTを返す", async () => {
     const { organizer, editor, event } = await seedEditorWithEvent();
 
     await expect(
@@ -145,6 +145,27 @@ describe("organizer event upsert-performance handler", () => {
         context: { session: { user: { id: editor.id } } },
       }),
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+  });
+
+  it("開場日時と開演日時が同時刻の場合は保存できる", async () => {
+    const { organizer, editor, event } = await seedEditorWithEvent();
+
+    const result = await upsertPerformanceHandler({
+      input: {
+        eventOrganizerId: organizer.id,
+        eventId: event.id,
+        name: "DAY 1",
+        venueName: "有明アリーナ",
+        doorsOpenAt: "2026-09-12T18:00:00+09:00",
+        startsAt: "2026-09-12T18:00:00+09:00",
+        admissionMethod: "NUMBERED_ENTRY",
+      },
+      context: { session: { user: { id: editor.id } } },
+    });
+
+    const performance = await db.performance.findUniqueOrThrow({ where: { id: result.id } });
+    expect(performance.doorsOpenAt.toISOString()).toBe("2026-09-12T09:00:00.000Z");
+    expect(performance.startsAt.toISOString()).toBe("2026-09-12T09:00:00.000Z");
   });
 
   it("日時の形式が不正な場合はBAD_REQUESTを返す", async () => {
