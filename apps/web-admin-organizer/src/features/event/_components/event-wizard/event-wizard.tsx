@@ -42,6 +42,10 @@ export function EventWizard({
   const [currentStep, setCurrentStep] = useState(1);
   const [isSaving, setIsSaving] = useState(false);
   const activeSeatCategories = draft.seatCategories.filter((seatCategory) => seatCategory.active);
+  const hasPerformances = draft.performances.length > 0;
+  const isStepBlocked = (step: number) => step >= 3 && !hasPerformances;
+  const isNextDisabled =
+    isSaving || (currentStep < WIZARD_STEPS.length && isStepBlocked(currentStep + 1));
 
   async function persistCurrentStep() {
     setIsSaving(true);
@@ -64,6 +68,11 @@ export function EventWizard({
   }
 
   async function handleNext() {
+    if (currentStep < WIZARD_STEPS.length && isStepBlocked(currentStep + 1)) {
+      toast.error("Step3へ進むには公演を1件以上追加してください");
+      return;
+    }
+
     const ok = await persistCurrentStep();
     if (!ok) {
       return;
@@ -93,6 +102,11 @@ export function EventWizard({
   // 後続ステップ(受付・券の対象公演/席種など)から参照できず、保存時に無言で欠落するため。
   async function handleGoToStep(targetStep: number) {
     if (targetStep === currentStep) {
+      return;
+    }
+
+    if (isStepBlocked(targetStep)) {
+      toast.error("Step3へ進むには公演を1件以上追加してください");
       return;
     }
 
@@ -184,7 +198,11 @@ export function EventWizard({
 
       <section className="mx-auto max-w-6xl px-4 py-8 md:px-6">
         <div className="grid gap-14 md:grid-cols-[240px_1fr]">
-          <EventWizardStepper currentStep={currentStep} onGoToStep={handleGoToStep} />
+          <EventWizardStepper
+            currentStep={currentStep}
+            onGoToStep={handleGoToStep}
+            isStepDisabled={isStepBlocked}
+          />
 
           <div className="min-w-0">
             <div className="mb-6">
@@ -279,7 +297,16 @@ export function EventWizard({
               ) : (
                 <span />
               )}
-              <Button type="button" disabled={isSaving} onClick={handleNext}>
+              <Button
+                type="button"
+                disabled={isNextDisabled}
+                title={
+                  isNextDisabled && currentStep === 2 && !hasPerformances
+                    ? "公演を追加すると次へ進めます"
+                    : undefined
+                }
+                onClick={handleNext}
+              >
                 {isSaving ? "保存中" : currentStep >= WIZARD_STEPS.length ? "作成して公開" : "次へ"}
               </Button>
             </div>
