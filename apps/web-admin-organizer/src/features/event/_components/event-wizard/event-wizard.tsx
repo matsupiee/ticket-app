@@ -151,17 +151,28 @@ export function EventWizard({
   }
 
   const currentStepConfig = WIZARD_STEPS[currentStep - 1];
+  const finishButtonLabel = mode === "create" ? "作成して公開" : "保存する";
 
   return (
     <main className="overflow-y-auto bg-background">
       <section className="border-b">
         <div className="mx-auto max-w-6xl px-4 py-8 md:px-6">
-          <Link
-            to="/"
-            className="mb-5 inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
-          >
-            ← イベント一覧へ戻る
-          </Link>
+          {mode === "edit" && draft.eventId ? (
+            <Link
+              to="/events/$eventId"
+              params={{ eventId: draft.eventId }}
+              className="mb-5 inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+            >
+              ← イベント詳細へ戻る
+            </Link>
+          ) : (
+            <Link
+              to="/"
+              className="mb-5 inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+            >
+              ← イベント一覧へ戻る
+            </Link>
+          )}
           <div className="flex flex-wrap items-end justify-between gap-6">
             <div>
               <div className="mb-2 flex items-center gap-2 text-xs font-medium text-muted-foreground">
@@ -282,7 +293,11 @@ export function EventWizard({
                 <span />
               )}
               <Button type="button" disabled={isSaving} onClick={handleNext}>
-                {isSaving ? "保存中" : currentStep >= WIZARD_STEPS.length ? "作成して公開" : "次へ"}
+                {isSaving
+                  ? "保存中"
+                  : currentStep >= WIZARD_STEPS.length
+                    ? finishButtonLabel
+                    : "次へ"}
               </Button>
             </div>
           </div>

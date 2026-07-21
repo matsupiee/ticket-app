@@ -179,6 +179,13 @@ test("既存イベントを開いて在庫を追加できる", async ({ page }) 
 
   await page.goto("/events/event-existing");
   await expect(page.getByRole("heading", { name: "既存イベント" })).toBeVisible();
+  await expect(page.getByText("既存の説明文です。")).toBeVisible();
+  await expect(page.getByText("販売受付は未設定です。")).toBeVisible();
+  await expect(page.getByRole("link", { name: /販売ページを見る/ })).toHaveCount(0);
+
+  await page.getByRole("link", { name: /編集する/ }).click();
+  await expect(page).toHaveURL(/\/events\/event-existing\/edit$/);
+  await expect(page.getByRole("heading", { name: "既存イベント" })).toBeVisible();
   await expect(page.getByLabel("イベント名")).toHaveValue("既存イベント");
 
   await page.getByRole("button", { name: "公演" }).click();
