@@ -36,6 +36,7 @@ export function AddOfferDialog({
   rateTypes,
   standardPrices,
   editingOffer,
+  allowPassOffers = true,
   onSubmit,
 }: {
   open: boolean;
@@ -45,6 +46,7 @@ export function AddOfferDialog({
   rateTypes: DraftRateType[];
   standardPrices: DraftPriceCell[];
   editingOffer?: DraftOffer;
+  allowPassOffers?: boolean;
   onSubmit: (offer: DraftOffer) => void;
 }) {
   const [isPass, setIsPass] = useState(false);
@@ -65,7 +67,7 @@ export function AddOfferDialog({
     }
 
     if (editingOffer) {
-      setIsPass(editingOffer.isPass);
+      setIsPass(allowPassOffers && editingOffer.isPass);
       setPerformanceKeys(editingOffer.performanceKeys);
       setSeatCategoryKey(editingOffer.seatCategoryKey);
       setMaxQuantityPerOrder(editingOffer.maxQuantityPerOrder);
@@ -113,7 +115,7 @@ export function AddOfferDialog({
     onSubmit({
       key: editingOffer?.key ?? crypto.randomUUID(),
       id: editingOffer?.id,
-      isPass,
+      isPass: allowPassOffers && isPass,
       performanceKeys,
       seatCategoryKey,
       maxQuantityPerOrder,
@@ -130,28 +132,30 @@ export function AddOfferDialog({
         </DialogHeader>
 
         <div className="flex flex-col gap-4.5">
-          <div className="flex flex-col gap-2">
-            <Label>種別</Label>
-            <ToggleGroup
-              variant="outline"
-              spacing={0}
-              value={[isPass ? "pass" : "single"]}
-              onValueChange={(value) => {
-                const next = value[0];
-                if (next) {
-                  setIsPass(next === "pass");
-                }
-              }}
-              className="w-fit"
-            >
-              <ToggleGroupItem value="single" className="px-4 text-xs">
-                単券（1公演）
-              </ToggleGroupItem>
-              <ToggleGroupItem value="pass" className="px-4 text-xs">
-                通し券（複数公演）
-              </ToggleGroupItem>
-            </ToggleGroup>
-          </div>
+          {allowPassOffers && (
+            <div className="flex flex-col gap-2">
+              <Label>種別</Label>
+              <ToggleGroup
+                variant="outline"
+                spacing={0}
+                value={[isPass ? "pass" : "single"]}
+                onValueChange={(value) => {
+                  const next = value[0];
+                  if (next) {
+                    setIsPass(next === "pass");
+                  }
+                }}
+                className="w-fit"
+              >
+                <ToggleGroupItem value="single" className="px-4 text-xs">
+                  単券（1公演）
+                </ToggleGroupItem>
+                <ToggleGroupItem value="pass" className="px-4 text-xs">
+                  通し券（複数公演）
+                </ToggleGroupItem>
+              </ToggleGroup>
+            </div>
+          )}
 
           {isPass ? (
             <div className="flex flex-col gap-2">

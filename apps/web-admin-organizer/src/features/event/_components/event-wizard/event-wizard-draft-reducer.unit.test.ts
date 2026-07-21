@@ -33,6 +33,25 @@ describe("wizardDraftReducer", () => {
     });
   });
 
+  it("APPLY_SIMPLE_CREATION_PRESETは簡単作成に必要な公演・席種・料金種別を用意する", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 6, 21, 10, 0));
+    const draft = buildEmptyDraft();
+
+    const next = wizardDraftReducer(draft, { type: "APPLY_SIMPLE_CREATION_PRESET" });
+
+    expect(next.performances).toHaveLength(1);
+    expect(next.performances[0]).toMatchObject({
+      name: "",
+      venueName: "",
+      performanceDate: "2026-07-28",
+      doorsOpenAt: "2026-07-28T18:00",
+      startsAt: "2026-07-28T18:00",
+    });
+    expect(next.seatCategories).toMatchObject([{ name: "一般", active: true }]);
+    expect(next.rateTypes).toMatchObject([{ name: "一般" }]);
+  });
+
   it("UPDATE_PERFORMANCEは指定したkeyの公演だけを更新する", () => {
     const draft = withTwoPerformances();
 
@@ -338,6 +357,29 @@ describe("wizardDraftReducer", () => {
     const next = wizardDraftReducer(draft, { type: "HYDRATE", draft: hydrated });
 
     expect(next).toEqual(hydrated);
+  });
+
+  it("RESET_DRAFTは作成前ドラフトを初期状態に戻す", () => {
+    const draft: WizardDraft = {
+      ...buildEmptyDraft(),
+      name: "入力中イベント",
+      performances: [
+        {
+          key: "perf-1",
+          name: "本公演",
+          venueName: "会場",
+          performanceDate: "2026-09-01",
+          doorsOpenAt: "2026-09-01T17:00",
+          startsAt: "2026-09-01T18:00",
+        },
+      ],
+      seatCategories: [{ key: "seat-1", name: "一般", active: true }],
+      rateTypes: [{ key: "rate-1", name: "一般" }],
+    };
+
+    const next = wizardDraftReducer(draft, { type: "RESET_DRAFT" });
+
+    expect(next).toEqual(buildEmptyDraft());
   });
 
   it("buildDraftFromEventは日またぎ公演を開場日の月日と時刻に復元する", () => {

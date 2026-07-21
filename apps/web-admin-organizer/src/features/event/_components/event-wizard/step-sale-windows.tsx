@@ -35,6 +35,7 @@ export function StepSaleWindows({
   onAddOffer,
   onUpdateOffer,
   onRemoveOffer,
+  allowPassOffers = true,
 }: {
   saleWindows: DraftSaleWindow[];
   performances: DraftPerformance[];
@@ -47,6 +48,7 @@ export function StepSaleWindows({
   onAddOffer: (saleWindowKey: string, offer: DraftOffer) => void;
   onUpdateOffer: (saleWindowKey: string, offer: DraftOffer) => void;
   onRemoveOffer: (saleWindowKey: string, offerKey: string) => void;
+  allowPassOffers?: boolean;
 }) {
   const activeSeatCategories = seatCategories.filter((seatCategory) => seatCategory.active);
   const visibleSaleWindows = saleWindows.filter((saleWindow) => !saleWindow.canceledAt);
@@ -67,6 +69,7 @@ export function StepSaleWindows({
           onAddOffer={(offer) => onAddOffer(saleWindow.key, offer)}
           onUpdateOffer={(offer) => onUpdateOffer(saleWindow.key, offer)}
           onRemoveOffer={(offerKey) => onRemoveOffer(saleWindow.key, offerKey)}
+          allowPassOffers={allowPassOffers}
         />
       ))}
 
@@ -89,6 +92,7 @@ function SaleWindowCard({
   onAddOffer,
   onUpdateOffer,
   onRemoveOffer,
+  allowPassOffers,
 }: {
   index: number;
   saleWindow: DraftSaleWindow;
@@ -101,6 +105,7 @@ function SaleWindowCard({
   onAddOffer: (offer: DraftOffer) => void;
   onUpdateOffer: (offer: DraftOffer) => void;
   onRemoveOffer: (offerKey: string) => void;
+  allowPassOffers: boolean;
 }) {
   const [dialogState, setDialogState] = useState<{ open: boolean; editingOffer?: DraftOffer }>({
     open: false,
@@ -317,6 +322,7 @@ function SaleWindowCard({
         rateTypes={rateTypes}
         standardPrices={standardPrices}
         editingOffer={dialogState.editingOffer}
+        allowPassOffers={allowPassOffers}
         onSubmit={(offer) => (dialogState.editingOffer ? onUpdateOffer(offer) : onAddOffer(offer))}
       />
     </div>
