@@ -18,7 +18,7 @@ import { EventStatusBadge } from "../status-badge";
 
 const STEP_DESCRIPTIONS: Record<number, string> = {
   1: "イベント名と説明を入力します。",
-  2: "会場と公演（日程）を登録します。ツアーは公演を複数追加します。",
+  2: "公演ごとに会場と日程を登録します。ツアーは公演を複数追加します。",
   3: "席種を定義し、公演ごとの在庫数を設定します。",
   4: "料金種別を定義し、席種ごとの標準価格を設定します。",
   5: "受付ごとに販売する券を1件ずつ登録します。価格は標準価格から引き継ぎ、受付・公演ごとに変更できます。",
@@ -209,9 +209,7 @@ export function EventWizard({
 
             {currentStep === 2 && (
               <StepPerformances
-                venueName={draft.venueName}
                 performances={draft.performances}
-                onVenueNameChange={(venueName) => dispatch({ type: "SET_VENUE_NAME", venueName })}
                 onAdd={() => dispatch({ type: "ADD_PERFORMANCE" })}
                 onUpdate={(key, patch) => dispatch({ type: "UPDATE_PERFORMANCE", key, patch })}
                 onRemove={(key) => dispatch({ type: "REMOVE_PERFORMANCE", key })}

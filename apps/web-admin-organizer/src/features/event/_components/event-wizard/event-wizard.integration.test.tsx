@@ -1,6 +1,8 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import type { GetEventOutput } from "@ticket-app/api/routers/organizer/event/get/route";
 
 vi.mock("@tanstack/react-router", () => ({
   Link: ({ children, ...props }: { children: React.ReactNode }) => <a {...props}>{children}</a>,
@@ -29,7 +31,15 @@ const { client } = await import("@/lib/orpc");
 const { EventWizard } = await import("./event-wizard");
 
 describe("EventWizard", () => {
-  it("Step1を保存するとイベントを作成し、Step2で作成済みeventIdを使って公演を保存する", async () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  it("Step1を保存するとイベントを作成し、Step2で作成済みeventIdを使って公演ごとの会場を保存する", async () => {
     const user = userEvent.setup();
     vi.mocked(client.organizer.event.create).mockResolvedValue({
       id: "event-123",
@@ -58,18 +68,31 @@ describe("EventWizard", () => {
 
     expect(await screen.findByRole("heading", { name: "公演" })).toBeInTheDocument();
 
-    await user.type(screen.getByLabelText("会場"), "有明アリーナ");
-    await user.click(screen.getByRole("button", { name: "＋ 公演を追加" }));
+    await user.click(screen.getByRole("button", { name: "公演を追加" }));
     await user.type(screen.getByLabelText("公演1の名称"), "DAY 1");
+    await user.type(screen.getByLabelText("公演1の会場"), "有明アリーナ");
+    await user.click(screen.getByRole("button", { name: "公演を追加" }));
+    await user.type(screen.getByLabelText("公演2の名称"), "DAY 2");
+    await user.type(screen.getByLabelText("公演2の会場"), "幕張メッセ");
     await user.click(screen.getByRole("button", { name: "次へ" }));
 
     await waitFor(() => {
-      expect(client.organizer.event.upsertPerformance).toHaveBeenCalledWith(
+      expect(client.organizer.event.upsertPerformance).toHaveBeenNthCalledWith(
+        1,
         expect.objectContaining({
           eventOrganizerId: "organizer-1",
           eventId: "event-123",
           name: "DAY 1",
           venueName: "有明アリーナ",
+        }),
+      );
+      expect(client.organizer.event.upsertPerformance).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({
+          eventOrganizerId: "organizer-1",
+          eventId: "event-123",
+          name: "DAY 2",
+          venueName: "幕張メッセ",
         }),
       );
     });
@@ -83,9 +106,61 @@ describe("EventWizard", () => {
     expect(screen.getByLabelText("イベント名")).toHaveValue("既存イベント");
     expect(screen.getByLabelText("説明")).toHaveValue("既存の説明");
   });
+
+  it("編集モードで既存公演の会場を変更すると公演ごとの会場名を保存する", async () => {
+    const user = userEvent.setup();
+    vi.mocked(client.organizer.event.upsertPerformance).mockResolvedValue({
+      id: "performance-existing",
+      updatedAt: "2026-07-20T00:00:00.000Z",
+    });
+
+    render(
+      <EventWizard
+        mode="edit"
+        eventOrganizerId="organizer-1"
+        initialEvent={buildMinimalEvent({
+          performances: [
+            {
+              id: "performance-existing",
+              name: "本公演",
+              venueName: "旧ホール",
+              venueId: "venue-existing",
+              startsAt: "2026-08-20T18:00:00.000Z",
+              doorsOpenAt: "2026-08-20T17:00:00.000Z",
+              admissionMethod: "NUMBERED_ENTRY",
+            },
+          ],
+        })}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "次へ" }));
+    expect(await screen.findByRole("heading", { name: "公演" })).toBeInTheDocument();
+
+    const venueInput = await screen.findByLabelText("公演1の会場");
+    await user.clear(venueInput);
+    await user.type(venueInput, "新ホール");
+    await user.click(screen.getByRole("button", { name: "次へ" }));
+
+    await waitFor(() => {
+      expect(client.organizer.event.upsertPerformance).toHaveBeenCalledWith(
+        expect.objectContaining({
+          eventOrganizerId: "organizer-1",
+          eventId: "event-existing",
+          performanceId: "performance-existing",
+          name: "本公演",
+          venueName: "新ホール",
+        }),
+      );
+    });
+  });
 });
 
-function buildMinimalEvent() {
+function buildMinimalEvent(overrides: Partial<GetEventOutput> = {}): GetEventOutput {
+  return { ...buildMinimalEventBase(), ...overrides };
+}
+
+function buildMinimalEventBase(): GetEventOutput {
   return {
     id: "event-existing",
     name: "既存イベント",

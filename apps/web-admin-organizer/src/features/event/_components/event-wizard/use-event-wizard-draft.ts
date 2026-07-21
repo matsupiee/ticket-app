@@ -53,7 +53,7 @@ export function useEventWizardDraft(input: {
         eventId,
         performanceId: performance.id,
         name: performance.name,
-        venueName: draft.venueName,
+        venueName: performance.venueName,
         doorsOpenAt: performance.doorsOpenAt,
         startsAt: performance.startsAt,
         admissionMethod: "NUMBERED_ENTRY",
