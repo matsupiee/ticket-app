@@ -15,7 +15,12 @@ describe("wizardDraftReducer", () => {
 
     expect(nextNext.performances).toHaveLength(2);
     expect(nextNext.performances[0]?.key).not.toBe(nextNext.performances[1]?.key);
-    expect(nextNext.performances[0]).toMatchObject({ name: "", doorsOpenAt: "", startsAt: "" });
+    expect(nextNext.performances[0]).toMatchObject({
+      name: "",
+      venueName: "",
+      doorsOpenAt: "",
+      startsAt: "",
+    });
   });
 
   it("UPDATE_PERFORMANCEは指定したkeyの公演だけを更新する", () => {
@@ -330,8 +335,8 @@ function withTwoPerformances(): WizardDraft {
   return {
     ...buildEmptyDraft(),
     performances: [
-      { key: "perf-1", name: "", doorsOpenAt: "", startsAt: "" },
-      { key: "perf-2", name: "", doorsOpenAt: "", startsAt: "" },
+      { key: "perf-1", name: "", venueName: "", doorsOpenAt: "", startsAt: "" },
+      { key: "perf-2", name: "", venueName: "", doorsOpenAt: "", startsAt: "" },
     ],
   };
 }
