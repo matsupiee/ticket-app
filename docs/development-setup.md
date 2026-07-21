@@ -39,6 +39,7 @@ VITE_SERVER_URL=http://localhost:3000
 
 # apps/web-admin-organizer/.env
 VITE_SERVER_URL=http://localhost:3000
+VITE_WEB_URL=http://localhost:3001
 VITE_ORGANIZER_ADMIN_EMAILS=organizer@example.com
 
 # apps/web-admin-platform/.env

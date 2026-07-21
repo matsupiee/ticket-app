@@ -1,9 +1,9 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
 
-import { EventDetailPage } from "@/features/event/(detail)/[eventId]/page";
+import { EventEditPage } from "@/features/event/(edit)/[eventId]/page";
 import { client } from "@/lib/orpc";
 
-export const Route = createFileRoute("/_auth/events/$eventId")({
+export const Route = createFileRoute("/_auth/events_/$eventId/edit")({
   component: RouteComponent,
   loader: async ({ params }) => {
     try {
@@ -21,7 +21,7 @@ export const Route = createFileRoute("/_auth/events/$eventId")({
 });
 
 function RouteComponent() {
-  const { event } = Route.useLoaderData();
+  const { event, eventOrganizerId } = Route.useLoaderData();
 
-  return <EventDetailPage event={event} />;
+  return <EventEditPage event={event} eventOrganizerId={eventOrganizerId} />;
 }
