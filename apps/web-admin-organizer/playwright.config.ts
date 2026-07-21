@@ -15,6 +15,9 @@ export default defineConfig({
   webServer: {
     command: "bun run dev:bare --host 127.0.0.1 --port 4174",
     cwd: webRoot,
+    env: {
+      VITE_SERVER_URL: "http://127.0.0.1:4174",
+    },
     reuseExistingServer: true,
     url: "http://127.0.0.1:4174",
   },

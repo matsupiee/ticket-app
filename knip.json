@@ -1,0 +1,52 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "workspaces": {
+    ".": {
+      "entry": ["scripts/*.ts"],
+      "project": ["scripts/**/*.ts"]
+    },
+    "apps/server": {
+      "project": ["src/**/*.ts"]
+    },
+    "apps/web": {
+      "entry": ["src/routes/**/*.tsx"],
+      "project": ["src/**/*.{ts,tsx}", "e2e/**/*.ts"],
+      "tanstack-router": {
+        "entry": ["src/main.tsx", "src/routes/**/*.tsx"]
+      }
+    },
+    "apps/web-admin-organizer": {
+      "entry": ["src/routes/**/*.tsx"],
+      "project": ["src/**/*.{ts,tsx}", "e2e/**/*.ts"],
+      "tanstack-router": {
+        "entry": ["src/main.tsx", "src/routes/**/*.tsx"]
+      }
+    },
+    "apps/web-admin-platform": {
+      "entry": ["src/routes/**/*.tsx"],
+      "project": ["src/**/*.{ts,tsx}", "e2e/**/*.ts"],
+      "tanstack-router": {
+        "entry": ["src/main.tsx", "src/routes/**/*.tsx"]
+      }
+    },
+    "packages/api": {
+      "project": ["src/**/*.ts"],
+      "ignoreBinaries": ["prisma"]
+    },
+    "packages/auth": {
+      "project": ["src/**/*.ts"]
+    },
+    "packages/db": {
+      "project": ["src/**/*.ts"]
+    },
+    "packages/env": {
+      "project": ["src/**/*.ts"]
+    },
+    "packages/infra": {
+      "entry": ["alchemy.run.ts"]
+    },
+    "packages/ui": {
+      "project": ["src/**/*.{ts,tsx}"]
+    }
+  }
+}

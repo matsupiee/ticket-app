@@ -18,7 +18,7 @@ import { EventStatusBadge } from "../status-badge";
 
 const STEP_DESCRIPTIONS: Record<number, string> = {
   1: "イベント名と説明を入力します。",
-  2: "会場と公演（日程）を登録します。ツアーは公演を複数追加します。",
+  2: "公演ごとに会場と日程を登録します。ツアーは公演を複数追加します。",
   3: "席種を定義し、公演ごとの在庫数を設定します。",
   4: "料金種別を定義し、席種ごとの標準価格を設定します。",
   5: "受付ごとに販売する券を1件ずつ登録します。価格は標準価格から引き継ぎ、受付・公演ごとに変更できます。",
@@ -42,6 +42,10 @@ export function EventWizard({
   const [currentStep, setCurrentStep] = useState(1);
   const [isSaving, setIsSaving] = useState(false);
   const activeSeatCategories = draft.seatCategories.filter((seatCategory) => seatCategory.active);
+  const hasPerformances = draft.performances.length > 0;
+  const isStepBlocked = (step: number) => step >= 3 && !hasPerformances;
+  const isNextDisabled =
+    isSaving || (currentStep < WIZARD_STEPS.length && isStepBlocked(currentStep + 1));
 
   async function persistCurrentStep() {
     setIsSaving(true);
@@ -64,6 +68,11 @@ export function EventWizard({
   }
 
   async function handleNext() {
+    if (currentStep < WIZARD_STEPS.length && isStepBlocked(currentStep + 1)) {
+      toast.error("Step3へ進むには公演を1件以上追加してください");
+      return;
+    }
+
     const ok = await persistCurrentStep();
     if (!ok) {
       return;
@@ -93,6 +102,11 @@ export function EventWizard({
   // 後続ステップ(受付・券の対象公演/席種など)から参照できず、保存時に無言で欠落するため。
   async function handleGoToStep(targetStep: number) {
     if (targetStep === currentStep) {
+      return;
+    }
+
+    if (isStepBlocked(targetStep)) {
+      toast.error("Step3へ進むには公演を1件以上追加してください");
       return;
     }
 
@@ -195,7 +209,11 @@ export function EventWizard({
 
       <section className="mx-auto max-w-6xl px-4 py-8 md:px-6">
         <div className="grid gap-14 md:grid-cols-[240px_1fr]">
-          <EventWizardStepper currentStep={currentStep} onGoToStep={handleGoToStep} />
+          <EventWizardStepper
+            currentStep={currentStep}
+            onGoToStep={handleGoToStep}
+            isStepDisabled={isStepBlocked}
+          />
 
           <div className="min-w-0">
             <div className="mb-6">
@@ -220,9 +238,7 @@ export function EventWizard({
 
             {currentStep === 2 && (
               <StepPerformances
-                venueName={draft.venueName}
                 performances={draft.performances}
-                onVenueNameChange={(venueName) => dispatch({ type: "SET_VENUE_NAME", venueName })}
                 onAdd={() => dispatch({ type: "ADD_PERFORMANCE" })}
                 onUpdate={(key, patch) => dispatch({ type: "UPDATE_PERFORMANCE", key, patch })}
                 onRemove={(key) => dispatch({ type: "REMOVE_PERFORMANCE", key })}
@@ -292,7 +308,16 @@ export function EventWizard({
               ) : (
                 <span />
               )}
-              <Button type="button" disabled={isSaving} onClick={handleNext}>
+              <Button
+                type="button"
+                disabled={isNextDisabled}
+                title={
+                  isNextDisabled && currentStep === 2 && !hasPerformances
+                    ? "公演を追加すると次へ進めます"
+                    : undefined
+                }
+                onClick={handleNext}
+              >
                 {isSaving
                   ? "保存中"
                   : currentStep >= WIZARD_STEPS.length

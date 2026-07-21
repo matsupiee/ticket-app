@@ -52,6 +52,12 @@ export function AddOfferDialog({
   const [seatCategoryKey, setSeatCategoryKey] = useState("");
   const [maxQuantityPerOrder, setMaxQuantityPerOrder] = useState(4);
   const [prices, setPrices] = useState<Record<string, number>>({});
+  const performanceLabels = Object.fromEntries(
+    performances.map((performance) => [performance.key, performance.name || "(未設定)"]),
+  );
+  const seatCategoryLabels = Object.fromEntries(
+    seatCategories.map((seatCategory) => [seatCategory.key, seatCategory.name || "(未設定)"]),
+  );
 
   useEffect(() => {
     if (!open) {
@@ -180,7 +186,11 @@ export function AddOfferDialog({
                 onValueChange={(value) => setPerformanceKeys(value ? [value] : [])}
               >
                 <SelectTrigger id="offer-performance" className="w-full">
-                  <SelectValue placeholder="公演を選択" />
+                  <SelectValue placeholder="公演を選択">
+                    {(value) =>
+                      formatSelectedLabel(value, performanceLabels, "公演を選択", "(公演未設定)")
+                    }
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {performances.map((performance) => (
@@ -197,7 +207,11 @@ export function AddOfferDialog({
             <Label htmlFor="offer-seat-category">席種</Label>
             <Select value={seatCategoryKey} onValueChange={handleSeatCategoryChange}>
               <SelectTrigger id="offer-seat-category" className="w-full">
-                <SelectValue placeholder="席種を選択" />
+                <SelectValue placeholder="席種を選択">
+                  {(value) =>
+                    formatSelectedLabel(value, seatCategoryLabels, "席種を選択", "(席種未設定)")
+                  }
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {seatCategories.map((seatCategory) => (
@@ -268,6 +282,19 @@ export function AddOfferDialog({
       </DialogContent>
     </Dialog>
   );
+}
+
+function formatSelectedLabel(
+  value: unknown,
+  labels: Record<string, string>,
+  placeholder: string,
+  missingLabel: string,
+) {
+  if (typeof value !== "string" || value.length === 0) {
+    return placeholder;
+  }
+
+  return labels[value] ?? missingLabel;
 }
 
 function buildPricesFromStandard(

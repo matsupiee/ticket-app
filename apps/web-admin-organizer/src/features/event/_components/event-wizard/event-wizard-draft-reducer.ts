@@ -4,6 +4,7 @@ export type DraftPerformance = {
   key: string;
   id?: string;
   name: string;
+  venueName: string;
   doorsOpenAt: string;
   startsAt: string;
 };
@@ -68,7 +69,6 @@ export type WizardDraft = {
   eventId?: string;
   name: string;
   description: string;
-  venueName: string;
   performances: DraftPerformance[];
   seatCategories: DraftSeatCategory[];
   rateTypes: DraftRateType[];
@@ -80,7 +80,6 @@ export type WizardDraft = {
 export type WizardDraftAction =
   | { type: "SET_BASIC_INFO"; name: string; description: string }
   | { type: "SET_EVENT_ID"; eventId: string }
-  | { type: "SET_VENUE_NAME"; venueName: string }
   | { type: "ADD_PERFORMANCE" }
   | { type: "UPDATE_PERFORMANCE"; key: string; patch: Partial<DraftPerformance> }
   | { type: "REMOVE_PERFORMANCE"; key: string }
@@ -138,14 +137,12 @@ export function wizardDraftReducer(draft: WizardDraft, action: WizardDraftAction
       return { ...draft, name: action.name, description: action.description };
     case "SET_EVENT_ID":
       return { ...draft, eventId: action.eventId };
-    case "SET_VENUE_NAME":
-      return { ...draft, venueName: action.venueName };
     case "ADD_PERFORMANCE":
       return {
         ...draft,
         performances: [
           ...draft.performances,
-          { key: crypto.randomUUID(), name: "", doorsOpenAt: "", startsAt: "" },
+          { key: crypto.randomUUID(), name: "", venueName: "", doorsOpenAt: "", startsAt: "" },
         ],
       };
     case "UPDATE_PERFORMANCE":
@@ -396,7 +393,6 @@ export function buildEmptyDraft(): WizardDraft {
   return {
     name: "",
     description: "",
-    venueName: "",
     performances: [],
     seatCategories: [],
     rateTypes: [],
@@ -412,11 +408,11 @@ export function buildDraftFromEvent(event: GetEventOutput): WizardDraft {
     eventId: event.id,
     name: event.name,
     description: event.description,
-    venueName: event.performances[0]?.venueName ?? "",
     performances: event.performances.map((performance) => ({
       key: performance.id,
       id: performance.id,
       name: performance.name,
+      venueName: performance.venueName,
       doorsOpenAt: toDateTimeLocalValue(performance.doorsOpenAt),
       startsAt: toDateTimeLocalValue(performance.startsAt),
     })),

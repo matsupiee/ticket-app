@@ -11,9 +11,11 @@ export const WIZARD_STEPS = [
 export function EventWizardStepper({
   currentStep,
   onGoToStep,
+  isStepDisabled,
 }: {
   currentStep: number;
   onGoToStep: (step: number) => void;
+  isStepDisabled?: (step: number) => boolean;
 }) {
   return (
     <nav className="sticky top-6 flex flex-col">
@@ -21,13 +23,18 @@ export function EventWizardStepper({
         const isDone = step.num < currentStep;
         const isActive = step.num === currentStep;
         const isLast = index === WIZARD_STEPS.length - 1;
+        const disabled = !isActive && (isStepDisabled?.(step.num) ?? false);
 
         return (
           <button
             key={step.num}
             type="button"
+            disabled={disabled}
+            title={disabled ? "公演を追加すると選択できます" : undefined}
             onClick={() => onGoToStep(step.num)}
-            className="group flex cursor-pointer gap-3.5 text-left"
+            className={`group flex gap-3.5 text-left ${
+              disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"
+            }`}
           >
             <div className="flex flex-col items-center">
               {isDone ? (
