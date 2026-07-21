@@ -1,15 +1,15 @@
-export type SaleMethod = "FIRST_COME" | "LOTTERY";
+type SaleMethod = "FIRST_COME" | "LOTTERY";
 
-export type AdmissionMethod = "GENERAL_ADMISSION" | "NUMBERED_ENTRY" | "RESERVED_SEAT";
+type AdmissionMethod = "GENERAL_ADMISSION" | "NUMBERED_ENTRY" | "RESERVED_SEAT";
 
-export type FeePayer = "BUYER" | "EVENT_ORGANIZER";
+type FeePayer = "BUYER" | "EVENT_ORGANIZER";
 
-export type RateType = {
+type RateType = {
   id: string;
   name: string;
 };
 
-export type FeeRule = {
+type FeeRule = {
   id: string;
   name: string;
   payer: FeePayer;
@@ -17,7 +17,7 @@ export type FeeRule = {
   flatAmount: number;
 };
 
-export type Performance = {
+type Performance = {
   id: string;
   name: string;
   venueName: string;
@@ -26,12 +26,12 @@ export type Performance = {
   admissionMethod: AdmissionMethod;
 };
 
-export type SaleOfferRate = {
+type SaleOfferRate = {
   rateTypeId: string;
   price: number;
 };
 
-export type SaleOffer = {
+type SaleOffer = {
   id: string;
   name: string;
   seatCategoryName: string;
@@ -43,7 +43,7 @@ export type SaleOffer = {
   feeRules?: FeeRule[];
 };
 
-export type SaleWindow = {
+type SaleWindow = {
   id: string;
   name: string;
   saleMethod: SaleMethod;
@@ -88,7 +88,7 @@ export type ApplicationSelection = {
   quantity: number;
 };
 
-export type FeeLine = {
+type FeeLine = {
   id: string;
   name: string;
   payer: FeePayer;
@@ -360,11 +360,11 @@ export function formatDateTime(value: string) {
   }).format(new Date(value));
 }
 
-export function getEventById(eventId: string) {
+function getEventById(eventId: string) {
   return ticketEvents.find((event) => event.id === eventId);
 }
 
-export function getUpcomingEvents() {
+function getUpcomingEvents() {
   return [...ticketEvents].sort(
     (first, second) =>
       new Date(first.performances[0]?.startsAt ?? "").getTime() -

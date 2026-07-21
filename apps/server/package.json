@@ -18,10 +18,7 @@
     "@ticket-app/auth": "workspace:*",
     "@ticket-app/db": "workspace:*",
     "@ticket-app/env": "workspace:*",
-    "better-auth": "catalog:",
-    "dotenv": "catalog:",
-    "hono": "catalog:",
-    "zod": "catalog:"
+    "hono": "catalog:"
   },
   "devDependencies": {
     "@ticket-app/config": "workspace:*",

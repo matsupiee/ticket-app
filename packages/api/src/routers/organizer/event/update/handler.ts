@@ -58,7 +58,9 @@ export async function updateEventHandler({
   }
 
   if (publicTicketing && publicTicketing.saleStartsAt >= publicTicketing.saleEndsAt) {
-    throw new ORPCError("BAD_REQUEST", { message: "販売開始日時は販売終了日時より前にしてください" });
+    throw new ORPCError("BAD_REQUEST", {
+      message: "販売開始日時は販売終了日時より前にしてください",
+    });
   }
 
   const event = await db.event.findFirst({
@@ -68,7 +70,11 @@ export async function updateEventHandler({
       performances: {
         orderBy: { startsAt: "asc" },
         take: 1,
-        select: { id: true, venueId: true, inventoryPools: { take: 1, select: { id: true, soldCount: true, capacity: true } } },
+        select: {
+          id: true,
+          venueId: true,
+          inventoryPools: { take: 1, select: { id: true, soldCount: true, capacity: true } },
+        },
       },
       saleWindows: {
         orderBy: { applicationStartsAt: "asc" },
@@ -78,7 +84,14 @@ export async function updateEventHandler({
           saleOffers: {
             orderBy: { displayOrder: "asc" },
             take: 1,
-            select: { id: true, saleOfferRates: { orderBy: { displayOrder: "asc" }, take: 1, select: { id: true, rateTypeId: true } } },
+            select: {
+              id: true,
+              saleOfferRates: {
+                orderBy: { displayOrder: "asc" },
+                take: 1,
+                select: { id: true, rateTypeId: true },
+              },
+            },
           },
         },
       },
@@ -117,26 +130,47 @@ export async function updateEventHandler({
       });
     }
 
-    await tx.venue.update({ where: { id: performance.venueId }, data: { name: publicTicketing.venueName } });
+    await tx.venue.update({
+      where: { id: performance.venueId },
+      data: { name: publicTicketing.venueName },
+    });
     await tx.performance.update({
       where: { id: performance.id },
-      data: { name: publicTicketing.performanceName, startsAt: publicTicketing.startsAt, doorsOpenAt: publicTicketing.doorsOpenAt },
+      data: {
+        name: publicTicketing.performanceName,
+        startsAt: publicTicketing.startsAt,
+        doorsOpenAt: publicTicketing.doorsOpenAt,
+      },
     });
     await tx.saleWindow.update({
       where: { id: saleWindow.id },
-      data: { name: publicTicketing.saleWindowName, applicationStartsAt: publicTicketing.saleStartsAt, applicationEndsAt: publicTicketing.saleEndsAt, method: publicTicketing.saleMethod },
+      data: {
+        name: publicTicketing.saleWindowName,
+        applicationStartsAt: publicTicketing.saleStartsAt,
+        applicationEndsAt: publicTicketing.saleEndsAt,
+        method: publicTicketing.saleMethod,
+      },
     });
     await tx.saleOffer.update({
       where: { id: offer.id },
-      data: { name: publicTicketing.seatCategoryName, maxQuantityPerOrder: publicTicketing.maxQuantityPerOrder },
+      data: {
+        name: publicTicketing.seatCategoryName,
+        maxQuantityPerOrder: publicTicketing.maxQuantityPerOrder,
+      },
     });
-    await tx.rateType.update({ where: { id: rate.rateTypeId }, data: { name: publicTicketing.rateTypeName } });
+    await tx.rateType.update({
+      where: { id: rate.rateTypeId },
+      data: { name: publicTicketing.rateTypeName },
+    });
     await tx.saleOfferRate.update({
       where: { id: rate.id },
       data: { price: publicTicketing.price, maxQuantity: publicTicketing.maxQuantityPerOrder },
     });
 
-    await tx.inventoryPool.update({ where: { id: inventoryPool.id }, data: { capacity: publicTicketing.capacity } });
+    await tx.inventoryPool.update({
+      where: { id: inventoryPool.id },
+      data: { capacity: publicTicketing.capacity },
+    });
 
     return updated;
   });

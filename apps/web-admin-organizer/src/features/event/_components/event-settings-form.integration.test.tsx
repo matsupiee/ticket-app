@@ -46,7 +46,7 @@ describe("EventSettingsForm", () => {
 
     expect(buildEventFormValues(event)).toEqual(
       expect.objectContaining({
-        doorsOpenAt: "2026-09-12T08:00",
+        doorsOpenAt: "2026-09-12T17:00",
         maxQuantityPerOrder: "4",
         saleMethod: "FIRST_COME",
       }),

@@ -4,7 +4,7 @@ export type SaleMethod = "FIRST_COME" | "LOTTERY";
 
 export type SettlementStatus = "SCHEDULED" | "PROCESSING" | "PAID";
 
-export type OrganizerPerformance = {
+type OrganizerPerformance = {
   id: string;
   name: string;
   venueName: string;
@@ -13,7 +13,7 @@ export type OrganizerPerformance = {
   admissionMethod: "GENERAL_ADMISSION" | "RESERVED_SEAT" | "NUMBERED_ENTRY";
 };
 
-export type OrganizerSaleWindow = {
+type OrganizerSaleWindow = {
   id: string;
   name: string;
   saleMethod: SaleMethod;

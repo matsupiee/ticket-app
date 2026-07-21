@@ -2,10 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { buttonVariants } from "@ticket-app/ui/components/button";
 import { toast } from "sonner";
 
-import {
-  EventSettingsForm,
-  buildEventFormValues,
-} from "../../_components/event-settings-form";
+import { EventSettingsForm, buildEventFormValues } from "../../_components/event-settings-form";
 import { SectionHeading } from "../../_components/section-heading";
 import { EventStatusBadge } from "../../_components/status-badge";
 import {

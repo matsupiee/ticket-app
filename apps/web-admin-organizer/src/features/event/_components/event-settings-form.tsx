@@ -70,7 +70,9 @@ export function EventSettingsForm({
           id="seatCategoryName"
           label="席種"
           value={settings.seatCategoryName}
-          onChange={(seatCategoryName) => setSettings((current) => ({ ...current, seatCategoryName }))}
+          onChange={(seatCategoryName) =>
+            setSettings((current) => ({ ...current, seatCategoryName }))
+          }
         />
         <TextField
           id="rateTypeName"
@@ -169,7 +171,7 @@ export function EventSettingsForm({
   );
 }
 
-export function buildDefaultEventFormValues(): EventSettingsFormValues {
+function buildDefaultEventFormValues(): EventSettingsFormValues {
   const now = new Date();
   const startsAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
   startsAt.setHours(18, 0, 0, 0);
@@ -210,7 +212,9 @@ export function buildEventFormValues(event: OrganizerEvent): EventSettingsFormVa
     capacity: firstOffer ? String(firstOffer.soldQuantity + firstOffer.availableQuantity) : "",
     maxQuantityPerOrder: firstOffer ? String(firstOffer.maxQuantityPerOrder) : "",
     startsAt: firstPerformance ? toDateTimeLocalValue(new Date(firstPerformance.startsAt)) : "",
-    doorsOpenAt: firstPerformance ? toDateTimeLocalValue(new Date(firstPerformance.doorsOpenAt)) : "",
+    doorsOpenAt: firstPerformance
+      ? toDateTimeLocalValue(new Date(firstPerformance.doorsOpenAt))
+      : "",
     saleStartsAt: firstSaleWindow ? toDateTimeLocalValue(new Date(firstSaleWindow.opensAt)) : "",
     saleEndsAt: firstSaleWindow ? toDateTimeLocalValue(new Date(firstSaleWindow.closesAt)) : "",
     saleMethod: firstSaleWindow?.saleMethod ?? "FIRST_COME",

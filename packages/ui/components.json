@@ -14,7 +14,6 @@
   "aliases": {
     "components": "@ticket-app/ui/components",
     "utils": "@ticket-app/ui/lib/utils",
-    "hooks": "@ticket-app/ui/hooks",
     "lib": "@ticket-app/ui/lib",
     "ui": "@ticket-app/ui/components"
   },

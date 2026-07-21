@@ -13,9 +13,7 @@
   "dependencies": {
     "@ticket-app/db": "workspace:*",
     "@ticket-app/env": "workspace:*",
-    "better-auth": "catalog:",
-    "dotenv": "catalog:",
-    "zod": "catalog:"
+    "better-auth": "catalog:"
   },
   "devDependencies": {
     "@ticket-app/config": "workspace:*",

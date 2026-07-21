@@ -118,6 +118,7 @@ function buildOrganizerEvent(
         id: "performance-1",
         name: "初日",
         startsAt: new Date("2026-09-01T10:00:00.000Z"),
+        doorsOpenAt: new Date("2026-09-01T09:00:00.000Z"),
         venue: {
           name: "テスト会場",
         },
