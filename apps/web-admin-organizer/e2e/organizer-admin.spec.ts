@@ -1,6 +1,6 @@
-import { expect, test, type Page, type Route } from "@playwright/test";
+import { expect, test, type Page, type Request, type Route } from "@playwright/test";
 
-test("主催者が登録後に整理番号先着イベントを作成して公開できる", async ({ page }) => {
+test("主催者が登録後にウィザードで整理番号先着イベントを作成して公開できる", async ({ page }) => {
   const authState = {
     user: null as null | { id: string; name: string; email: string },
   };
@@ -10,10 +10,10 @@ test("主催者が登録後に整理番号先着イベントを作成して公�
     slug: "shinjuku-live",
     role: "EDITOR",
   } as const;
-  const events: OrganizerEvent[] = [];
+  const store = createEventStore();
 
   await mockAuth(page, authState);
-  await mockRpc(page, organizer, events);
+  await mockRpc(page, organizer, store);
 
   await page.goto("/login");
   await page.getByRole("button", { name: "アカウントを作成" }).click();
@@ -26,36 +26,176 @@ test("主催者が登録後に整理番号先着イベントを作成して公�
 
   await expect(page.getByRole("heading", { name: "主催者ダッシュボード" })).toBeVisible();
   await page.getByRole("link", { name: "イベントを作成" }).click();
-  await expect(page.getByRole("heading", { name: "イベント新規作成" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "イベントを作成" })).toBeVisible();
 
+  // STEP 1: 基本情報
   await page.getByLabel("イベント名").fill("E2E整理番号公演");
+  await page.getByLabel("説明").fill("整理番号順に入場する先着販売イベントです。");
+  await page.getByRole("button", { name: "次へ" }).click();
+
+  // STEP 2: 公演
+  await expect(page.getByRole("heading", { name: "公演" })).toBeVisible();
   await page.getByLabel("会場").fill("新宿ライブホール");
-  await page.getByLabel("席種").fill("スタンディング");
-  await page.getByLabel("料金種別").fill("一般");
-  await page.getByLabel("価格").fill("5000");
-  await page.getByRole("spinbutton", { name: "販売枚数" }).fill("30");
+  await page.getByRole("button", { name: "＋ 公演を追加" }).click();
+  await page.getByLabel("公演1の名称").fill("本公演");
+  await page.getByLabel("公演1の開場日時").fill("2026-08-20T17:00");
+  await page.getByLabel("公演1の開演日時").fill("2026-08-20T18:00");
+  await page.getByRole("button", { name: "次へ" }).click();
+
+  // STEP 3: 席種
+  await expect(page.getByRole("heading", { name: "席種" })).toBeVisible();
+  await page.getByRole("button", { name: "＋ 席種を追加" }).click();
+  await page.getByLabel("席種1の名称").fill("スタンディング");
+  await page.getByLabel("本公演 × スタンディングの在庫数").fill("30");
+  await page.getByRole("button", { name: "次へ" }).click();
+
+  // STEP 4: 料金種別
+  await expect(page.getByRole("heading", { name: "料金種別" })).toBeVisible();
+  await page.getByRole("button", { name: "＋ 料金種別を追加" }).click();
+  await page.getByLabel("料金種別1の名称").fill("一般");
+  await page.getByLabel("スタンディング × 一般の標準価格").fill("5000");
+  await page.getByRole("button", { name: "次へ" }).click();
+
+  // STEP 5: 販売受付
+  await expect(page.getByRole("heading", { name: "販売受付" })).toBeVisible();
+  await page.getByRole("button", { name: "＋ 受付を追加（一般販売など）" }).click();
+  await page.getByLabel("受付名").fill("一般販売");
+  await page.getByLabel("申込開始").fill("2026-07-25T10:00");
+  await page.getByLabel("申込終了").fill("2026-08-19T23:59");
+
+  await page.getByRole("button", { name: "＋ 券を追加" }).click();
+  await expect(page.getByRole("heading", { name: "券を追加" })).toBeVisible();
+  await page.getByRole("button", { name: "追加する" }).click();
+
+  await expect(page.getByText("スタンディング")).toBeVisible();
   await page.getByRole("button", { name: "作成して公開" }).click();
 
-  await expect(page.getByRole("heading", { name: "イベント設定" })).toBeVisible();
-  await expect(page.getByText("E2E整理番号公演", { exact: true })).toBeVisible();
-  await expect(page.getByText("販売中", { exact: true })).toBeVisible();
-  await expect(page.getByText(/先着 \/ 2026年7月20日/)).toBeVisible();
-  await expect(page.getByText("販売中", { exact: true })).toBeVisible();
-  await expect(page.getByText("一般販売")).toBeVisible();
-  await expect(page.getByText("スタンディング / 販売済み 0枚 / 残り 30枚")).toBeVisible();
+  await expect(page.getByText("イベントを作成して公開しました")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "E2E整理番号公演" })).toBeVisible();
 
-  await page
-    .getByRole("textbox", { name: "イベント名", exact: true })
-    .fill("E2E整理番号公演 追加公演");
-  await page.getByLabel("会場").fill("渋谷ライブホール");
-  await page.getByRole("spinbutton", { name: "価格" }).fill("6500");
-  await page.getByRole("button", { name: "設定を保存" }).click();
-  await expect(page.getByText("E2E整理番号公演 追加公演 の設定を保存しました")).toBeVisible();
-  expect(events[0]).toMatchObject({
-    name: "E2E整理番号公演 追加公演",
-    performances: [{ venueName: "渋谷ライブホール" }],
-    saleWindows: [{ offers: [{ minPrice: 6_500 }] }],
+  const event = store.events[0];
+  expect(event).toMatchObject({
+    name: "E2E整理番号公演",
+    performances: [{ name: "本公演", venueName: "新宿ライブホール" }],
+    seatCategories: [{ name: "スタンディング" }],
+    rateTypes: [{ name: "一般" }],
   });
+  expect(event.inventoryPools[0]).toMatchObject({ capacity: 30 });
+  expect(event.saleWindows[0]).toMatchObject({ name: "一般販売", saleMethod: "FIRST_COME" });
+  expect(event.saleWindows[0]?.offers[0]?.rates[0]).toMatchObject({ price: 5_000 });
+});
+
+test("抽選方式と複数公演にまたがる通し券を設定できる", async ({ page }) => {
+  const authState = {
+    user: { id: "organizer-user", name: "主催者ユーザー", email: "lottery-e2e@example.com" },
+  };
+  const organizer = {
+    eventOrganizerId: "organizer-e2e",
+    name: "横浜ベイ制作",
+    slug: "yokohama-bay",
+    role: "EDITOR",
+  } as const;
+  const store = createEventStore();
+
+  await mockAuth(page, authState);
+  await mockRpc(page, organizer, store);
+
+  await page.goto("/events/new");
+  await expect(page.getByRole("heading", { name: "イベントを作成" })).toBeVisible();
+
+  await page.getByLabel("イベント名").fill("E2E抽選フェス");
+  await page.getByLabel("説明").fill("複数公演の抽選イベントです。");
+  await page.getByRole("button", { name: "次へ" }).click();
+
+  await expect(page.getByRole("heading", { name: "公演" })).toBeVisible();
+  await page.getByLabel("会場").fill("横浜ベイホール");
+  await page.getByRole("button", { name: "＋ 公演を追加" }).click();
+  await page.getByLabel("公演1の名称").fill("SATURDAY");
+  await page.getByLabel("公演1の開場日時").fill("2026-10-03T10:00");
+  await page.getByLabel("公演1の開演日時").fill("2026-10-03T11:00");
+  await page.getByRole("button", { name: "＋ 公演を追加" }).click();
+  await page.getByLabel("公演2の名称").fill("SUNDAY");
+  await page.getByLabel("公演2の開場日時").fill("2026-10-04T10:00");
+  await page.getByLabel("公演2の開演日時").fill("2026-10-04T11:00");
+  await page.getByRole("button", { name: "次へ" }).click();
+
+  await expect(page.getByRole("heading", { name: "席種" })).toBeVisible();
+  await page.getByRole("button", { name: "＋ 席種を追加" }).click();
+  await page.getByLabel("席種1の名称").fill("スタンディング");
+  await page.getByLabel("SATURDAY × スタンディングの在庫数").fill("400");
+  await page.getByLabel("SUNDAY × スタンディングの在庫数").fill("400");
+  await page.getByRole("button", { name: "次へ" }).click();
+
+  await expect(page.getByRole("heading", { name: "料金種別" })).toBeVisible();
+  await page.getByRole("button", { name: "＋ 料金種別を追加" }).click();
+  await page.getByLabel("料金種別1の名称").fill("一般");
+  await page.getByLabel("スタンディング × 一般の標準価格").fill("9900");
+  await page.getByRole("button", { name: "次へ" }).click();
+
+  await expect(page.getByRole("heading", { name: "販売受付" })).toBeVisible();
+  await page.getByRole("button", { name: "＋ 受付を追加（一般販売など）" }).click();
+  await page.getByLabel("受付名").fill("オフィシャル先行抽選");
+  await page.getByRole("button", { name: "抽選" }).click();
+  await page.getByLabel("申込開始").fill("2026-08-01T12:00");
+  await page.getByLabel("申込終了").fill("2026-08-12T23:59");
+  await expect(page.getByLabel("抽選方式")).toBeVisible();
+  await page.getByLabel("当落発表日時").fill("2026-08-20T18:00");
+
+  await page.getByRole("button", { name: "＋ 券を追加" }).click();
+  await page.getByRole("button", { name: "通し券（複数公演）" }).click();
+  await expect(page.getByText("対象公演（複数選択）")).toBeVisible();
+  await page.getByRole("button", { name: "SUNDAY" }).click();
+  await page.getByRole("button", { name: "追加する" }).click();
+
+  await expect(page.getByText("通し券（SATURDAY・SUNDAY）")).toBeVisible();
+  await page.getByRole("button", { name: "作成して公開" }).click();
+
+  await expect(page.getByText("イベントを作成して公開しました")).toBeVisible();
+
+  const event = store.events[0];
+  expect(event.saleWindows[0]).toMatchObject({
+    name: "オフィシャル先行抽選",
+    saleMethod: "LOTTERY",
+    lotteryMode: "AUTO",
+  });
+  expect(event.saleWindows[0]?.offers[0]?.entitlements).toHaveLength(2);
+});
+
+test("既存イベントを開いて在庫を追加できる", async ({ page }) => {
+  const authState = {
+    user: { id: "organizer-user", name: "主催者ユーザー", email: "edit-e2e@example.com" },
+  };
+  const organizer = {
+    eventOrganizerId: "organizer-e2e",
+    name: "京都クラシック",
+    slug: "kyoto-classic",
+    role: "EDITOR",
+  } as const;
+  const store = createEventStore();
+  store.events.push(buildExistingEvent());
+
+  await mockAuth(page, authState);
+  await mockRpc(page, organizer, store);
+
+  await page.goto("/events/event-existing");
+  await expect(page.getByRole("heading", { name: "既存イベント" })).toBeVisible();
+  await expect(page.getByLabel("イベント名")).toHaveValue("既存イベント");
+
+  await page.getByRole("button", { name: "公演" }).click();
+  await expect(page.getByLabel("公演1の名称")).toHaveValue("本公演");
+  await page.getByRole("button", { name: "次へ" }).click();
+
+  await expect(page.getByRole("heading", { name: "席種" })).toBeVisible();
+  const inventoryInput = page.getByLabel("本公演 × 指定席の在庫数");
+  await expect(inventoryInput).toHaveValue("100");
+  await inventoryInput.fill("150");
+  await page.getByRole("button", { name: "次へ" }).click();
+
+  await expect(page.getByRole("heading", { name: "料金種別" })).toBeVisible();
+  await expect(page.getByLabel("料金種別1の名称")).toHaveValue("大人");
+
+  const adjustCall = await store.waitForAdjustInventory();
+  expect(adjustCall).toMatchObject({ performanceId: "performance-existing", capacityDelta: 50 });
 });
 
 test("未ログインの場合はログイン画面へ誘導する", async ({ page }) => {
@@ -82,48 +222,161 @@ test("主催者メンバーでないユーザーは主催者管理画面を開�
   await expect(page.getByRole("heading", { name: "権限がありません" })).toBeVisible();
 });
 
-type OrganizerEvent = {
+type MockPerformance = {
+  id: string;
+  name: string;
+  venueName: string;
+  venueId: string;
+  startsAt: string;
+  doorsOpenAt: string;
+  admissionMethod: "NUMBERED_ENTRY";
+};
+
+type MockSeatCategory = {
   id: string;
   name: string;
   description: string;
-  status: "ON_SALE";
-  location: string;
-  tags: string[];
-  performances: {
-    id: string;
-    name: string;
-    venueName: string;
-    startsAt: string;
-    doorsOpenAt: string;
-    admissionMethod: "NUMBERED_ENTRY";
-  }[];
-  saleWindows: {
-    id: string;
-    name: string;
-    saleMethod: "FIRST_COME" | "LOTTERY";
-    opensAt: string;
-    closesAt: string;
-    offers: {
-      id: string;
-      name: string;
-      seatCategoryName: string;
-      soldQuantity: number;
-      availableQuantity: number;
-      minPrice: number;
-      maxQuantityPerOrder: number;
-    }[];
-  }[];
-  sales: {
-    grossSales: number;
-    ticketsSold: number;
-    buyerFeeAmount: number;
-    organizerFeeAmount: number;
-  };
-  settlement: {
-    status: "SCHEDULED";
-    scheduledAt: string;
-  };
+  active: boolean;
+  displayOrder: number;
 };
+
+type MockRateType = {
+  id: string;
+  name: string;
+  displayOrder: number;
+};
+
+type MockInventoryPool = {
+  id: string;
+  performanceId: string;
+  seatCategoryId: string;
+  admissionMethod: "NUMBERED_ENTRY";
+  seatAllocationMethod: "IMMEDIATE";
+  capacity: number;
+  heldCount: number;
+  soldCount: number;
+};
+
+type MockOffer = {
+  id: string;
+  name: string;
+  description: string;
+  maxQuantityPerOrder: number;
+  displayOrder: number;
+  rates: {
+    id: string;
+    rateTypeId: string;
+    price: number;
+    currency: string;
+    minQuantity: number;
+    maxQuantity: number;
+    quantityStep: number;
+    displayOrder: number;
+  }[];
+  entitlements: { id: string; performanceId: string; seatCategoryId: string }[];
+};
+
+type MockSaleWindow = {
+  id: string;
+  name: string;
+  saleMethod: "FIRST_COME" | "LOTTERY";
+  opensAt: string;
+  closesAt: string;
+  publishesAt?: string;
+  isSmsAuthRequired: boolean;
+  lotteryMode: "AUTO" | "MANUAL";
+  notifyLotteryResultAt?: string;
+  canceledAt?: string;
+  cancelReason?: string;
+  offers: MockOffer[];
+};
+
+type MockEvent = {
+  id: string;
+  name: string;
+  description: string;
+  performances: MockPerformance[];
+  seatCategories: MockSeatCategory[];
+  rateTypes: MockRateType[];
+  inventoryPools: MockInventoryPool[];
+  saleWindows: MockSaleWindow[];
+};
+
+type EventStore = {
+  events: MockEvent[];
+  adjustInventoryCalls: { performanceId: string; seatCategoryId: string; capacityDelta: number }[];
+  waitForAdjustInventory: () => Promise<
+    { performanceId: string; seatCategoryId: string; capacityDelta: number } | undefined
+  >;
+};
+
+function createEventStore(): EventStore {
+  const events: MockEvent[] = [];
+  const adjustInventoryCalls: EventStore["adjustInventoryCalls"] = [];
+
+  return {
+    events,
+    adjustInventoryCalls,
+    waitForAdjustInventory: async () => {
+      const deadline = Date.now() + 5_000;
+      while (Date.now() < deadline) {
+        if (adjustInventoryCalls.length > 0) {
+          return adjustInventoryCalls[0];
+        }
+        await new Promise((resolveWait) => setTimeout(resolveWait, 100));
+      }
+      return undefined;
+    },
+  };
+}
+
+function buildExistingEvent(): MockEvent {
+  return {
+    id: "event-existing",
+    name: "既存イベント",
+    description: "既存の説明文です。",
+    performances: [
+      {
+        id: "performance-existing",
+        name: "本公演",
+        venueName: "京都コンサートホール",
+        venueId: "venue-existing",
+        startsAt: "2026-11-18T19:00:00.000Z",
+        doorsOpenAt: "2026-11-18T18:00:00.000Z",
+        admissionMethod: "NUMBERED_ENTRY",
+      },
+    ],
+    seatCategories: [
+      {
+        id: "seat-category-existing",
+        name: "指定席",
+        description: "",
+        active: true,
+        displayOrder: 0,
+      },
+    ],
+    rateTypes: [{ id: "rate-type-existing", name: "大人", displayOrder: 0 }],
+    inventoryPools: [
+      {
+        id: "pool-existing",
+        performanceId: "performance-existing",
+        seatCategoryId: "seat-category-existing",
+        admissionMethod: "NUMBERED_ENTRY",
+        seatAllocationMethod: "IMMEDIATE",
+        capacity: 100,
+        heldCount: 0,
+        soldCount: 0,
+      },
+    ],
+    saleWindows: [],
+  };
+}
+
+let idCounter = 0;
+function nextId(prefix: string) {
+  idCounter += 1;
+  return `${prefix}-${idCounter}`;
+}
 
 async function mockAuth(
   page: Page,
@@ -182,7 +435,7 @@ async function mockRpc(
     slug: string;
     role: "EDITOR";
   },
-  events: OrganizerEvent[],
+  store: EventStore,
 ) {
   await page.route("**/rpc/**", async (route) => {
     const request = route.request();
@@ -204,12 +457,13 @@ async function mockRpc(
     }
 
     if (pathname.endsWith("/organizer/event/list")) {
+      const items = store.events.map((event) => toEventSummary(event));
       await route.fulfill(
         rpcResponse({
-          items: events,
+          items,
           summary: {
-            eventCount: events.length,
-            onSaleEventCount: events.length,
+            eventCount: items.length,
+            onSaleEventCount: items.length,
             ticketsSold: 0,
             grossSales: 0,
             organizerFeeAmount: 0,
@@ -220,57 +474,200 @@ async function mockRpc(
       return;
     }
 
-    if (pathname.endsWith("/organizer/event/create")) {
-      const body = request.postDataJSON() as {
-        json?: {
-          name?: string;
-          description?: string;
-          publicTicketing?: { saleMethod?: "FIRST_COME" | "LOTTERY" };
-        };
-        name?: string;
-        description?: string;
-        publicTicketing?: { saleMethod?: "FIRST_COME" | "LOTTERY" };
-      };
-      events.splice(0, events.length, buildCreatedEvent(body.json ?? body));
-      await route.fulfill(
-        rpcResponse({
-          id: "event-e2e",
-          updatedAt: "2026-07-20T00:00:00.000Z",
-        }),
-      );
-      return;
-    }
+    const input = readInput(request);
 
-    if (pathname.endsWith("/organizer/event/get")) {
-      await route.fulfill(rpcResponse(events[0]));
+    if (pathname.endsWith("/organizer/event/create")) {
+      const created: MockEvent = {
+        id: nextId("event"),
+        name: input.name ?? "",
+        description: input.description ?? "",
+        performances: [],
+        seatCategories: [],
+        rateTypes: [],
+        inventoryPools: [],
+        saleWindows: [],
+      };
+      store.events.push(created);
+      await route.fulfill(rpcResponse({ id: created.id, updatedAt: nowIso() }));
       return;
     }
 
     if (pathname.endsWith("/organizer/event/update")) {
-      const body = request.postDataJSON() as {
-        json?: {
-          name?: string;
-          description?: string;
-          publicTicketing?: { venueName?: string; price?: number };
-        };
-        name?: string;
-        description?: string;
-        publicTicketing?: { venueName?: string; price?: number };
+      const event = findEvent(store, input.eventId);
+      if (event) {
+        event.name = input.name ?? event.name;
+        event.description = input.description ?? event.description;
+      }
+      await route.fulfill(rpcResponse({ id: event?.id ?? input.eventId, updatedAt: nowIso() }));
+      return;
+    }
+
+    if (pathname.endsWith("/organizer/event/get")) {
+      const event = findEvent(store, input.eventId) ?? store.events[0];
+      await route.fulfill(rpcResponse(event ? toEventDetail(event) : null));
+      return;
+    }
+
+    if (pathname.endsWith("/organizer/event/upsertPerformance")) {
+      const event = findEvent(store, input.eventId);
+      if (!event) {
+        await route.fulfill(rpcResponse({}, { status: 404 }));
+        return;
+      }
+      const existing = event.performances.find(
+        (performance) => performance.id === input.performanceId,
+      );
+      const performance: MockPerformance = {
+        id: existing?.id ?? nextId("performance"),
+        name: input.name,
+        venueName: input.venueName,
+        venueId: existing?.venueId ?? nextId("venue"),
+        startsAt: toIso(input.startsAt),
+        doorsOpenAt: toIso(input.doorsOpenAt),
+        admissionMethod: "NUMBERED_ENTRY",
       };
-      const input = body.json ?? body;
-      if (events[0]) {
-        events[0].name = input.name ?? events[0].name;
-        events[0].description = input.description ?? events[0].description;
-        events[0].performances[0].venueName =
-          input.publicTicketing?.venueName ?? events[0].performances[0].venueName;
-        events[0].saleWindows[0].offers[0].minPrice =
-          input.publicTicketing?.price ?? events[0].saleWindows[0].offers[0].minPrice;
+      upsertById(event.performances, performance);
+      await route.fulfill(rpcResponse({ id: performance.id, updatedAt: nowIso() }));
+      return;
+    }
+
+    if (pathname.endsWith("/organizer/event/upsertSeatCategory")) {
+      const event = findEvent(store, input.eventId);
+      if (!event) {
+        await route.fulfill(rpcResponse({}, { status: 404 }));
+        return;
+      }
+      const seatCategory: MockSeatCategory = {
+        id: input.seatCategoryId ?? nextId("seat-category"),
+        name: input.name,
+        description: input.description ?? "",
+        active: input.active,
+        displayOrder: input.displayOrder ?? 0,
+      };
+      upsertById(event.seatCategories, seatCategory);
+      await route.fulfill(rpcResponse({ id: seatCategory.id, updatedAt: nowIso() }));
+      return;
+    }
+
+    if (pathname.endsWith("/organizer/event/upsertRateType")) {
+      const event = findEvent(store, input.eventId);
+      if (!event) {
+        await route.fulfill(rpcResponse({}, { status: 404 }));
+        return;
+      }
+      const rateType: MockRateType = {
+        id: input.rateTypeId ?? nextId("rate-type"),
+        name: input.name,
+        displayOrder: input.displayOrder ?? 0,
+      };
+      upsertById(event.rateTypes, rateType);
+      await route.fulfill(rpcResponse({ id: rateType.id, updatedAt: nowIso() }));
+      return;
+    }
+
+    if (pathname.endsWith("/organizer/event/adjustInventory")) {
+      const event = findEvent(store, input.eventId);
+      if (!event) {
+        await route.fulfill(rpcResponse({}, { status: 404 }));
+        return;
+      }
+      store.adjustInventoryCalls.push({
+        performanceId: input.performanceId,
+        seatCategoryId: input.seatCategoryId,
+        capacityDelta: input.capacityDelta,
+      });
+      let pool = event.inventoryPools.find(
+        (candidate) =>
+          candidate.performanceId === input.performanceId &&
+          candidate.seatCategoryId === input.seatCategoryId,
+      );
+      if (!pool) {
+        pool = {
+          id: nextId("pool"),
+          performanceId: input.performanceId,
+          seatCategoryId: input.seatCategoryId,
+          admissionMethod: "NUMBERED_ENTRY",
+          seatAllocationMethod: "IMMEDIATE",
+          capacity: 0,
+          heldCount: 0,
+          soldCount: 0,
+        };
+        event.inventoryPools.push(pool);
+      }
+      pool.capacity += input.capacityDelta;
+      await route.fulfill(rpcResponse({ id: pool.id, updatedAt: nowIso() }));
+      return;
+    }
+
+    if (pathname.endsWith("/organizer/event/upsertSaleWindow")) {
+      const event = findEvent(store, input.eventId);
+      if (!event) {
+        await route.fulfill(rpcResponse({}, { status: 404 }));
+        return;
+      }
+      const existing = event.saleWindows.find((saleWindow) => saleWindow.id === input.saleWindowId);
+      const saleWindow: MockSaleWindow = {
+        id: existing?.id ?? nextId("sale-window"),
+        name: input.name,
+        saleMethod: input.method,
+        opensAt: toIso(input.applicationStartsAt),
+        closesAt: toIso(input.applicationEndsAt),
+        publishesAt: input.publishesAt ? toIso(input.publishesAt) : undefined,
+        isSmsAuthRequired: input.isSmsAuthRequired,
+        lotteryMode: input.lotteryMode,
+        notifyLotteryResultAt: input.notifyLotteryResultAt
+          ? toIso(input.notifyLotteryResultAt)
+          : undefined,
+        offers: existing?.offers ?? [],
+      };
+      upsertById(event.saleWindows, saleWindow);
+      await route.fulfill(rpcResponse({ id: saleWindow.id, updatedAt: nowIso() }));
+      return;
+    }
+
+    if (pathname.endsWith("/organizer/event/upsertSaleOffer")) {
+      const event = findEvent(store, input.eventId);
+      const saleWindow = event?.saleWindows.find(
+        (candidate) => candidate.id === input.saleWindowId,
+      );
+      if (!event || !saleWindow) {
+        await route.fulfill(rpcResponse({}, { status: 404 }));
+        return;
+      }
+      const existing = saleWindow.offers.find((offer) => offer.id === input.saleOfferId);
+      const offer: MockOffer = {
+        id: existing?.id ?? nextId("offer"),
+        name: input.name,
+        description: input.description ?? "",
+        maxQuantityPerOrder: input.maxQuantityPerOrder,
+        displayOrder: input.displayOrder ?? 0,
+        rates: (input.rates as Omit<MockOffer["rates"][number], "id">[]).map((rate, index) => ({
+          id: existing?.rates[index]?.id ?? nextId("rate"),
+          ...rate,
+        })),
+        entitlements: (input.entitlements as Omit<MockOffer["entitlements"][number], "id">[]).map(
+          (entitlement, index) => ({
+            id: existing?.entitlements[index]?.id ?? nextId("entitlement"),
+            ...entitlement,
+          }),
+        ),
+      };
+      upsertById(saleWindow.offers, offer);
+      await route.fulfill(rpcResponse({ id: offer.id, updatedAt: nowIso() }));
+      return;
+    }
+
+    if (pathname.endsWith("/organizer/event/cancelSaleWindow")) {
+      const event = findEvent(store, input.eventId);
+      const saleWindow = event?.saleWindows.find(
+        (candidate) => candidate.id === input.saleWindowId,
+      );
+      if (saleWindow) {
+        saleWindow.canceledAt = nowIso();
+        saleWindow.cancelReason = input.cancelReason;
       }
       await route.fulfill(
-        rpcResponse({
-          id: events[0]?.id ?? "event-e2e",
-          updatedAt: "2026-07-20T00:00:00.000Z",
-        }),
+        rpcResponse({ id: saleWindow?.id ?? input.saleWindowId, updatedAt: nowIso() }),
       );
       return;
     }
@@ -279,60 +676,89 @@ async function mockRpc(
   });
 }
 
-function buildCreatedEvent(
-  input: {
-    name?: string;
-    description?: string;
-    publicTicketing?: { saleMethod?: "FIRST_COME" | "LOTTERY" };
-  } = {},
-): OrganizerEvent {
+function readInput(request: Request) {
+  if (request.method() === "GET") {
+    const url = new URL(request.url());
+    const raw = url.searchParams.get("data");
+    const parsed = raw ? (JSON.parse(raw) as { json?: Record<string, unknown> }) : {};
+    return (parsed.json ?? {}) as Record<string, any>;
+  }
+
+  const body = request.postDataJSON() as
+    | { json?: Record<string, unknown> }
+    | Record<string, unknown>;
+  return ("json" in body ? body.json : body) as Record<string, any>;
+}
+
+function findEvent(store: EventStore, eventId: string | undefined) {
+  return store.events.find((event) => event.id === eventId);
+}
+
+function upsertById<T extends { id: string }>(list: T[], item: T) {
+  const index = list.findIndex((candidate) => candidate.id === item.id);
+  if (index >= 0) {
+    list[index] = item;
+  } else {
+    list.push(item);
+  }
+}
+
+function toIso(value: string) {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? new Date().toISOString() : date.toISOString();
+}
+
+function nowIso() {
+  return new Date().toISOString();
+}
+
+function toEventSummary(event: MockEvent) {
+  return { ...toEventDetail(event) };
+}
+
+function toEventDetail(event: MockEvent) {
   return {
-    id: "event-e2e",
-    name: input.name ?? "E2E整理番号公演",
-    description: input.description ?? "整理番号順に入場する先着販売イベントです。",
-    status: "ON_SALE",
-    location: "新宿ライブホール",
-    tags: ["整理番号", "先着", "電子チケット"],
-    performances: [
-      {
-        id: "event-e2e-performance",
-        name: "本公演",
-        venueName: "新宿ライブホール",
-        startsAt: "2026-08-20T18:00:00.000Z",
-        doorsOpenAt: "2026-08-20T17:00:00.000Z",
-        admissionMethod: "NUMBERED_ENTRY",
-      },
-    ],
-    saleWindows: [
-      {
-        id: "event-e2e-sale-window",
-        name: "一般販売",
-        saleMethod: input.publicTicketing?.saleMethod ?? "FIRST_COME",
-        opensAt: "2026-07-20T00:00:00.000Z",
-        closesAt: "2026-08-20T08:00:00.000Z",
-        offers: [
-          {
-            id: "event-e2e-offer",
-            name: "スタンディング",
-            seatCategoryName: "スタンディング",
-            soldQuantity: 0,
-            availableQuantity: 30,
-            minPrice: 5_000,
-            maxQuantityPerOrder: 4,
-          },
-        ],
-      },
-    ],
-    sales: {
-      grossSales: 0,
-      ticketsSold: 0,
-      buyerFeeAmount: 0,
-      organizerFeeAmount: 0,
-    },
-    settlement: {
-      status: "SCHEDULED",
-      scheduledAt: "2026-09-28T01:00:00.000Z",
-    },
+    id: event.id,
+    name: event.name,
+    description: event.description,
+    status: event.saleWindows.some((saleWindow) => !saleWindow.canceledAt) ? "ON_SALE" : "DRAFT",
+    location: event.performances[0]?.venueName ?? "会場未定",
+    tags: ["整理番号", "電子チケット"],
+    seatCategories: event.seatCategories,
+    rateTypes: event.rateTypes,
+    inventoryPools: event.inventoryPools,
+    performances: event.performances,
+    saleWindows: event.saleWindows.map((saleWindow) => ({
+      id: saleWindow.id,
+      name: saleWindow.name,
+      saleMethod: saleWindow.saleMethod,
+      opensAt: saleWindow.opensAt,
+      closesAt: saleWindow.closesAt,
+      publishesAt: saleWindow.publishesAt,
+      isSmsAuthRequired: saleWindow.isSmsAuthRequired,
+      lotteryMode: saleWindow.lotteryMode,
+      notifyLotteryResultAt: saleWindow.notifyLotteryResultAt,
+      canceledAt: saleWindow.canceledAt,
+      cancelReason: saleWindow.cancelReason,
+      offers: saleWindow.offers.map((offer) => ({
+        id: offer.id,
+        name: offer.name,
+        description: offer.description,
+        displayOrder: offer.displayOrder,
+        seatCategoryName:
+          event.seatCategories.find(
+            (seatCategory) => seatCategory.id === offer.entitlements[0]?.seatCategoryId,
+          )?.name ?? "席種未設定",
+        soldQuantity: 0,
+        availableQuantity: 30,
+        minPrice: offer.rates.length > 0 ? Math.min(...offer.rates.map((rate) => rate.price)) : 0,
+        maxQuantityPerOrder: offer.maxQuantityPerOrder,
+        rates: offer.rates,
+        entitlements: offer.entitlements,
+      })),
+    })),
+    sales: { grossSales: 0, ticketsSold: 0, buyerFeeAmount: 0, organizerFeeAmount: 0 },
+    settlement: { status: "SCHEDULED", scheduledAt: "2026-09-28T01:00:00.000Z" },
   };
 }
 

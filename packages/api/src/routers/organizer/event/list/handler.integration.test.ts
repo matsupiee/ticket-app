@@ -1,135 +1,83 @@
-import { describe, expect, it } from "vitest";
+import { db } from "@ticket-app/db";
+import { describe, expect, inject, it } from "vitest";
 
-import { toOrganizerEventSummary } from "./handler";
+import { listOrganizerEventsHandler } from "./handler";
 
-describe("toOrganizerEventSummary", () => {
-  it("販売数と売上は在庫プールではなく支払い済み注文明細から集計する", () => {
-    const event = buildOrganizerEvent({
-      saleWindows: [
-        {
-          id: "sale-window-1",
-          name: "一般販売",
-          publishesAt: new Date("2026-08-01T10:00:00.000Z"),
-          applicationStartsAt: new Date("2026-08-01T10:00:00.000Z"),
-          applicationEndsAt: new Date("2026-08-31T10:00:00.000Z"),
-          canceledAt: null,
-          method: "FIRST_COME",
-          saleOffers: [
-            {
-              id: "offer-paid",
-              name: "購入済みオファー",
-              saleOfferRates: [
-                {
-                  price: 5_000,
-                  displayOrder: 0,
-                  orderItems: [
-                    {
-                      quantity: 2,
-                      unitPrice: 4_500,
-                      orderFeeLines: [
-                        {
-                          payer: "BUYER",
-                          feeAmount: 600,
-                        },
-                        {
-                          payer: "EVENT_ORGANIZER",
-                          feeAmount: 300,
-                        },
-                      ],
-                    },
-                  ],
-                },
-              ],
-              saleOfferEntitlements: [
-                {
-                  inventoryPool: {
-                    capacity: 10,
-                    heldCount: 1,
-                    soldCount: 8,
-                    admissionMethod: "RESERVED_SEAT",
-                    seatCategory: {
-                      name: "S席",
-                    },
-                  },
-                },
-              ],
-            },
-            {
-              id: "offer-empty",
-              name: "未購入オファー",
-              saleOfferRates: [],
-              saleOfferEntitlements: [
-                {
-                  inventoryPool: {
-                    capacity: 10,
-                    heldCount: 1,
-                    soldCount: 8,
-                    admissionMethod: "RESERVED_SEAT",
-                    seatCategory: {
-                      name: "S席",
-                    },
-                  },
-                },
-              ],
-            },
-          ],
-        },
-      ],
+const { serverUrl } = inject("apiIntegration");
+
+describe("organizer event list handler", () => {
+  it("未ログインの場合はUNAUTHORIZEDを返す", async () => {
+    const response = await fetch(`${serverUrl}/rpc/organizer/event/list`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        json: {},
+      }),
     });
 
-    const summary = toOrganizerEventSummary(event);
+    expect(response.status).toBe(401);
+  });
 
-    expect(summary.sales).toEqual({
-      grossSales: 9_000,
-      ticketsSold: 2,
-      buyerFeeAmount: 600,
-      organizerFeeAmount: 300,
+  it("自分が所属する主催者のイベントのみ一覧に含める", async () => {
+    const suffix = crypto.randomUUID();
+    const editor = await db.user.create({
+      data: { name: "主催者ユーザー", email: `editor-${suffix}@example.com` },
     });
-    expect(summary.saleWindows[0]?.offers).toEqual([
-      {
-        id: "offer-paid",
-        name: "購入済みオファー",
-        seatCategoryName: "S席",
-        soldQuantity: 2,
-        availableQuantity: 1,
-        minPrice: 5_000,
+    const company = await db.company.create({ data: { name: `テスト会社 ${suffix}` } });
+    const organizer = await db.organizer.create({
+      data: { name: `テスト主催者 ${suffix}`, slug: `organizer-${suffix}`, companyId: company.id },
+    });
+    await db.organizerMember.create({
+      data: { userId: editor.id, organizerId: organizer.id, role: "EDITOR" },
+    });
+    const event = await db.event.create({
+      data: { organizerId: organizer.id, name: `テストイベント ${suffix}`, description: "" },
+    });
+    const otherCompany = await db.company.create({ data: { name: `別会社 ${suffix}` } });
+    const otherOrganizer = await db.organizer.create({
+      data: {
+        name: `別主催者 ${suffix}`,
+        slug: `other-organizer-${suffix}`,
+        companyId: otherCompany.id,
       },
-      {
-        id: "offer-empty",
-        name: "未購入オファー",
-        seatCategoryName: "S席",
-        soldQuantity: 0,
-        availableQuantity: 1,
-        minPrice: 0,
+    });
+    await db.event.create({
+      data: {
+        organizerId: otherOrganizer.id,
+        name: `別主催者のイベント ${suffix}`,
+        description: "",
       },
-    ]);
+    });
+
+    const result = await listOrganizerEventsHandler({
+      input: { eventOrganizerId: organizer.id },
+      context: { session: { user: { id: editor.id } } },
+    });
+
+    expect(result.items.map((item) => item.id)).toEqual([event.id]);
+    expect(result.summary.eventCount).toBe(1);
+  });
+
+  it("VIEWERロールのユーザーはFORBIDDENになる", async () => {
+    const suffix = crypto.randomUUID();
+    const company = await db.company.create({ data: { name: `テスト会社 ${suffix}` } });
+    const organizer = await db.organizer.create({
+      data: { name: `テスト主催者 ${suffix}`, slug: `organizer-${suffix}`, companyId: company.id },
+    });
+    const viewer = await db.user.create({
+      data: { name: "閲覧者", email: `viewer-${suffix}@example.com` },
+    });
+    await db.organizerMember.create({
+      data: { userId: viewer.id, organizerId: organizer.id, role: "VIEWER" },
+    });
+
+    await expect(
+      listOrganizerEventsHandler({
+        input: { eventOrganizerId: organizer.id },
+        context: { session: { user: { id: viewer.id } } },
+      }),
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 });
-
-function buildOrganizerEvent(
-  overrides: Partial<Parameters<typeof toOrganizerEventSummary>[0]> = {},
-): Parameters<typeof toOrganizerEventSummary>[0] {
-  return {
-    id: "event-1",
-    name: "テストイベント",
-    description: "",
-    performances: [
-      {
-        id: "performance-1",
-        name: "初日",
-        startsAt: new Date("2026-09-01T10:00:00.000Z"),
-        doorsOpenAt: new Date("2026-09-01T09:00:00.000Z"),
-        venue: {
-          name: "テスト会場",
-        },
-        inventoryPools: [
-          {
-            admissionMethod: "RESERVED_SEAT",
-          },
-        ],
-      },
-    ],
-    saleWindows: [],
-    ...overrides,
-  };
-}

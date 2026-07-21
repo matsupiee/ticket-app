@@ -19,6 +19,9 @@ const mutationOutputSchema = z.object({
   updatedAt: z.string().min(1),
 });
 
+export type AdjustInventoryInput = z.infer<typeof adjustInventoryInputSchema>;
+export type AdjustInventoryOutput = z.infer<typeof mutationOutputSchema>;
+
 export const adjustInventoryRoute = protectedProcedure
   .route({
     method: "POST",

@@ -16,6 +16,9 @@ const mutationOutputSchema = z.object({
   updatedAt: z.string().min(1),
 });
 
+export type UpsertRateTypeInput = z.infer<typeof upsertRateTypeInputSchema>;
+export type UpsertRateTypeOutput = z.infer<typeof mutationOutputSchema>;
+
 export const upsertRateTypeRoute = protectedProcedure
   .route({
     method: "PUT",

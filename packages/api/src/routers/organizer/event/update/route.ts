@@ -32,6 +32,9 @@ const mutationOutputSchema = z.object({
   updatedAt: z.string().min(1),
 });
 
+export type UpdateEventInput = z.infer<typeof updateEventInputSchema>;
+export type UpdateEventOutput = z.infer<typeof mutationOutputSchema>;
+
 export const updateEventRoute = protectedProcedure
   .route({
     method: "PATCH",

@@ -36,6 +36,9 @@ const mutationOutputSchema = z.object({
   updatedAt: z.string().min(1),
 });
 
+export type UpsertSaleOfferInput = z.infer<typeof upsertSaleOfferInputSchema>;
+export type UpsertSaleOfferOutput = z.infer<typeof mutationOutputSchema>;
+
 export const upsertSaleOfferRoute = protectedProcedure
   .route({
     method: "PUT",
