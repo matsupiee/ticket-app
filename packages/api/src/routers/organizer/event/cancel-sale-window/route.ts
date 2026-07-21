@@ -15,6 +15,9 @@ const mutationOutputSchema = z.object({
   updatedAt: z.string().min(1),
 });
 
+export type CancelSaleWindowInput = z.infer<typeof cancelSaleWindowInputSchema>;
+export type CancelSaleWindowOutput = z.infer<typeof mutationOutputSchema>;
+
 export const cancelSaleWindowRoute = protectedProcedure
   .route({
     method: "POST",
