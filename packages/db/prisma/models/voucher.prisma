@@ -1,0 +1,31 @@
+// ============================================================
+// 副券
+// ============================================================
+
+model VoucherTemplate {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  eventId String
+
+  name        String
+  description String
+
+  event             Event              @relation(fields: [eventId], references: [id])
+  saleOfferVouchers SaleOfferVoucher[]
+}
+
+model SaleOfferVoucher {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  saleOfferId       String
+  voucherTemplateId String
+
+  saleOffer       SaleOffer       @relation(fields: [saleOfferId], references: [id])
+  voucherTemplate VoucherTemplate @relation(fields: [voucherTemplateId], references: [id])
+
+  @@unique([saleOfferId, voucherTemplateId])
+}

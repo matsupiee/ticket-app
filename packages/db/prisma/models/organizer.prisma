@@ -1,0 +1,147 @@
+// イベント主催者の情報を管理するテーブル
+// 1イベント主催者に複数ユーザーが所属できる
+// better-auth の organization テーブルを参考にしている
+// @see https://www.better-auth.com/docs/plugins/organization#organization
+model Organizer {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  name String @unique // 主催者表示名（法人・団体名）
+
+  // どの会社に属しているか？
+  companyId String
+
+  // ユーザーに表示する問い合わせ先情報
+  inquiryEmail       String?
+  inquiryPhoneNumber String?
+
+  organizerMembers     OrganizerMember[]
+  organizerInvitations OrganizerInvitation[]
+
+  events  Event[]
+  company Company @relation(fields: [companyId], references: [id])
+}
+
+enum OrganizerMemberRole {
+  VIEWER // 閲覧だけ
+  EDITOR // 編集可能
+}
+
+// ユーザーがどのイベント主催者に所属しているかを管理するテーブル
+// better-auth の invitation テーブルを参考にしている
+// @see https://www.better-auth.com/docs/plugins/organization#member
+model OrganizerMember {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  userId      String
+  organizerId String
+  role        OrganizerMemberRole
+
+  user      User      @relation(fields: [userId], references: [id])
+  organizer Organizer @relation(fields: [organizerId], references: [id])
+
+  @@unique([userId, organizerId])
+}
+
+// 他のユーザーをイベント主催者として招待する
+// better-auth の invitation テーブルを参考にしている
+// @see https://www.better-auth.com/docs/plugins/organization#invitation
+model OrganizerInvitation {
+  // #region better-authで必要なカラム
+
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  email       String // このメールアドレスに招待リンクが送られる
+  inviterId   String // 招待を行ったユーザーのID
+  organizerId String
+  role        OrganizerMemberRole
+  status      String
+  expiresAt   DateTime
+
+  // #endregion
+
+  organizer     Organizer @relation(fields: [organizerId], references: [id])
+  invitedByUser User      @relation(fields: [inviterId], references: [id])
+}
+
+// イベント主催者：会社 = 多:1
+// 会社情報を管理するテーブル
+// 1つの会社が複数のイベント主催者を持つことがあり、その場合1つの会社に対して売上をまとめて振り込むことになる
+model Company {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  name String @unique
+
+  organizers         Organizer[]
+  companyBankAccount CompanyBankAccount?
+  companySettlement  CompanySettlement[]
+}
+
+// 会社:銀行口座 = 1:1
+// 銀行口座情報を変更する場合は、このテーブルのデータを更新する
+// 振り込みが行われた場合、振り込んだ瞬間のデータをログとして別テーブルに保存する
+model CompanyBankAccount {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  companyId String @unique
+
+  accountType   BankAccountType
+  accountNumber String          @db.Char(7)
+  bankName      String
+  bankCode      String          @db.Char(4)
+  branchName    String
+  branchCode    String          @db.Char(3)
+  holderName    String
+
+  company Company @relation(fields: [companyId], references: [id])
+}
+
+enum BankAccountType {
+  ORDINARY // 普通
+  CURRENT // 当座
+  SAVINGS // 貯蓄
+  OTHER // その他
+}
+
+// 精算の履歴を管理するテーブル
+model CompanySettlement {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  companyId String
+
+  // 対象期間
+  periodStart DateTime
+  periodEnd   DateTime
+
+  transferredAt DateTime? // 実際に振込実行した日時
+
+  // 金額情報
+  totalSalesAmount  Int // 売上合計
+  feeAmount         Int // 手数料
+  transferFeeAmount Int // 振込手数料
+  netAmount         Int // 実際の振込額
+
+  // 振込時点の口座情報をスナップショットとして記録する
+  accountType   BankAccountType
+  accountNumber String          @db.Char(7)
+  bankName      String
+  bankCode      String          @db.Char(4)
+  branchName    String
+  branchCode    String          @db.Char(3)
+  holderName    String
+
+  company Company @relation(fields: [companyId], references: [id])
+
+  @@index([companyId, periodStart, periodEnd])
+}

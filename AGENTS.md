@@ -47,6 +47,7 @@ bun run dev # apiサーバー、web、web-admin-organizer、web-admin-platform �
 ### 5. Document
 
 振る舞い・仕様・アーキテクチャに影響する変更は、同じPR内で関連ドキュメントを更新する。
+特に DB スキーマなどが変わった場合は、 packages/db/src/seed 配下のファイルをチェックしデータ生成方法にスキーマ変更への追従漏れがないかを確認して修正する。
 
 ### 6. Improve
 

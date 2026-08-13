@@ -29,6 +29,12 @@
           }
         ]
       }
+    },
+    {
+      "files": ["packages/db/src/seed/**/*.ts"],
+      "rules": {
+        "unicorn/no-empty-file": "off"
+      }
     }
   ],
   "env": {

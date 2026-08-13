@@ -10,7 +10,7 @@
     }
   },
   "scripts": {
-    "db:push": "bun --env-file=../../apps/server/.env prisma db push",
+    "db:push": "bun --env-file=../../apps/server/.env prisma db push --force-reset",
     "db:generate": "bun prisma generate",
     "db:seed": "bun --env-file=../../apps/server/.env src/seed/run.ts",
     "db:studio": "bun --env-file=../../apps/server/.env prisma studio",

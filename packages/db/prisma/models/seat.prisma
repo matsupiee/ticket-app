@@ -1,0 +1,82 @@
+// ============================================================
+// 座席のレイアウト
+//
+// 座席の最上位概念
+//
+// 1つの会場でも、公演ごとに座席レイアウトは変わる
+// 1つの会場に対して、複数のレイアウトを登録できるようにする必要がある
+// ============================================================
+
+model SeatLayout {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  venueId String
+
+  name String
+
+  venue Venue @relation(fields: [venueId], references: [id])
+
+  stages    Stage[]
+  seatZones SeatZone[]
+  seats     Seat[]
+
+  @@unique([venueId, name])
+}
+
+// 以下のような階層構造を表現できるように Tree 形式のテーブルを作る
+// AREA: スタンド
+//   └ AREA: 1塁側
+//       └ LEVEL: 200レベル（水平方向の分類）
+//           └ SECTION: 24通路
+//               └ BLOCK: Aブロック
+//                   └ Seat: 18列120番
+
+model SeatZone {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  seatLayoutId String
+  parentId     String? // 親の SeatZone がない場合は null になる
+
+  kind  String // area, side, gate, level, block など
+  name  String // スタンド, 1塁側, 24通路, 200レベル, Aブロック
+  order Int    @default(0)
+
+  seatLayout SeatLayout @relation(fields: [seatLayoutId], references: [id])
+  parent     SeatZone?  @relation("SeatZoneTree", fields: [parentId], references: [id])
+  children   SeatZone[] @relation("SeatZoneTree")
+
+  seats Seat[]
+}
+
+// ============================================================
+// 席種
+//
+// ticketmaster では section -> row -> seat を座席表記の最小単位として保持している
+// @see https://developer.ticketmaster.com/products-and-docs/apis/partner/availability/?utm_source=chatgpt.com
+// ============================================================
+
+model Seat {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  seatLayoutId String
+  seatZoneId   String?
+
+  rowLabel  String // 18列, C列 など
+  seatLabel String // 120番, 8番 など
+
+  seatLayout SeatLayout @relation(fields: [seatLayoutId], references: [id])
+  seatZone   SeatZone?  @relation(fields: [seatZoneId], references: [id])
+
+  // 公演ごとに在庫枠が作られるため、1 seat に対して公演数分の inventorySlot が紐づく。
+  // 同じ公演 x 席種の中で同じ座席の枠が二重に作られないことは、
+  // InventorySlot の @@unique([inventoryPoolId, seatId]) が保証する。
+  inventorySlots InventorySlot[]
+
+  @@unique([seatLayoutId, rowLabel, seatLabel])
+}

@@ -30,3 +30,7 @@ bun run db:seed
 seed イベントに注文・チケットなどの取引データを追加している場合、外部キー制約で削除が止まることがある。
 
 新しいパターンを追加するときは `seedScenarioPatterns` に1件足し、`packages/db/src/seed/scenarios.unit.test.ts` で期待する組み合わせ数や通し券などの重要条件を確認する。
+
+## `seed/senarios` 配下のシナリオ別ファイル
+
+`packages/db/src/seed/senarios/<受付方式>/<抽選方式>/` には、パターンの組み合わせ（公演数・席種数・受付回数・料金種別数など）ごとに1ファイルを対応させる形式で seed スクリプトを置く。

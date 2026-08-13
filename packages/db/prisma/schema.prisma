@@ -1,352 +1,13 @@
 generator client {
-  provider = "prisma-client"
-  runtime  = "nodejs"
-  output   = "../src/generated/prisma"
+  provider        = "prisma-client"
+  runtime         = "nodejs"
+  output          = "../src/generated/prisma"
+  // partialIndexes: @@unique の where 句（部分インデックス）。
+  previewFeatures = ["partialIndexes"]
 }
 
 datasource db {
   provider = "postgresql"
-}
-
-// ============================================================
-// Enum
-// ============================================================
-
-enum SaleMethod {
-  FIRST_COME
-  LOTTERY
-}
-
-enum AdmissionMethod {
-  GENERAL_ADMISSION
-  NUMBERED_ENTRY
-  RESERVED_SEAT
-}
-
-enum SeatAllocationMethod {
-  NONE
-  LOTTERY_LATER
-  IMMEDIATE
-}
-
-enum InventoryUnitStatus {
-  AVAILABLE
-  HELD
-  SOLD
-  DISABLED
-}
-
-enum ApplicationStatus {
-  APPLIED
-  DECIDED
-  CANCELED
-  EXPIRED
-}
-
-enum LotteryMode {
-  MANUAL
-  AUTO
-}
-
-enum LotteryResult {
-  PENDING // 当落を出してない
-  WON // 当選
-  LOST // 落選
-}
-
-enum OrderStatus {
-  PENDING
-  PAID
-  CANCELED
-  EXPIRED
-  REFUNDED
-}
-
-enum PaymentStatus {
-  PENDING
-  SUCCEEDED
-  FAILED
-  CANCELED
-  REFUNDED
-}
-
-enum RefundStatus {
-  PENDING
-  SUCCEEDED
-  FAILED
-}
-
-enum TicketStatus {
-  ACTIVE
-  USED
-  CANCELED
-  REFUNDED
-  VOIDED
-}
-
-enum InventoryHoldStatus {
-  ACTIVE
-  CONSUMED
-  RELEASED
-  EXPIRED
-}
-
-enum FeePayer {
-  // 購入者が負担する
-  // 購入者の支払総額に加算される
-  // チケット購入画面上に表示される
-  BUYER
-  // イベント主催者が負担する
-  // 購入者の支払総額には影響しない。主催者の精算額から差し引く
-  // チケット購入画面には表示されない
-  EVENT_ORGANIZER
-}
-
-// ============================================================
-// 認証
-// ============================================================
-
-model User {
-  id        String   @id @default(uuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  name          String
-  email         String  @unique
-  emailVerified Boolean @default(false) @map("email_verified")
-  image         String?
-
-  sessions             Session[]
-  accounts             Account[]
-  inventoryHolds       InventoryHold[]
-  orders               Order[]
-  tickets              Ticket[]
-  organizerMembers     OrganizerMember[]
-  organizerInvitations OrganizerInvitation[]
-  applications         Application[]
-
-  @@map("user")
-}
-
-model Session {
-  id        String   @id @default(uuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  expiresAt DateTime @map("expires_at")
-  token     String   @unique
-  ipAddress String?  @map("ip_address")
-  userAgent String?  @map("user_agent")
-  userId    String   @map("user_id")
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId], map: "session_userId_idx")
-  @@map("session")
-}
-
-model Account {
-  id        String   @id @default(uuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  accountId             String    @map("account_id")
-  providerId            String    @map("provider_id")
-  userId                String    @map("user_id")
-  accessToken           String?   @map("access_token")
-  refreshToken          String?   @map("refresh_token")
-  idToken               String?   @map("id_token")
-  accessTokenExpiresAt  DateTime? @map("access_token_expires_at")
-  refreshTokenExpiresAt DateTime? @map("refresh_token_expires_at")
-  scope                 String?
-  password              String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId], map: "account_userId_idx")
-  @@map("account")
-}
-
-model Verification {
-  id        String   @id @default(uuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  identifier String
-  value      String
-  expiresAt  DateTime @map("expires_at")
-
-  @@index([identifier], map: "verification_identifier_idx")
-  @@map("verification")
-}
-
-// イベント主催者の情報を管理するテーブル
-// 1イベント主催者に複数ユーザーが所属できる
-// better-auth の organization テーブルを参考にしている
-// @see https://www.better-auth.com/docs/plugins/organization#organization
-model Organizer {
-  id        String   @id @default(cuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-
-  name String @unique // 主催者表示名（法人・団体名）
-  slug String @unique // 主催者識別子（スラッグ）
-
-  // どの会社に属しているか？
-  companyId String
-
-  // ユーザーに表示する問い合わせ先情報
-  inquiryEmail       String?
-  inquiryPhoneNumber String?
-
-  organizerMembers OrganizerMember[]
-
-  organizerInvitations OrganizerInvitation[]
-
-  organizerFeatures OrganizerFeature[]
-
-  events Event[]
-
-  company Company @relation(fields: [companyId], references: [id])
-}
-
-enum OrganizerMemberRole {
-  VIEWER
-  EDITOR
-}
-
-// ユーザーがどのイベント主催者に所属しているかを管理するテーブル
-// better-auth の invitation テーブルを参考にしている
-// @see https://www.better-auth.com/docs/plugins/organization#member
-model OrganizerMember {
-  id        String   @id @default(cuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-
-  userId      String
-  organizerId String
-  role        OrganizerMemberRole
-
-  user      User      @relation(fields: [userId], references: [id])
-  organizer Organizer @relation(fields: [organizerId], references: [id])
-
-  @@unique([userId, organizerId])
-}
-
-// 他のユーザーをイベント主催者として招待する
-// better-auth の invitation テーブルを参考にしている
-// @see https://www.better-auth.com/docs/plugins/organization#invitation
-model OrganizerInvitation {
-  // #region better-authで必要なカラム
-
-  id        String   @id @default(cuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-
-  email       String // このメールアドレスに招待リンクが送られる
-  inviterId   String // 招待を行ったユーザーのID
-  organizerId String
-  role        OrganizerMemberRole
-  status      String
-  expiresAt   DateTime?
-
-  // #endregion
-
-  organizer     Organizer @relation(fields: [organizerId], references: [id])
-  invitedByUser User      @relation(fields: [inviterId], references: [id])
-}
-
-// イベント主催者：会社 = 多:1
-// 会社情報を管理するテーブル
-// 1つの会社が複数のイベント主催者を持つことがあり、その場合1つの会社に対して売上をまとめて振り込むことになる
-model Company {
-  id        String   @id @default(cuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-
-  name String @unique
-
-  organizers         Organizer[]
-  companyBankAccount CompanyBankAccount?
-  companySettlement  CompanySettlement[]
-}
-
-// 会社:銀行口座 = 1:1
-// 銀行口座情報を変更する場合は、このテーブルのデータを更新する
-// 振り込みが行われた場合、振り込んだ瞬間のデータをログとして別テーブルに保存する
-model CompanyBankAccount {
-  id        String   @id @default(cuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-
-  companyId String @unique
-
-  accountType   BankAccountType
-  accountNumber String          @db.Char(7)
-  bankName      String
-  bankCode      String          @db.Char(4)
-  branchName    String
-  branchCode    String          @db.Char(3)
-  holderName    String
-
-  company Company @relation(fields: [companyId], references: [id])
-}
-
-enum BankAccountType {
-  ORDINARY // 普通
-  CURRENT // 当座
-  SAVINGS // 貯蓄
-  OTHER // その他
-}
-
-// 精算の履歴を管理するテーブル
-model CompanySettlement {
-  id        String   @id @default(cuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  companyId String
-
-  // 対象期間
-  periodStart DateTime
-  periodEnd   DateTime
-
-  transferredAt DateTime? // 実際に振込実行した日時
-
-  // 金額情報
-  totalSalesAmount  Int // 売上合計
-  feeAmount         Int // 手数料
-  transferFeeAmount Int // 振込手数料
-  netAmount         Int // 実際の振込額
-
-  // 振込時点の口座情報をスナップショットとして記録する
-  accountType   BankAccountType
-  accountNumber String          @db.Char(7)
-  bankName      String
-  bankCode      String          @db.Char(4)
-  branchName    String
-  branchCode    String          @db.Char(3)
-  holderName    String
-
-  company Company @relation(fields: [companyId], references: [id])
-
-  @@index([companyId, periodStart, periodEnd])
-}
-
-// 主催者ごとに使える機能を制御する
-model OrganizerFeature {
-  id        String   @id @default(cuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-
-  organizerId String
-
-  // 機能が割と頻繁に増えるという想定でstring型にしている
-  // 増える頻度が低い(3ヶ月に1回くらい)ならenumでいいかもしれない
-  key       String
-  isEnabled Boolean @default(false)
-
-  organizer Organizer @relation(fields: [organizerId], references: [id])
 }
 
 // ============================================================
@@ -365,22 +26,28 @@ model Event {
 
   organizer Organizer @relation(fields: [organizerId], references: [id])
 
-  performances     Performance[]
+  stages           Stage[]
   saleWindows      SaleWindow[]
-  seatCategories   SeatCategory[]
+  seatCategories   TicketCategory[]
   rateTypes        RateType[]
   voucherTemplates VoucherTemplate[]
   feeRules         FeeRule[]
 }
 
-model Performance {
+model Stage {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  eventId      String
-  venueId      String
-  seatLayoutId String? // 整理番号方式の場合はnull、指定席の場合でも未設定段階ではnull
+  eventId String
+  venueId String
+
+  // 指定席がある公演の場合は座席レイアウトを紐づける
+  // 指定席がない場合はnull
+  // 公演によっては、一部は自由席で一部は指定席というパターンもあるので注意
+  //　また、指定席の場合でも未設定段階ではnull
+  // 複数公演で同じ座席レイアウトを使うことがあるので、Stage:SeatLayout=N:1
+  seatLayoutId String?
 
   name        String
   doorsOpenAt DateTime // 開場時間
@@ -391,11 +58,8 @@ model Performance {
   seatLayout SeatLayout? @relation(fields: [seatLayoutId], references: [id])
 
   inventoryPools     InventoryPool[]
-  offerEntitlements  SaleOfferEntitlement[]
   ticketEntitlements TicketEntitlement[]
-  inventoryUnits     InventoryUnit[]
-  inventoryHoldItems InventoryHoldItem[]
-  performanceArtists PerformanceArtist[]
+  stageArtists       StageArtist[]
 }
 
 model Artist {
@@ -403,21 +67,21 @@ model Artist {
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  name               String
-  imageUrl           String?
-  performanceArtists PerformanceArtist[]
+  name         String
+  imageUrl     String?
+  stageArtists StageArtist[]
 }
 
-model PerformanceArtist {
+model StageArtist {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  performanceId String
-  artistId      String
+  stageId  String
+  artistId String
 
-  performance Performance @relation(fields: [performanceId], references: [id])
-  artist      Artist      @relation(fields: [artistId], references: [id])
+  stage  Stage  @relation(fields: [stageId], references: [id])
+  artist Artist @relation(fields: [artistId], references: [id])
 }
 
 model Venue {
@@ -427,112 +91,40 @@ model Venue {
 
   name String
 
-  seatLayouts  SeatLayout[]
-  performances Performance[]
+  seatLayouts SeatLayout[]
+  stages      Stage[]
 }
 
 // ============================================================
-// 座席のレイアウト
-//
-// 1つの会場でも、公演ごとに座席レイアウトは変わる
-// 1つの会場に対して、複数のレイアウトを登録できるようにする必要がある
-// ============================================================
-
-model SeatLayout {
-  id        String   @id @default(uuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-
-  venueId String
-  name    String
-
-  venue Venue @relation(fields: [venueId], references: [id])
-
-  performances Performance[]
-  seatZones    SeatZone[]
-  seats        Seat[]
-
-  @@unique([venueId, name])
-}
-
-// 以下のような階層構造を表現できるように Tree 形式のテーブルを作る
-// AREA: スタンド
-//   └ AREA: 1塁側
-//       └ LEVEL: 200レベル（水平方向の分類）
-//           └ SECTION: 24通路
-//               └ BLOCK: Aブロック
-//                   └ Seat: 18列120番
-
-model SeatZone {
-  id        String   @id @default(uuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-
-  seatLayoutId String
-  parentId     String? // 親の SeatZone がない場合は null になる
-
-  kind  String // area, side, gate, level, block など
-  name  String // スタンド, 1塁側, 24通路, 200レベル, Aブロック
-  order Int    @default(0)
-
-  seatLayout SeatLayout @relation(fields: [seatLayoutId], references: [id])
-  parent     SeatZone?  @relation("SeatZoneTree", fields: [parentId], references: [id])
-  children   SeatZone[] @relation("SeatZoneTree")
-
-  seats Seat[]
-}
-
-// ============================================================
-// 席種
-//
-// ticketmaster では section -> row -> seat を座席表記の最小単位として保持している
-// @see https://developer.ticketmaster.com/products-and-docs/apis/partner/availability/?utm_source=chatgpt.com
-// ============================================================
-
-model Seat {
-  id        String   @id @default(uuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-
-  seatLayoutId String
-  seatZoneId   String?
-
-  rowLabel  String? // 18列, C列 など
-  seatLabel String // 120番, 8番 など
-
-  seatLayout SeatLayout @relation(fields: [seatLayoutId], references: [id])
-  seatZone   SeatZone?  @relation(fields: [seatZoneId], references: [id])
-
-  inventoryUnits InventoryUnit[]
-
-  @@unique([seatLayoutId, rowLabel, seatLabel])
-}
-
-// ============================================================
-// 席種
+// チケット種別
 //
 // ツアーや複数公演で同じ席種を共有するため、席種はEvent配下に置く。
 //
 // 例: S席, A席, VIP席, 一般席 などなど
 // ============================================================
 
-model SeatCategory {
+model TicketCategory {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
   eventId String
 
+  kind         TicketCategoryKind
   name         String
   description  String // 何もない場合は空文字
-  active       Boolean @default(true)
-  displayOrder Int     @default(0)
+  displayOrder Int                @default(0)
 
   event Event @relation(fields: [eventId], references: [id])
 
   inventoryPools InventoryPool[]
 
   @@unique([eventId, name])
+}
+
+enum TicketCategoryKind {
+  ENTRY_NUMBER // 整理番号
+  RESERVED_SEAT // 指定席
 }
 
 // ============================================================
@@ -543,8 +135,8 @@ model SeatCategory {
 // このテーブルでは持たずに SaleOfferRate に保持する。
 //
 // ※ なぜ `rate` という命名にするのか？
+// `rate`は「条件や区分に応じて適用される料金」というニュアンスを持つため
 // `price`は具体的な金額の違いを表す。例: S席=10000円 A席=5000円 の違い
-// `rate`は条件や区分に応じて適用される料金というニュアンスになる
 // ============================================================
 
 model RateType {
@@ -565,24 +157,6 @@ model RateType {
 }
 
 // ============================================================
-// 副券
-// ============================================================
-
-model VoucherTemplate {
-  id        String   @id @default(uuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-
-  eventId String
-
-  name        String
-  description String
-
-  event             Event              @relation(fields: [eventId], references: [id])
-  saleOfferVouchers SaleOfferVoucher[]
-}
-
-// ============================================================
 // 販売受付
 //
 // 例1: 単独公演(SaleOfferEntitlementが1つだけ)
@@ -591,30 +165,30 @@ model VoucherTemplate {
 // │  ├─ 大人・子供 100円（SaleOfferRate）
 // │  └─ 公演1・S席在庫への利用権（SaleOfferEntitlement）
 // │     └─ 公演1 S席在庫（InventoryPool）
-// │        ├─ S席 座席1（InventoryUnit）
-// │        ├─ S席 座席2（InventoryUnit）
+// │        ├─ S席 座席1（InventorySlot）
+// │        ├─ S席 座席2（InventorySlot）
 // │        └─ ...
 // └─ A席（SaleOffer）
 //    ├─ 大人・子供 30円（SaleOfferRate）
 //    └─ 公演1・A席在庫への利用権（SaleOfferEntitlement）
 //       └─ 公演1 A席在庫（InventoryPool）
-//          ├─ A席 座席1（InventoryUnit）
-//          ├─ A席 座席2（InventoryUnit）
+//          ├─ A席 座席1（InventorySlot）
+//          ├─ A席 座席2（InventorySlot）
 //          └─ ...
 // 先行販売（SaleWindow）
 // ├─ S席（SaleOffer）
 // │  ├─ 大人・子供 100円（SaleOfferRate）
 // │  └─ 公演1・S席在庫への利用権（SaleOfferEntitlement）
 // │     └─ 公演1 S席在庫（InventoryPool）
-// │        ├─ S席 座席1（InventoryUnit）
-// │        ├─ S席 座席2（InventoryUnit）
+// │        ├─ S席 座席1（InventorySlot）
+// │        ├─ S席 座席2（InventorySlot）
 // │        └─ ...
 // └─ A席（SaleOffer）
 //    ├─ 大人・子供 30円（SaleOfferRate）
 //    └─ 公演1・A席在庫への利用権（SaleOfferEntitlement）
 //       └─ 公演1 A席在庫（InventoryPool）
-//          ├─ A席 座席1（InventoryUnit）
-//          ├─ A席 座席2（InventoryUnit）
+//          ├─ A席 座席1（InventorySlot）
+//          ├─ A席 座席2（InventorySlot）
 //          └─ ...
 //
 // 例2: 単独公演 + 料金種別あり
@@ -625,8 +199,8 @@ model VoucherTemplate {
 // │  ├─ 子供 30円（SaleOfferRate）
 // │  └─ 公演1・S席在庫への利用権（SaleOfferEntitlement）
 // │     └─ 公演1 S席在庫（InventoryPool）
-// │        ├─ S席 座席1（InventoryUnit）
-// │        ├─ S席 座席2（InventoryUnit）
+// │        ├─ S席 座席1（InventorySlot）
+// │        ├─ S席 座席2（InventorySlot）
 // │        └─ ...
 // │
 // └─ A席（SaleOffer）
@@ -635,8 +209,8 @@ model VoucherTemplate {
 //    ├─ 子供 20円（SaleOfferRate）
 //    └─ 公演1・A席在庫への利用権（SaleOfferEntitlement）
 //       └─ 公演1 A席在庫（InventoryPool）
-//          ├─ A席 座席1（InventoryUnit）
-//          ├─ A席 座席2（InventoryUnit）
+//          ├─ A席 座席1（InventorySlot）
+//          ├─ A席 座席2（InventorySlot）
 //          └─ ...
 //
 // 例3: 通し券
@@ -645,26 +219,26 @@ model VoucherTemplate {
 // │  ├─ 大人・子供 180円（SaleOfferRate）
 // │  ├─ 公演1・S席在庫への利用権（SaleOfferEntitlement）
 // │  │  └─ 公演1 S席在庫（InventoryPool）
-// │  │     ├─ 公演1 S席 座席1（InventoryUnit）
-// │  │     ├─ 公演1 S席 座席2（InventoryUnit）
+// │  │     ├─ 公演1 S席 座席1（InventorySlot）
+// │  │     ├─ 公演1 S席 座席2（InventorySlot）
 // │  │     └─ ...
 // │  └─ 公演2・S席在庫への利用権（SaleOfferEntitlement）
 // │     └─ 公演2 S席在庫（InventoryPool）
-// │        ├─ 公演2 S席 座席1（InventoryUnit）
-// │        ├─ 公演2 S席 座席2（InventoryUnit）
+// │        ├─ 公演2 S席 座席1（InventorySlot）
+// │        ├─ 公演2 S席 座席2（InventorySlot）
 // │        └─ ...
 // │
 // └─ 2日通し券 A席（SaleOffer）
 //    ├─ 大人・子供 90円（SaleOfferRate）
 //    ├─ 公演1・A席在庫への利用権（SaleOfferEntitlement）
 //    │  └─ 公演1 A席在庫（InventoryPool）
-//    │     ├─ 公演1 A席 座席1（InventoryUnit）
-//    │     ├─ 公演1 A席 座席2（InventoryUnit）
+//    │     ├─ 公演1 A席 座席1（InventorySlot）
+//    │     ├─ 公演1 A席 座席2（InventorySlot）
 //    │     └─ ...
 //    └─ 公演2・A席在庫への利用権（SaleOfferEntitlement）
 //       └─ 公演2 A席在庫（InventoryPool）
-//          ├─ 公演2 A席 座席1（InventoryUnit）
-//          ├─ 公演2 A席 座席2（InventoryUnit）
+//          ├─ 公演2 A席 座席1（InventorySlot）
+//          ├─ 公演2 A席 座席2（InventorySlot）
 //          └─ ...
 // ============================================================
 
@@ -686,17 +260,23 @@ model SaleWindow {
 
   isSmsAuthRequired Boolean // 電話番号認証が必要かどうか？
 
-  method SaleMethod // 販売方式
+  saleMethod SaleMethod // 販売方式
 
   // 販売方式が抽選の場合は、以下のカラムに値が入る
-  lotteryMode           LotteryMode // 抽選方式
-  notifyLotteryResultAt DateTime? // 抽選結果をユーザーに伝える日時
+  autoLotteryStartsAt     DateTime? // 自動抽選を開始する日時（手動抽選の場合は不要）
+  notifiesLotteryResultAt DateTime? // 抽選結果をユーザーに伝える日時
+  maxLotteryItemCount     Int? // 第何希望まで申し込めるか？
 
   event Event @relation(fields: [eventId], references: [id])
 
-  saleOffers   SaleOffer[]
-  applications Application[]
-  feeRules     FeeRule[]
+  saleOffers          SaleOffer[]
+  lotteryApplications LotteryApplication[]
+  feeRules            FeeRule[]
+}
+
+enum SaleMethod {
+  FIRST_COME // 先着
+  LOTTERY // 抽選
 }
 
 // ============================================================
@@ -728,25 +308,23 @@ model SaleOffer {
 
   saleWindowId String
 
+  // 基本的に TicketCategory.name がコピーされる
+  // 通し券などの場合は上書きされる
   name        String
   description String // 何もない場合は空文字
 
-  maxQuantityPerOrder Int
+  maxQuantityPerOrder Int @default(4)
+  // 「この商品は2枚単位でしか買えない」というような制約をつけたい場合に使う
+  quantityStep        Int @default(1)
   displayOrder        Int @default(0)
 
   saleWindow SaleWindow @relation(fields: [saleWindowId], references: [id])
 
-  saleOfferRates             SaleOfferRate[] // 料金種別がある場合は2つ以上、ない場合は1つだけ紐づく
-  saleOfferEntitlements      SaleOfferEntitlement[] // 通し券の場合は2つ以上、その他は1つだけ紐づく
-  applicationPreferenceItems ApplicationPreferenceItem[]
-  applicationPreferences     ApplicationPreference[]
-  saleOfferVouchers          SaleOfferVoucher[]
-  feeRules                   FeeRule[]
+  saleOfferRates        SaleOfferRate[] // 料金種別がある場合は2つ以上、ない場合は1つだけ紐づく
+  saleOfferEntitlements SaleOfferEntitlement[] // 通し券の場合は2つ以上、その他は1つだけ紐づく
+  saleOfferVouchers     SaleOfferVoucher[]
+  feeRules              FeeRule[]
 }
-
-// ============================================================
-// 券種
-// ============================================================
 
 model SaleOfferRate {
   id        String   @id @default(uuid())
@@ -756,22 +334,13 @@ model SaleOfferRate {
   saleOfferId String
   rateTypeId  String
 
-  price    Int
-  currency String @default("JPY")
-
-  minQuantity Int @default(1)
-  maxQuantity Int @default(4)
-
-  // 「この商品は2枚単位でしか買えない」というような制約をつけたい場合に使う
-  quantityStep Int @default(1)
-
-  displayOrder Int @default(0)
+  price Int
 
   saleOffer SaleOffer @relation(fields: [saleOfferId], references: [id])
   rateType  RateType  @relation(fields: [rateTypeId], references: [id])
 
-  applicationPreferenceItems ApplicationPreferenceItem[]
-  orderItems                 OrderItem[]
+  lotteryApplicationItems LotteryApplicationItem[]
+  orderItems              OrderItem[]
 
   @@unique([saleOfferId, rateTypeId])
 }
@@ -785,7 +354,8 @@ model FeeRule {
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  // eventId は所属 Event を表す。saleWindowId / saleOfferId が NULL の場合は
+  // eventId は所属 Event を表す
+  // saleWindowId / saleOfferId が NULL の場合は
   // Event 全体の手数料として扱い、saleWindowId がある場合は販売受付単位、
   // saleOfferId がある場合は販売商品単位の手数料として扱う。
   // ただし、「saleWindowId と saleOfferId が両方設定される」「saleOfferId が別イベントに属している」
@@ -794,16 +364,9 @@ model FeeRule {
   saleWindowId String?
   saleOfferId  String?
 
-  name         String
-  displayOrder Int    @default(0)
-
-  // ミスが発覚して無効化した場合、その日時を記録する
-  disabledAt DateTime
-
-  payer FeePayer
-
-  currency String @default("JPY")
-
+  displayOrder    Int      @default(0)
+  name            String
+  payer           FeePayer
   // 例1: 5% → rateBasisPoints=500, flatAmount=0
   // 例2: 300円 → rateBasisPoints=0, flatAmount=300
   // 例3: 3% + 100円  → rateBasisPoints=300, flatAmount=100
@@ -813,15 +376,27 @@ model FeeRule {
   // 最初は切り下げで固定する
   // roundingMode    FeeRoundingMode // 切り上げ / 切り下げ / 四捨五入
 
-  // 以下のような設定をすることも考えられるが必要性が低いので、一旦1チケットごとの扱いにする
+  // 以下のような設定をすることも考えられるが最初は必要性が低い
+  // 一旦は、1チケットごとに発生する前提にする
   // - PER_TICKET: 1チケットごと
-  // - PER_ORDER: 1注文ごと
+  // - PER_ORDER: 1注文ごと（注文枚数が1枚でも4枚でも変わらない）
 
   event      Event       @relation(fields: [eventId], references: [id])
   saleWindow SaleWindow? @relation(fields: [saleWindowId], references: [id])
   saleOffer  SaleOffer?  @relation(fields: [saleOfferId], references: [id])
 
-  orderFeeLines OrderFeeLine[]
+  orderItemFees OrderItemFee[]
+}
+
+enum FeePayer {
+  // 購入者が負担する
+  // 購入者の支払総額に加算される
+  // チケット購入画面上に表示される
+  BUYER
+  // イベント主催者が負担する
+  // 購入者の支払総額には影響しない。主催者の精算額から差し引く
+  // チケット購入画面には表示されない
+  EVENT_ORGANIZER
 }
 
 // ============================================================
@@ -841,33 +416,16 @@ model SaleOfferEntitlement {
   saleOfferId     String
   inventoryPoolId String
 
-  saleOffer     SaleOffer     @relation(fields: [saleOfferId], references: [id])
+  saleOffer SaleOffer @relation(fields: [saleOfferId], references: [id])
+
   inventoryPool InventoryPool @relation(fields: [inventoryPoolId], references: [id])
-
-  ticketEntitlements TicketEntitlement[]
-  performance        Performance?        @relation(fields: [performanceId], references: [id])
-  performanceId      String?
-}
-
-model SaleOfferVoucher {
-  id        String   @id @default(uuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-
-  saleOfferId       String
-  voucherTemplateId String
-
-  saleOffer       SaleOffer       @relation(fields: [saleOfferId], references: [id])
-  voucherTemplate VoucherTemplate @relation(fields: [voucherTemplateId], references: [id])
-
-  @@unique([saleOfferId, voucherTemplateId])
 }
 
 // ============================================================
 // 在庫
 //
 // InventoryPool: 公演 x 席種に対して 1 レコード作成される
-// InventoryUnit: 販売・確保・発券で消費される最小単位。指定席でも整理番号でも、発券時には必ず1つのInventoryUnitを消費する。
+// InventorySlot: 販売・確保・発券で消費される最小単位。指定席でも整理番号でも、発券時には必ず1つのInventorySlotを消費する。
 // ============================================================
 
 model InventoryPool {
@@ -875,181 +433,100 @@ model InventoryPool {
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  performanceId  String
-  seatCategoryId String
+  stageId          String
+  ticketCategoryId String
 
-  admissionMethod      AdmissionMethod
-  seatAllocationMethod SeatAllocationMethod
-
+  // 以下の2つは表示用のキャッシュ値（正しい値は inventorySlot を数える必要がある）
   capacity  Int
   heldCount Int @default(0)
-  soldCount Int @default(0)
 
-  performance  Performance  @relation(fields: [performanceId], references: [id])
-  seatCategory SeatCategory @relation(fields: [seatCategoryId], references: [id])
+  // 次に払い出す整理番号。Order への割り当て時に UPDATE ... RETURNING で atomic に採番する
+  // max(entryNumber) + 1 を読んでから書く方式は同時申込で衝突するため使わない
+  // キャンセルで空いた番号は再利用しないので、この値は減らさない
+  nextEntryNumber Int @default(1)
 
-  units             InventoryUnit[]
-  offerEntitlements SaleOfferEntitlement[]
-  holds             InventoryHold[]
+  stage          Stage          @relation(fields: [stageId], references: [id])
+  ticketCategory TicketCategory @relation(fields: [ticketCategoryId], references: [id])
 
-  @@unique([performanceId, seatCategoryId])
+  inventorySlots        InventorySlot[]
+  saleOfferEntitlements SaleOfferEntitlement[]
+
+  @@unique([stageId, ticketCategoryId])
 }
 
-model InventoryUnit {
+model InventorySlot {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  inventoryPoolId String // 1 inventoryUnit は 1inventoryPool にのみ所属できるようにする
-  seatId          String? // 指定席方式の場合だけ値が入る。整理番号方式では値が入らない
+  inventoryPoolId String // 1 inventorySlot は 1inventoryPool にのみ所属できるようにする
+  // 指定席方式の場合だけ値が入る。
+  // 座席は「この在庫枠が会場のどの席か」という在庫側の事実である
+  // 確保(HELD)した時点で確定していないと「A列12番を確保中」を表現できない
+  // そのため、ここで持つ必要がある
+  seatId          String?
 
-  entryNumber Int? // 整理番号方式の場合だけ値が入る。指定席方式の場合は値が入らない
-  status      InventoryUnitStatus @default(AVAILABLE)
+  // 割り振られた整理番号（整理番号方式の場合だけ値が入る）
+  // Order にこの枠を割り当てる時点で採番する
+  // 先着販売においては、発券時ではなく申込時に採番する（発券時だとコンビニ払い時に後ろの番号が採番されてしまう）
+  // Order キャンセル時は null に戻る。その番号は再利用されず、欠番になる
+  entryNumber Int?
+
+  status InventorySlotStatus @default(AVAILABLE)
 
   inventoryPool InventoryPool @relation(fields: [inventoryPoolId], references: [id])
   seat          Seat?         @relation(fields: [seatId], references: [id])
 
+  slotHold           InventorySlotHold?
   ticketEntitlements TicketEntitlement[]
-  inventoryHoldItems InventoryHoldItem[]
-  performance        Performance?        @relation(fields: [performanceId], references: [id])
-  performanceId      String?
 
-  @@unique([inventoryPoolId, entryNumber])
+  @@unique([inventoryPoolId, seatId]) // 同じ座席に対する在庫枠が二重に作られないようにする
+  @@unique([inventoryPoolId, entryNumber]) // 同じ公演 x 席種で整理番号が重複しないようにする
+  @@index([inventoryPoolId, status]) // 先着販売で AVAILABLE な枠を探しやすくするためのインデックス
+}
+
+enum InventorySlotStatus {
+  AVAILABLE // 販売可能
+  HELD // 確保中
+  VOIDED // 無効化された
 }
 
 // ============================================================
-// 在庫の一時確保
+// 在庫枠の確保
 //
-// 先着販売などで在庫を一時的に仮押さえする際に使う。
-// InventoryHoldItemは現在確保中のInventoryUnitを表す。
-// 解放・期限切れ時はInventoryUnit.statusを戻し、対応するHoldItemを削除する。
+// 「どの申し込みがこの在庫枠を押さえているか」を表す。
+// InventorySlot.status = HELD の枠には必ず1件存在し、解放時は行ごと削除して
+// InventorySlot.status を AVAILABLE に戻す。
 //
-// ticketmaster にも同様の概念が存在する
-// @see https://developer.ticketmaster.com/products-and-docs/apis/partner/
+// 発券後もこの行は残る。発券は TicketEntitlement が増えるだけで、
+// 「枠が埋まった」という事実の正本は常にこのテーブルが担う
 // ============================================================
 
-model InventoryHold {
+model InventorySlotHold {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  userId      String
-  orderItemId String? @unique
+  // 1つの在庫枠を同時に複数の申し込みが確保できないようにする
+  inventorySlotId String @unique
+  // どの申し込みが確保しているか
+  // 抽選は当選確定時に OrderItem が作られる（LotteryApplicationItem.orderItemId）ため、
+  // 先着・抽選のどちらも OrderItem を辿れば申込元に到達できる
+  orderItemId     String
 
-  quantity Int
+  // 自動解放期限はカラムとして設ける必要はないと判断した
+  // カード決済時の仮確保期間: 計算で導き出せる
+  // コンビニ払いの支払期限： 計算で導き出せる
+  // expiresAt DateTime?
 
-  status    InventoryHoldStatus @default(ACTIVE)
-  expiresAt DateTime
+  inventorySlot InventorySlot @relation(fields: [inventorySlotId], references: [id])
+  orderItem     OrderItem     @relation(fields: [orderItemId], references: [id])
 
-  user      User       @relation(fields: [userId], references: [id])
-  orderItem OrderItem? @relation(fields: [orderItemId], references: [id])
-
-  items           InventoryHoldItem[]
-  inventoryPool   InventoryPool?      @relation(fields: [inventoryPoolId], references: [id])
-  inventoryPoolId String?
-}
-
-model InventoryHoldItem {
-  id        String   @id @default(uuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-
-  inventoryHoldId String
-  inventoryUnitId String @unique
-
-  inventoryHold InventoryHold @relation(fields: [inventoryHoldId], references: [id])
-  inventoryUnit InventoryUnit @relation(fields: [inventoryUnitId], references: [id])
-  performance   Performance?  @relation(fields: [performanceId], references: [id])
-  performanceId String?
-}
-
-// ============================================================
-// 例1: 希望制なしの単独応募
-//
-// Application
-// └─ 第1希望: 9/2 S席
-//    ├─ 大人 × 2
-//    └─ 子供 × 1
-//
-// ※ 希望制でない場合も ApplicationPreference は1件作成される
-//
-// 例2: 希望制ありの応募
-//
-// Application
-// ├─ 第1希望: 9/1 S席
-// │  ├─ 大人 × 2
-// │  └─ 子供 × 1
-// ├─ 第2希望: 9/1 A席
-// │  ├─ 大人 × 2
-// │  └─ 子供 × 1
-// └─ 第3希望: 9/2 S席
-//    ├─ 大人 × 2
-//    └─ 子供 × 1
-// ============================================================
-
-model Application {
-  id        String   @id @default(uuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-
-  userId       String
-  saleWindowId String // 正規化の観点では冗長だが、対応関係のわかりやすさのために持たせる
-
-  status ApplicationStatus @default(APPLIED)
-
-  user       User       @relation(fields: [userId], references: [id])
-  saleWindow SaleWindow @relation(fields: [saleWindowId], references: [id])
-
-  applicationPreferences ApplicationPreference[]
-}
-
-model ApplicationPreference {
-  id        String   @id @default(uuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-
-  applicationId String
-  saleOfferId   String // 正規化の観点では冗長だが、対応関係のわかりやすさのために持たせる
-
-  preferenceRank Int // 第1希望→1 第2希望→2 第3希望→3
-
-  lotteryResult LotteryResult @default(PENDING)
-
-  application Application @relation(fields: [applicationId], references: [id])
-  saleOffer   SaleOffer   @relation(fields: [saleOfferId], references: [id])
-
-  applicationPreferenceItems ApplicationPreferenceItem[]
-
-  @@unique([applicationId, preferenceRank])
-}
-
-model ApplicationPreferenceItem {
-  id        String   @id @default(uuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-
-  applicationPreferenceId String
-  saleOfferRateId         String
-
-  quantity Int
-
-  applicationPreference ApplicationPreference @relation(fields: [applicationPreferenceId], references: [id])
-  saleOfferRate         SaleOfferRate         @relation(fields: [saleOfferRateId], references: [id])
-
-  orderItem   OrderItem?
-  saleOffer   SaleOffer? @relation(fields: [saleOfferId], references: [id])
-  saleOfferId String?
-
-  @@unique([applicationPreferenceId, saleOfferRateId])
+  @@index([orderItemId]) // 入金時に「この注文が押さえている枠」を引くため
 }
 
 // ============================================================
 // 注文・決済・返金
-//
-// Application は「欲しいです」という意思表示に過ぎない。
-// Order は「買います/買いました」という取引を表現する
-//
-// 抽選ではない先着販売の場合は、Application のデータは作成されない
 // ============================================================
 
 model Order {
@@ -1059,21 +536,25 @@ model Order {
 
   userId String
 
-  status OrderStatus @default(PENDING)
+  status OrderStatus @default(PROCESSING)
 
-  subtotalAmount     Int
-  feeAmount          Int    @default(0)
-  buyerFeeAmount     Int    @default(0)
-  organizerFeeAmount Int    @default(0)
-  totalAmount        Int
-  currency           String @default("JPY")
+  subtotalAmount Int // 手数料を除いた価格部分の合計
+  totalFeeAmount Int // 手数料の合計
+  totalAmount    Int // 価格部分の合計 + 手数料の合計
 
   user User @relation(fields: [userId], references: [id])
 
-  orderItems    OrderItem[]
-  orderFeeLines OrderFeeLine[]
-  payments      Payment[]
-  refunds       Refund[]
+  orderItems OrderItem[]
+  payments   Payment[]
+  refunds    Refund[]
+}
+
+enum OrderStatus {
+  PROCESSING
+  PAID
+  CANCELED
+  EXPIRED
+  REFUNDED
 }
 
 model OrderItem {
@@ -1081,9 +562,8 @@ model OrderItem {
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  orderId                     String
-  saleOfferRateId             String
-  applicationPreferenceItemId String? @unique // 抽選の場合だけ値が入る
+  orderId         String
+  saleOfferRateId String
 
   quantity  Int
   unitPrice Int
@@ -1091,12 +571,11 @@ model OrderItem {
   order         Order         @relation(fields: [orderId], references: [id])
   saleOfferRate SaleOfferRate @relation(fields: [saleOfferRateId], references: [id])
 
-  applicationPreferenceItem ApplicationPreferenceItem? @relation(fields: [applicationPreferenceItemId], references: [id])
-
-  tickets       Ticket[]
-  inventoryHold InventoryHold?
-  refundItems   RefundItem[]
-  orderFeeLines OrderFeeLine[]
+  tickets                Ticket[]
+  refundItems            RefundItem[]
+  orderItemFees          OrderItemFee[]
+  lotteryApplicationItem LotteryApplicationItem?
+  inventorySlotHolds     InventorySlotHold[]
 }
 
 // ============================================================
@@ -1106,38 +585,23 @@ model OrderItem {
 // 監査できるように、計算条件と計算結果をスナップショットとして保持する。
 // ============================================================
 
-model OrderFeeLine {
+model OrderItemFee {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  orderId     String
   orderItemId String
   feeRuleId   String
 
-  name         String
-  displayOrder Int
+  // 以下のカラムは FeeRule からそのままコピーした値を入れる
+  displayOrder    Int
+  name            String
+  payer           FeePayer
+  rateBasisPoints Int
+  flatAmount      Int
 
-  payer FeePayer
-
-  rateBasisPoints Int // 割合
-  flatAmount      Int // 固定額
-
-  currency       String
-  unitBaseAmount Int // 1チケットあたりの割合計算対象金額
-  quantity       Int // 手数料が適用される枚数
-
-  // orderItem に対して実際に適用される手数料金額
-  // (Math.floor(unitBaseAmount * rateBasisPoints / 10000) + flatAmount) * quantity
-  feeAmount Int
-
-  order     Order     @relation(fields: [orderId], references: [id])
   orderItem OrderItem @relation(fields: [orderItemId], references: [id])
-  feeRule   FeeRule?  @relation(fields: [feeRuleId], references: [id])
-
-  @@index([orderId])
-  @@index([orderItemId])
-  @@index([feeRuleId])
+  feeRule   FeeRule   @relation(fields: [feeRuleId], references: [id])
 }
 
 // order : payment = 1 : N
@@ -1149,12 +613,15 @@ model Payment {
 
   orderId String
 
-  provider          String
+  paymentMethod     PaymentMethod
+  provider          PaymentProvider
   providerPaymentId String
-
-  amount   Int
-  currency String        @default("JPY")
-  status   PaymentStatus @default(PENDING)
+  // 実際に支払う金額
+  // 基本的に order.totalAmount と一緒になる
+  // クーポンやポイントなどで割引が入ると order.totalAmount から割引分を引いた値が入る
+  paymentAmount     Int
+  succeededAt       DateTime?
+  failedAt          DateTime?
 
   order   Order    @relation(fields: [orderId], references: [id])
   refunds Refund[]
@@ -1162,26 +629,37 @@ model Payment {
   @@unique([provider, providerPaymentId])
 }
 
+enum PaymentMethod {
+  CARD
+  KONBINI
+}
+
+enum PaymentProvider {
+  STRIPE
+}
+
 model Refund {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  orderId   String
+  // ※ 部分返金ができる前提？
+  // * stripe の機能で部分返金があるのか？
+  // * コンビニ決済の返金は銀行振込になる？
+  orderId   String @unique
   paymentId String @unique
 
-  providerRefundId String? @unique
+  providerRefundId String @unique
 
-  amount   Int
-  currency String       @default("JPY")
-  status   RefundStatus @default(PENDING)
-  reason   String
+  amount Int
+  reason String
 
   completedAt DateTime?
 
-  order   Order        @relation(fields: [orderId], references: [id])
-  payment Payment      @relation(fields: [paymentId], references: [id])
-  items   RefundItem[]
+  payment Payment @relation(fields: [paymentId], references: [id])
+  order   Order   @relation(fields: [orderId], references: [id])
+
+  refundItems RefundItem[]
 }
 
 model RefundItem {
@@ -1211,12 +689,7 @@ model Ticket {
   updatedAt DateTime @default(now()) @updatedAt
 
   orderItemId String
-  ownerUserId String
-
-  status TicketStatus @default(ACTIVE)
-
-  serialNumber String @unique
-  qrToken      String @unique
+  ownerUserId String // 所有者のID（チケットは分配されることがあるため）
 
   orderItem OrderItem @relation(fields: [orderItemId], references: [id])
   owner     User      @relation(fields: [ownerUserId], references: [id])
@@ -1225,7 +698,6 @@ model Ticket {
   ticketVouchers     TicketVoucher[]
 
   @@index([orderItemId])
-  @@index([ownerUserId, status])
 }
 
 // ============================================================
@@ -1240,19 +712,28 @@ model TicketEntitlement {
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  ticketId               String
-  performanceId          String
-  saleOfferEntitlementId String
-  inventoryUnitId        String @unique
+  ticketId        String
+  // ある在庫枠を複数人が同時に所有しているのはおかしいので unique を張りたい
+  // しかし、キャンセルされたレコードは履歴として残すため、素の @unique では枠を占有し続けてしまう。
+  // そのため canceledAt が null の行だけを対象にした部分 unique index にしている
+  inventorySlotId String
+  // どの公演で使えるか？
+  // inventorySlot → inventoryPool → stage で辿れるがパフォーマンス向上のために保持しておく
+  stageId         String
 
-  usedAt DateTime?
+  usedAt     DateTime?
+  // キャンセル済みの場合に値が入る。行自体は履歴として残す。
+  // 値が入るとき、対応する InventorySlot は AVAILABLE に戻っていなければならない。
+  canceledAt DateTime?
 
-  ticket               Ticket               @relation(fields: [ticketId], references: [id])
-  performance          Performance          @relation(fields: [performanceId], references: [id])
-  saleOfferEntitlement SaleOfferEntitlement @relation(fields: [saleOfferEntitlementId], references: [id])
-  inventoryUnit        InventoryUnit        @relation(fields: [inventoryUnitId], references: [id])
+  ticket        Ticket        @relation(fields: [ticketId], references: [id])
+  inventorySlot InventorySlot @relation(fields: [inventorySlotId], references: [id])
+  stage         Stage         @relation(fields: [stageId], references: [id])
 
-  @@unique([ticketId, performanceId])
+  @@unique([ticketId, stageId])
+  // 1つの在庫枠を同時に複数人が所有できないようにする。
+  // キャンセル済みの行は対象外なので、キャンセル後はその枠を再販できる。
+  @@unique([inventorySlotId], where: { canceledAt: null })
 }
 
 // ============================================================

@@ -20,3 +20,6 @@
 - [adr/0002-ticket-fee-schema.md](./adr/0002-ticket-fee-schema.md): チケット手数料の設定と注文時明細のDBスキーマ整理。
 - [adr/0003-api-runtime-cloud-run.md](./adr/0003-api-runtime-cloud-run.md): APIサーバーをCloud Runで動かす判断。
 - [adr/0004-event-wizard-granular-upsert-apis.md](./adr/0004-event-wizard-granular-upsert-apis.md): イベント編集をステップ単位の粒度の細かいupsert APIで構成する判断。
+- [adr/0005-entry-number-assignment.md](./adr/0005-entry-number-assignment.md): 整理番号を注文作成時に採番し、座席・在庫枠の確保と排他を整理する判断。
+- [adr/0006-e2e-payment-provider-stub.md](./adr/0006-e2e-payment-provider-stub.md): E2Eの決済連携を stripe-mock と自前webhookエンドポイントに分ける判断。
+- [adr/0007-api-rewrite-premises.md](./adr/0007-api-rewrite-premises.md): スキーマを正としてAPI層を書き直す際の前提（通貨・数量・手数料・通し券）。
