@@ -116,6 +116,21 @@ routers/fan/event/get/index.ts
 
 不要なre-exportを避け、import元と実装ファイルの対応を明確にするためである。
 
+## `appRouter`への登録
+
+すべての`route.ts`は`routers/index.ts`から import し、`appRouter`へ登録する。登録しないルートは残さず削除する。
+
+利用者種別をまたいで同じexport名を持つルート（例: `fan/event/list`と`organizer/event/list`はどちらも`listEventsRoute`）があるため、誤って別種別のルートをimportしても型チェックは通ってしまう。実際に`fan.event.get` / `fan.event.list` / `fan.user.profile.update`が`organizer`配下のルートを指したまま気づけない不具合が発生した（ADR 0008）。
+
+そのため、名前が衝突するルートは import 時に利用者種別を含む別名を付ける。
+
+```ts
+import { listEventsRoute as listFanEventsRoute } from "./fan/event/list/route";
+import { listEventsRoute as listOrganizerEventsRoute } from "./organizer/event/list/route";
+```
+
+未登録の`route.ts`は`bun run check:patterns`が検出する。
+
 ## `route.ts`の書き方
 
 ### APIインターフェースの型定義
