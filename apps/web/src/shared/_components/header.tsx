@@ -6,7 +6,7 @@ import UserMenu from "./user-menu";
 export default function Header() {
   const links = [
     { to: "/", label: "イベント" },
-    { to: "/dashboard", label: "マイページ" },
+    { to: "/my-page", label: "マイページ" },
   ] as const;
 
   return (

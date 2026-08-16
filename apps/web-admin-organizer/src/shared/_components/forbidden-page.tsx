@@ -13,7 +13,7 @@ export function ForbiddenPage() {
             この主催者管理画面にアクセスできるアカウントでログインしてください。
           </p>
         </div>
-        <Link to="/login" className={buttonVariants({ variant: "outline" })}>
+        <Link to="/sign-in" className={buttonVariants({ variant: "outline" })}>
           ログインへ
         </Link>
       </section>

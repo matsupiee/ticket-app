@@ -10,7 +10,6 @@ const signUpOrganizerAccountInputSchema = z.object({
 const signUpOrganizerAccountOutputSchema = z.object({
   eventOrganizerId: z.string().min(1),
   name: z.string().min(1),
-  slug: z.string().min(1),
   role: z.enum(["VIEWER", "EDITOR"]),
 });
 
