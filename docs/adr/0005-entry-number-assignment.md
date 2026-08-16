@@ -46,6 +46,7 @@ Accepted
 - 注文がキャンセルされた場合、`InventorySlot.entryNumber` は `null` に戻して枠を再販可能にするが、`InventoryPool.nextEntryNumber` は減らさない。空いた番号は再利用せず欠番のままにする。既に発券済みの番号を詰め直すと券面の番号が変わり、入場列の運用が壊れるためである。
 - 在庫枠の割り当て（`allocateInventorySlots`）は `entryNumber` 順ではなく任意順で `AVAILABLE` な `InventorySlot` を選ぶ。どの枠を掴むかと何番になるかは無関係になる。
 - 抽選方式では当落確定時に注文を作成するため、同じ仕組みで当選確定順に採番される。
+- 表示上の接頭辞（`S-1` / `A-1` の `S` / `A`）は `TicketCategory` が持つ。採番そのものには影響しない。ADR 0008 を参照。
 
 ### 座席
 
