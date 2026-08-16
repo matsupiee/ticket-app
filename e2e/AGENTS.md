@@ -14,3 +14,5 @@
     │   └── platform
     └── utils // 便利関数
 ```
+
+`specs/` は `packages/db/src/seed/senarios` と一致させる必要がある
