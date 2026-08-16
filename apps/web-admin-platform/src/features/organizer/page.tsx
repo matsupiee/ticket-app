@@ -38,17 +38,7 @@ export function PlatformDashboardPage() {
       </section>
 
       <section className="mx-auto max-w-6xl space-y-5 px-4 py-8 md:px-6">
-        <div className="flex items-end justify-between gap-4">
-          <div>
-            <h2 className="text-sm font-semibold text-muted-foreground">主催者一覧</h2>
-          </div>
-          <Link
-            to="/sales"
-            className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-          >
-            月別売上へ
-          </Link>
-        </div>
+        <h2 className="text-sm font-semibold text-muted-foreground">主催者一覧</h2>
         <OrganizerListPanel
           organizers={platformOrganizers}
           renderOrganizerName={(organizer) => (

@@ -32,7 +32,7 @@ describe("PlatformSignInPage", () => {
     cleanup();
   });
 
-  it("メールアドレスとパスワードでログインすると、プラットフォーム管理トップへ遷移する", async () => {
+  it("メールアドレスとパスワードでログインすると、プラットフォーム管理画面へ遷移する", async () => {
     const user = userEvent.setup();
     signInEmail.mockImplementation(async (_input: unknown, options: { onSuccess?: () => void }) => {
       options.onSuccess?.();

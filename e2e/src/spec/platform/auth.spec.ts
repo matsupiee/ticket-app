@@ -21,8 +21,8 @@ test.describe("プラットフォーム管理者の新規登録・ログイン",
       await app.platform.signUp().clickSubmit();
     });
 
-    await test.step("プラットフォーム管理トップに遷移し、主催者一覧が表示されることを確認する。", async () => {
-      await expect(page).toHaveURL("/");
+    await test.step("主催者一覧ページに遷移し、主催者一覧が表示されることを確認する。", async () => {
+      await expect(page).toHaveURL("/organizers");
       await expect(app.platform.dashboard().heading).toBeVisible();
       await expect(app.platform.dashboard().organizerList).toBeVisible();
     });
@@ -54,8 +54,8 @@ test.describe("プラットフォーム管理者の新規登録・ログイン",
       await app.platform.signIn().clickSubmit();
     });
 
-    await test.step("プラットフォーム管理トップに遷移し、主催者一覧が表示されることを確認する。", async () => {
-      await expect(page).toHaveURL("/");
+    await test.step("主催者一覧ページに遷移し、主催者一覧が表示されることを確認する。", async () => {
+      await expect(page).toHaveURL("/organizers");
       await expect(app.platform.dashboard().heading).toBeVisible();
       await expect(app.platform.dashboard().organizerList).toBeVisible();
     });

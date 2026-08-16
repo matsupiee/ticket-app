@@ -4,10 +4,7 @@ import { ModeToggle } from "./mode-toggle";
 import UserMenu from "./user-menu";
 
 export default function Header() {
-  const links = [
-    { to: "/", label: "主催者" },
-    { to: "/sales", label: "月別売上" },
-  ] as const;
+  const links = [{ to: "/organizers", label: "主催者" }] as const;
 
   return (
     <header>
