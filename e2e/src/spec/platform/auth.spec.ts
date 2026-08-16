@@ -1,14 +1,12 @@
 import { expect, test } from "../../fixtures/app.fixture";
 import { e2eEnv } from "../../utils/env";
 
-// プラットフォーム管理者の許可リスト（VITE_PLATFORM_ADMIN_EMAILS）は playwright.config.ts で
-// `@platform-admin.e2e.test` ドメインを許可している。
 test.describe("プラットフォーム管理者の新規登録・ログイン", () => {
   test("未登録の管理者が新規登録すると、そのままプラットフォーム管理画面を開ける。", async ({
     app,
     page,
   }) => {
-    const email = `platform-signup-${Date.now()}@${e2eEnv.platformAdminEmailDomain}`;
+    const email = `platform-signup-${Date.now()}@example.com`;
     const password = "platform-e2e-password";
 
     await test.step("新規登録ページを開く。", async () => {
@@ -33,7 +31,7 @@ test.describe("プラットフォーム管理者の新規登録・ログイン",
     page,
     request,
   }) => {
-    const email = `platform-signin-${Date.now()}@${e2eEnv.platformAdminEmailDomain}`;
+    const email = `platform-signin-${Date.now()}@example.com`;
     const password = "platform-e2e-password";
 
     await test.step("ログイン対象の管理者アカウントを事前に作成する。", async () => {
@@ -61,27 +59,12 @@ test.describe("プラットフォーム管理者の新規登録・ログイン",
     });
   });
 
-  test("許可されていないメールアドレスで登録した場合、プラットフォーム管理画面を開けない。", async ({
-    app,
-    page,
-  }) => {
-    // 許可リストに含まれないドメインのメールアドレスで登録する
-    const email = `outsider-${Date.now()}@not-allowed.e2e.test`;
-    const password = "platform-e2e-password";
-
-    await test.step("新規登録ページから、許可されていないメールアドレスで登録する。", async () => {
-      await app.platform.signUp().goto();
-      await app.platform.signUp().fillAccount({ name: "部外者 次郎", email, password });
-      await app.platform.signUp().clickSubmit();
+  test("未ログインで管理画面を開くと、ログインページに戻される。", async ({ app, page }) => {
+    await test.step("未ログインの状態で主催者一覧ページを開く。", async () => {
+      await app.platform.organizerList().goto();
     });
 
-    await test.step("権限エラーページに遷移することを確認する。", async () => {
-      await expect(page).toHaveURL(`${e2eEnv.platformAdminUrl}/forbidden`);
-      await expect(app.platform.forbidden().heading).toBeVisible();
-    });
-
-    await test.step("ログインページへの導線が表示されることを確認する。", async () => {
-      await app.platform.forbidden().clickSignInLink();
+    await test.step("ログインページに遷移することを確認する。", async () => {
       await expect(page).toHaveURL(`${e2eEnv.platformAdminUrl}/sign-in`);
       await expect(app.platform.signIn().heading).toBeVisible();
     });

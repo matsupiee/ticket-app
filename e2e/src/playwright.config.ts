@@ -74,8 +74,6 @@ export default defineConfig({
       url: e2eEnv.platformAdminUrl,
       env: {
         VITE_SERVER_URL: e2eEnv.apiServerUrl,
-        // 許可リストにE2E用ドメインを追加し、テストごとにユニークなメールで登録できるようにする
-        VITE_PLATFORM_ADMIN_EMAILS: `platform@example.com,@${e2eEnv.platformAdminEmailDomain}`,
       },
       reuseExistingServer: !e2eEnv.CI,
       timeout: 120 * 1000,

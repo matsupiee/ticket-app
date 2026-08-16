@@ -44,13 +44,11 @@ VITE_ORGANIZER_ADMIN_EMAILS=organizer@example.com
 
 # apps/web-admin-platform/.env
 VITE_SERVER_URL=http://localhost:3000
-VITE_PLATFORM_ADMIN_EMAILS=platform@example.com
 ```
 
 `apps/web-admin-organizer/.env.example` と `apps/web-admin-platform/.env.example` はそのままコピーして使える。
 
-`VITE_PLATFORM_ADMIN_EMAILS` はカンマ区切りで、メールアドレス完全一致と `@example.com` 形式のドメイン指定を混在できる。
-プラットフォーム管理画面のE2Eは、テストごとにユニークなメールアドレスで新規登録するため、`e2e/src/playwright.config.ts` から E2E 用ドメインを許可リストに渡している。E2Eの設定値（各アプリのURL・E2E用ドメイン）は `e2e/src/utils/env.ts` にまとめている。
+E2Eの設定値（各アプリのURL）は `e2e/src/utils/env.ts` にまとめている。
 
 ## Supabase DB を起動する
 
