@@ -16,13 +16,13 @@ export function PlatformMonthlySalesPage() {
             <p className="text-xs font-medium text-muted-foreground">monthly sales</p>
             <h1 className="text-3xl font-semibold tracking-normal md:text-4xl">月別売上一覧</h1>
             <p className="max-w-2xl text-sm leading-7 text-muted-foreground">
-              月ごとの総流通額、平台手数料、主催者への精算額を比較します。
+              月ごとの総流通額、プラットフォーム手数料、主催者への精算額を比較します。
             </p>
           </div>
 
           <div className="grid gap-3 md:grid-cols-4">
             <Kpi label="総流通額" value={formatCurrency(summary.grossSales)} />
-            <Kpi label="平台手数料" value={formatCurrency(summary.platformFeeAmount)} />
+            <Kpi label="プラットフォーム手数料" value={formatCurrency(summary.platformFeeAmount)} />
             <Kpi label="精算額" value={formatCurrency(summary.payoutAmount)} />
             <Kpi label="申し込み数" value={`${summary.applications.toLocaleString("ja-JP")}件`} />
           </div>
@@ -36,7 +36,7 @@ export function PlatformMonthlySalesPage() {
               <tr>
                 <th className="py-3 pr-4 font-medium">月</th>
                 <th className="px-4 py-3 text-right font-medium">総流通額</th>
-                <th className="px-4 py-3 text-right font-medium">平台手数料</th>
+                <th className="px-4 py-3 text-right font-medium">プラットフォーム手数料</th>
                 <th className="px-4 py-3 text-right font-medium">精算額</th>
                 <th className="py-3 pl-4 text-right font-medium">申し込み数</th>
               </tr>

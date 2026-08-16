@@ -1,9 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-export const Route = createFileRoute("/(authenticated)/organizers/")({
-  component: RouteComponent,
-});
+import { PlatformOrganizerListPage } from "@/features/organizer/list/page";
 
-function RouteComponent() {
-  return <div>Hello "/(authenticated)/organizers/"!</div>;
-}
+export const Route = createFileRoute("/(authenticated)/organizers/")({
+  component: PlatformOrganizerListPage,
+});

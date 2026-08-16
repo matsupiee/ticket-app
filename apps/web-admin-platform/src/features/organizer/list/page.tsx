@@ -1,14 +1,14 @@
 import { Link } from "@tanstack/react-router";
 
-import { OrganizerListPanel } from "./_components/organizer-list-panel";
+import { OrganizerListPanel } from "../_components/organizer-list-panel";
 import {
   formatCurrency,
   platformMonthlySales,
   platformOrganizers,
   summarizePlatformSales,
-} from "./_utils/platform";
+} from "../_utils/platform";
 
-export function PlatformDashboardPage() {
+export function PlatformOrganizerListPage() {
   const summary = summarizePlatformSales(platformMonthlySales);
   const underReviewCount = platformOrganizers.filter(
     (organizer) => organizer.status === "UNDER_REVIEW",
@@ -30,7 +30,7 @@ export function PlatformDashboardPage() {
 
           <div className="grid gap-3 md:grid-cols-4">
             <Kpi label="総流通額" value={formatCurrency(summary.grossSales)} />
-            <Kpi label="平台手数料" value={formatCurrency(summary.platformFeeAmount)} />
+            <Kpi label="プラットフォーム手数料" value={formatCurrency(summary.platformFeeAmount)} />
             <Kpi label="精算予定額" value={formatCurrency(summary.payoutAmount)} />
             <Kpi label="審査中主催者" value={`${underReviewCount}件`} />
           </div>
@@ -38,17 +38,7 @@ export function PlatformDashboardPage() {
       </section>
 
       <section className="mx-auto max-w-6xl space-y-5 px-4 py-8 md:px-6">
-        <div className="flex items-end justify-between gap-4">
-          <div>
-            <h2 className="text-sm font-semibold text-muted-foreground">主催者一覧</h2>
-          </div>
-          <Link
-            to="/sales"
-            className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-          >
-            月別売上へ
-          </Link>
-        </div>
+        <h2 className="text-sm font-semibold text-muted-foreground">主催者一覧</h2>
         <OrganizerListPanel
           organizers={platformOrganizers}
           renderOrganizerName={(organizer) => (

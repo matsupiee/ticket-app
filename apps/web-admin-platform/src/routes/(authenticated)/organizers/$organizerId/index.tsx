@@ -1,6 +1,6 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
 
-import { PlatformOrganizerDetailPage } from "@/features/organizer/detail-page";
+import { PlatformOrganizerDetailPage } from "@/features/organizer/detail/page";
 import { getPlatformOrganizerById } from "@/features/organizer/_utils/platform";
 
 export const Route = createFileRoute("/(authenticated)/organizers/$organizerId/")({

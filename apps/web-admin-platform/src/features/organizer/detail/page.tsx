@@ -1,31 +1,27 @@
 import { Link } from "@tanstack/react-router";
-import { buttonVariants } from "@ticket-app/ui/components/button";
 
-import { OrganizerStatusBadge } from "./_components/status-badge";
+import { OrganizerStatusBadge } from "../_components/status-badge";
 import {
   type PlatformOrganizer,
   formatCurrency,
   formatDate,
   organizerStatusLabels,
-} from "./_utils/platform";
+} from "../_utils/platform";
 
 export function PlatformOrganizerDetailPage({ organizer }: { organizer: PlatformOrganizer }) {
   return (
     <main className="overflow-y-auto bg-background">
       <section className="border-b">
         <div className="mx-auto grid max-w-6xl gap-6 px-4 py-8 md:px-6">
-          <Link to="/" className="text-sm underline">
+          <Link to="/organizers" className="text-sm underline">
             主催者一覧へ戻る
           </Link>
-          <div className="grid gap-5 md:grid-cols-[1fr_auto] md:items-end">
+          <div className="grid gap-5">
             <div className="space-y-3">
               <OrganizerStatusBadge status={organizer.status} />
               <h1 className="text-3xl font-semibold tracking-normal md:text-4xl">主催者詳細</h1>
               <p className="text-sm leading-7 text-muted-foreground">{organizer.name}</p>
             </div>
-            <Link to="/sales" className={buttonVariants({ variant: "outline" })}>
-              月別売上
-            </Link>
           </div>
         </div>
       </section>
@@ -47,7 +43,10 @@ export function PlatformOrganizerDetailPage({ organizer }: { organizer: Platform
           <h2 className="text-sm font-semibold text-muted-foreground">イベントと精算</h2>
           <div className="grid gap-3 md:grid-cols-3">
             <Kpi label="総流通額" value={formatCurrency(organizer.grossSales)} />
-            <Kpi label="平台手数料" value={formatCurrency(organizer.platformFeeAmount)} />
+            <Kpi
+              label="プラットフォーム手数料"
+              value={formatCurrency(organizer.platformFeeAmount)}
+            />
             <Kpi label="精算額" value={formatCurrency(organizer.payoutAmount)} />
           </div>
           <div className="divide-y border-y">

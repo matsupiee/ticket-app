@@ -1,7 +1,6 @@
 import { Outlet, createFileRoute, redirect } from "@tanstack/react-router";
 
 import { authClient } from "@/lib/auth-client";
-import { hasPlatformAdminAccess } from "@/lib/admin-access";
 
 export const Route = createFileRoute("/(authenticated)")({
   component: AuthLayout,
@@ -10,13 +9,7 @@ export const Route = createFileRoute("/(authenticated)")({
 
     if (!session.data) {
       throw redirect({
-        to: "/login",
-      });
-    }
-
-    if (!hasPlatformAdminAccess(session.data)) {
-      throw redirect({
-        to: "/forbidden",
+        to: "/sign-in",
       });
     }
 

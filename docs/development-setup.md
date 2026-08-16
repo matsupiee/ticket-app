@@ -44,10 +44,11 @@ VITE_ORGANIZER_ADMIN_EMAILS=organizer@example.com
 
 # apps/web-admin-platform/.env
 VITE_SERVER_URL=http://localhost:3000
-VITE_PLATFORM_ADMIN_EMAILS=platform@example.com
 ```
 
 `apps/web-admin-organizer/.env.example` と `apps/web-admin-platform/.env.example` はそのままコピーして使える。
+
+E2Eの設定値（各アプリのURL）は `e2e/src/utils/env.ts` にまとめている。
 
 ## Supabase DB を起動する
 
