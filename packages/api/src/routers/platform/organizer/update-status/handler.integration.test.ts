@@ -69,7 +69,7 @@ describe("platform organizer update-status handler", () => {
     await db.platformMember.create({
       data: {
         userId: user.id,
-        role: "OPERATOR",
+        role: "EDITOR",
       },
     });
 

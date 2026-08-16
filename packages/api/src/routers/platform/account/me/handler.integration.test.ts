@@ -71,7 +71,7 @@ describe("platform account me handler", () => {
     await db.platformMember.create({
       data: {
         userId: user.id,
-        role: "OPERATOR",
+        role: "EDITOR",
       },
     });
 
@@ -95,7 +95,7 @@ describe("platform account me handler", () => {
         userId: user.id,
         name: "運営 太郎",
         email,
-        role: "OPERATOR",
+        role: "EDITOR",
       },
     });
   });

@@ -9,7 +9,7 @@ const getMyPlatformAccountOutputSchema = z.object({
   userId: z.string().min(1),
   name: z.string().min(1),
   email: z.email(),
-  role: z.enum(["OWNER", "OPERATOR", "VIEWER"]),
+  role: z.enum(["OWNER", "EDITOR", "VIEWER"]),
 });
 
 export const getMyPlatformAccountRoute = platformProcedure

@@ -69,7 +69,7 @@
 出演アーティストの登録、および保存済みの公演・料金種別・販売商品の削除は未対応（席種の無効化と販売受付のキャンセルのみ対応）。
 admin 画面のアクセス制御は、主催者管理画面では DB 上の `EventOrganizerMember`、プラットフォーム管理画面では DB 上の `PlatformMember` で判定する。
 `packages/api` の `platform.*` は `platformProcedure` で `PlatformMember` の有無を必ず確認するため、ログイン済みでも管理者として登録されていないユーザーは全ルートが `FORBIDDEN` になる（`docs/adr/0008-platform-member-authorization.md` 参照）。
-プラットフォーム管理者の新規登録画面は better-auth ユーザーを作るだけで、管理画面の利用権限は付与しない。開発環境の初期管理者は `bun run db:seed` が作り、本番環境は手動 INSERT で作る。ロール（`OWNER` / `OPERATOR` / `VIEWER`）は定義済みだが、ロールごとの操作制限はまだ行っていない。
+プラットフォーム管理者の新規登録画面は better-auth ユーザーを作るだけで、管理画面の利用権限は付与しない。開発環境の初期管理者は `bun run db:seed` が作り、本番環境は手動 INSERT で作る。ロール（`OWNER` / `EDITOR` / `VIEWER`）は定義済みだが、ロールごとの操作制限はまだ行っていない。
 ローカル開発では `CORS_ORIGIN` が localhost 系の場合に `localhost:3001` / `3002` / `3003` を trusted origin として扱う。
 パスワードリセットは better-auth の reset API を有効化し、現時点では開発用にリセット URL をサーバログへ出力する。
 

@@ -13,8 +13,9 @@ model PlatformMember {
   user User @relation(fields: [userId], references: [id])
 }
 
+// VIEWER / EDITOR は OrganizerMemberRole と同じ意味で使う
 enum PlatformMemberRole {
-  OWNER // 運営メンバーの追加・削除を含むすべての操作が可能
-  OPERATOR // 主催者の審査・状態変更など日常運用が可能
   VIEWER // 閲覧だけ
+  EDITOR // 主催者の審査・状態変更など編集可能
+  OWNER // 編集に加えて、運営メンバーの追加・削除が可能
 }

@@ -53,7 +53,7 @@ test.describe("プラットフォーム管理者の新規登録・ログイン",
       await db.platformMember.create({
         data: {
           userId: user.id,
-          role: "OPERATOR",
+          role: "EDITOR",
         },
       });
     });

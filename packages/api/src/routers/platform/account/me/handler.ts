@@ -3,7 +3,7 @@ export function getMyPlatformAccountHandler({
 }: {
   context: {
     platformMember: {
-      role: "OWNER" | "OPERATOR" | "VIEWER";
+      role: "OWNER" | "EDITOR" | "VIEWER";
       user: {
         id: string;
         name: string;

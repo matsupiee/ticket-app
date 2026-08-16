@@ -69,7 +69,7 @@ describe("platform organizer get handler", () => {
     await db.platformMember.create({
       data: {
         userId: user.id,
-        role: "OPERATOR",
+        role: "EDITOR",
       },
     });
 

@@ -19,7 +19,7 @@
 
 プラットフォーム管理者を DB の `PlatformMember` テーブルで管理し、認可はサーバー側だけを正とする。
 
-- スキーマ: `PlatformMember { id, createdAt, updatedAt, userId @unique, role }` と `PlatformMemberRole { OWNER, OPERATOR, VIEWER }` を追加する。主催者側の `OrganizerMember` に揃える
+- スキーマ: `PlatformMember { id, createdAt, updatedAt, userId @unique, role }` と `PlatformMemberRole { VIEWER, EDITOR, OWNER }` を追加する。主催者側の `OrganizerMember` に揃える
 - API: `packages/api/src/index.ts` に `platformProcedure = protectedProcedure.use(requirePlatformMember)` を追加し、`platform.*` のすべてのルートに適用する。判定は `packages/api/src/shared/platform/require-platform-member.ts` に集約する（`shared/organizer-access.ts` と同じ考え方）
 - フロント: `(authenticated)/route.tsx` で `platform.account.me` を呼び、失敗したら `/forbidden` へ送る。主催者管理画面がすでにこの形なので、2つの管理画面で実装が揃う
 - 初期管理者: 開発環境は `packages/db/src/seed` で1人作る。本番環境は手動INSERTで作り、その後は既存管理者からの招待導線を追加する（`OrganizerInvitation` に先例がある）
@@ -31,7 +31,7 @@
 - ログイン済みでも `PlatformMember` に登録されていないユーザーは、`platform.*` API がすべて `FORBIDDEN` になる
 - 管理者の追加・削除は DB のレコード操作だけで完結し、フロントの再ビルドが不要になる
 - 誰がいつ管理者になったかを `createdAt` で追える
-- ロールは定義したが、現時点で `OWNER` / `OPERATOR` / `VIEWER` による操作制限の出し分けは行っていない。書き込みAPIを増やす際にロール判定を追加する
+- ロールは定義したが、現時点で `OWNER` / `EDITOR` / `VIEWER` による操作制限の出し分けは行っていない。書き込みAPIを増やす際にロール判定を追加する
 
 ## 代替案
 
