@@ -74,6 +74,7 @@ handler.integration.test.ts
   - APIの具体的な処理
   - DBアクセス
   - APIレスポンスへの変換
+  - exportする関数名は必ず `handler` にする
 
 - `handler.integration.test.ts`
 
@@ -140,6 +141,38 @@ const eventGetOutputSchema = z.object({..});
 export const eventGetRoute = ...
 ```
 
+## `handler.ts`の書き方
+
+### 関数名
+
+`handler.ts`がexportする関数名は、APIルートによらず必ず`handler`にする。
+
+```ts
+// fan/event/list/handler.ts
+export async function handler({ input, context }) {
+  // ...
+}
+```
+
+```ts
+// fan/event/list/route.ts
+import { handler } from "./handler";
+
+export const eventListRoute = publicProcedure
+  .input(eventListInputSchema)
+  .output(eventListOutputSchema)
+  .handler(handler);
+```
+
+`listEventsHandler`のようにルート名を関数名へ繰り返さない。ディレクトリのパスがそのままAPIルートを表しており、
+関数名に同じ情報を持たせても増えるのは改名時の修正箇所だけであるためである。
+
+別ディレクトリのhandlerをテストのセットアップなどでimportする場合は、importする側でaliasを付ける。
+
+```ts
+import { handler as upsertPerformanceHandler } from "../upsert-performance/handler";
+```
+
 ## 統合テスト
 
 すべての`handler.ts`について、同じディレクトリに統合テストを作成する。
@@ -191,16 +224,11 @@ function toFanEventDetail(event: EventForPresenter) {
       id: performance.id,
       name: performance.name,
       venueName: performance.venue.name,
-      doorsOpenAt: (
-        performance.doorsOpenAt ?? performance.startsAt
-      ).toISOString(),
+      doorsOpenAt: (performance.doorsOpenAt ?? performance.startsAt).toISOString(),
       startsAt: performance.startsAt.toISOString(),
-      admissionMethod:
-        performance.inventoryPools[0]?.admissionMethod ?? "GENERAL_ADMISSION",
+      admissionMethod: performance.inventoryPools[0]?.admissionMethod ?? "GENERAL_ADMISSION",
     })),
-    saleWindows: event.saleWindows.map((saleWindow) =>
-      toFanSaleWindow(saleWindow),
-    ),
+    saleWindows: event.saleWindows.map((saleWindow) => toFanSaleWindow(saleWindow)),
   };
 }
 ```
@@ -302,9 +330,8 @@ offer.saleOfferEntitlements[0];
 必要な要素は、意味のある条件で明示的に選択する。
 
 ```ts
-const earliestPerformance = event.performances.reduce(
-  (earliest, performance) =>
-    performance.startsAt < earliest.startsAt ? performance : earliest,
+const earliestPerformance = event.performances.reduce((earliest, performance) =>
+  performance.startsAt < earliest.startsAt ? performance : earliest,
 );
 
 const targetInventoryPool = performance.inventoryPools.find(

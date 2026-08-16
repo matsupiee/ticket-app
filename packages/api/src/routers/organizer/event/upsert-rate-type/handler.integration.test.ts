@@ -1,7 +1,7 @@
 import { db } from "@ticket-app/db";
 import { describe, expect, inject, it } from "vitest";
 
-import { upsertRateTypeHandler } from "./handler";
+import { handler } from "./handler";
 
 const { serverUrl } = inject("apiIntegration");
 
@@ -23,7 +23,7 @@ describe("organizer event upsert-rate-type handler", () => {
   it("rateTypeIdを指定しない場合、料金種別を新規作成する", async () => {
     const { organizer, editor, event } = await seedEditorWithEvent();
 
-    const result = await upsertRateTypeHandler({
+    const result = await handler({
       input: {
         eventOrganizerId: organizer.id,
         eventId: event.id,
@@ -41,7 +41,7 @@ describe("organizer event upsert-rate-type handler", () => {
 
   it("rateTypeIdを指定すると、既存の料金種別を更新する", async () => {
     const { organizer, editor, event } = await seedEditorWithEvent();
-    const created = await upsertRateTypeHandler({
+    const created = await handler({
       input: {
         eventOrganizerId: organizer.id,
         eventId: event.id,
@@ -51,7 +51,7 @@ describe("organizer event upsert-rate-type handler", () => {
       context: { session: { user: { id: editor.id } } },
     });
 
-    const updated = await upsertRateTypeHandler({
+    const updated = await handler({
       input: {
         eventOrganizerId: organizer.id,
         eventId: event.id,
@@ -73,7 +73,7 @@ describe("organizer event upsert-rate-type handler", () => {
 
   it("同一イベント内で新規作成時に名前が重複しているとCONFLICTを返す", async () => {
     const { organizer, editor, event } = await seedEditorWithEvent();
-    await upsertRateTypeHandler({
+    await handler({
       input: {
         eventOrganizerId: organizer.id,
         eventId: event.id,
@@ -84,7 +84,7 @@ describe("organizer event upsert-rate-type handler", () => {
     });
 
     await expect(
-      upsertRateTypeHandler({
+      handler({
         input: {
           eventOrganizerId: organizer.id,
           eventId: event.id,
@@ -101,7 +101,7 @@ describe("organizer event upsert-rate-type handler", () => {
 
   it("更新時に別の料金種別と同じ名前へ改名しようとするとCONFLICTを返す", async () => {
     const { organizer, editor, event } = await seedEditorWithEvent();
-    await upsertRateTypeHandler({
+    await handler({
       input: {
         eventOrganizerId: organizer.id,
         eventId: event.id,
@@ -110,7 +110,7 @@ describe("organizer event upsert-rate-type handler", () => {
       },
       context: { session: { user: { id: editor.id } } },
     });
-    const child = await upsertRateTypeHandler({
+    const child = await handler({
       input: {
         eventOrganizerId: organizer.id,
         eventId: event.id,
@@ -121,7 +121,7 @@ describe("organizer event upsert-rate-type handler", () => {
     });
 
     await expect(
-      upsertRateTypeHandler({
+      handler({
         input: {
           eventOrganizerId: organizer.id,
           eventId: event.id,
@@ -137,7 +137,7 @@ describe("organizer event upsert-rate-type handler", () => {
   it("他のイベントに属するrateTypeIdを指定するとNOT_FOUNDを返す", async () => {
     const { organizer, editor, event } = await seedEditorWithEvent();
     const other = await seedEditorWithEvent();
-    const otherRateType = await upsertRateTypeHandler({
+    const otherRateType = await handler({
       input: {
         eventOrganizerId: other.organizer.id,
         eventId: other.event.id,
@@ -148,7 +148,7 @@ describe("organizer event upsert-rate-type handler", () => {
     });
 
     await expect(
-      upsertRateTypeHandler({
+      handler({
         input: {
           eventOrganizerId: organizer.id,
           eventId: event.id,
@@ -171,7 +171,7 @@ describe("organizer event upsert-rate-type handler", () => {
     });
 
     await expect(
-      upsertRateTypeHandler({
+      handler({
         input: {
           eventOrganizerId: organizer.id,
           eventId: event.id,

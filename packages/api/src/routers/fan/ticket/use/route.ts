@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { useTicketHandler } from "./handler";
+import { handler } from "./handler";
 import { protectedProcedure } from "../../../../index";
 
 const useTicketInputSchema = z.object({
@@ -21,4 +21,4 @@ export const useTicketRoute = protectedProcedure
   })
   .input(useTicketInputSchema)
   .output(useTicketOutputSchema)
-  .handler(useTicketHandler);
+  .handler(handler);

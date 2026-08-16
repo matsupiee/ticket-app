@@ -3,7 +3,7 @@ import { describe, expect, inject, it } from "vitest";
 
 const { origin, serverUrl } = inject("apiIntegration");
 
-describe("signUpOrganizerAccountHandler", () => {
+describe("organizer account sign-up handler", () => {
   it("Cloud Run形式のAPIサーバーでlocalhost:3002から主催者新規登録でき、CORSヘッダーを返す", async () => {
     const suffix = crypto.randomUUID();
     const email = `organizer-${suffix}@example.com`;

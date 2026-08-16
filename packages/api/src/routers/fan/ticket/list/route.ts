@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { listTicketsHandler } from "./handler";
+import { handler } from "./handler";
 import { protectedProcedure } from "../../../../index";
 
 const listTicketsInputSchema = z.object({
@@ -36,4 +36,4 @@ export const listTicketsRoute = protectedProcedure
   })
   .input(listTicketsInputSchema)
   .output(listTicketsOutputSchema)
-  .handler(listTicketsHandler);
+  .handler(handler);

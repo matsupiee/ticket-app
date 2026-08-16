@@ -3,7 +3,7 @@ import { db } from "@ticket-app/db";
 
 import { getFirstOrganizerMembership } from "../../../../shared/organizer-access";
 
-export async function signUpOrganizerAccountHandler({
+export async function handler({
   input,
   context,
 }: {

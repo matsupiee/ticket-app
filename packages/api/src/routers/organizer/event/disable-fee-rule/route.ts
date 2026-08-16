@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { disableFeeRuleHandler } from "./handler";
+import { handler } from "./handler";
 import { protectedProcedure } from "../../../../index";
 
 const disableFeeRuleInputSchema = z.object({
@@ -22,4 +22,4 @@ export const disableFeeRuleRoute = protectedProcedure
   })
   .input(disableFeeRuleInputSchema)
   .output(disableFeeRuleOutputSchema)
-  .handler(disableFeeRuleHandler);
+  .handler(handler);

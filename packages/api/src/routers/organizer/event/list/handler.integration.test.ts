@@ -1,7 +1,7 @@
 import { db } from "@ticket-app/db";
 import { describe, expect, inject, it } from "vitest";
 
-import { listOrganizerEventsHandler } from "./handler";
+import { handler } from "./handler";
 
 const { serverUrl } = inject("apiIntegration");
 
@@ -51,7 +51,7 @@ describe("organizer event list handler", () => {
       },
     });
 
-    const result = await listOrganizerEventsHandler({
+    const result = await handler({
       input: { eventOrganizerId: organizer.id },
       context: { session: { user: { id: editor.id } } },
     });
@@ -74,7 +74,7 @@ describe("organizer event list handler", () => {
     });
 
     await expect(
-      listOrganizerEventsHandler({
+      handler({
         input: { eventOrganizerId: organizer.id },
         context: { session: { user: { id: viewer.id } } },
       }),

@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { verifyPhoneHandler } from "./handler";
+import { handler } from "./handler";
 import { protectedProcedure } from "../../../../../index";
 
 const verifyPhoneInputSchema = z.object({
@@ -25,4 +25,4 @@ export const verifyPhoneRoute = protectedProcedure
   })
   .input(verifyPhoneInputSchema)
   .output(verifyPhoneOutputSchema)
-  .handler(verifyPhoneHandler);
+  .handler(handler);

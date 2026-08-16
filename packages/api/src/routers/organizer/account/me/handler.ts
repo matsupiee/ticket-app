@@ -2,7 +2,7 @@ import { ORPCError } from "@orpc/server";
 
 import { getFirstOrganizerMembership } from "../../../../shared/organizer-access";
 
-export async function getMyOrganizerAccountHandler({
+export async function handler({
   context,
 }: {
   context: {

@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { getMyOrganizerAccountHandler } from "./handler";
+import { handler } from "./handler";
 import { protectedProcedure } from "../../../../index";
 
 const getMyOrganizerAccountInputSchema = z.object({});
@@ -19,4 +19,4 @@ export const getMyOrganizerAccountRoute = protectedProcedure
   })
   .input(getMyOrganizerAccountInputSchema)
   .output(getMyOrganizerAccountOutputSchema)
-  .handler(getMyOrganizerAccountHandler);
+  .handler(handler);

@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { removeMemberHandler } from "./handler";
+import { handler } from "./handler";
 import { protectedProcedure } from "../../../../index";
 
 const removeMemberInputSchema = z.object({
@@ -21,4 +21,4 @@ export const removeMemberRoute = protectedProcedure
   })
   .input(removeMemberInputSchema)
   .output(removeMemberOutputSchema)
-  .handler(removeMemberHandler);
+  .handler(handler);

@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { signUpOrganizerAccountHandler } from "./handler";
+import { handler } from "./handler";
 import { protectedProcedure } from "../../../../index";
 
 const signUpOrganizerAccountInputSchema = z.object({
@@ -21,4 +21,4 @@ export const signUpOrganizerAccountRoute = protectedProcedure
   })
   .input(signUpOrganizerAccountInputSchema)
   .output(signUpOrganizerAccountOutputSchema)
-  .handler(signUpOrganizerAccountHandler);
+  .handler(handler);

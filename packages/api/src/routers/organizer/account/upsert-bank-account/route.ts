@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { upsertBankAccountHandler } from "./handler";
+import { handler } from "./handler";
 import { protectedProcedure } from "../../../../index";
 
 const upsertBankAccountInputSchema = z.object({
@@ -27,4 +27,4 @@ export const upsertBankAccountRoute = protectedProcedure
   })
   .input(upsertBankAccountInputSchema)
   .output(upsertBankAccountOutputSchema)
-  .handler(upsertBankAccountHandler);
+  .handler(handler);

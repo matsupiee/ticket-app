@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { getProfileHandler } from "./handler";
+import { handler } from "./handler";
 import { protectedProcedure } from "../../../../../index";
 
 const getProfileOutputSchema = z.object({
@@ -19,4 +19,4 @@ export const getProfileRoute = protectedProcedure
     summary: "Get fan profile",
   })
   .output(getProfileOutputSchema)
-  .handler(getProfileHandler);
+  .handler(handler);

@@ -1,7 +1,7 @@
 import { db } from "@ticket-app/db";
 import { describe, expect, inject, it } from "vitest";
 
-import { adjustInventoryHandler } from "./handler";
+import { handler } from "./handler";
 
 const { serverUrl } = inject("apiIntegration");
 
@@ -23,7 +23,7 @@ describe("organizer event adjust-inventory handler", () => {
   it("正常な入力で在庫を増加させ、公演×席種のInventoryPoolを作成する", async () => {
     const { organizer, editor, event, performance, seatCategory } = await seedFixture();
 
-    const result = await adjustInventoryHandler({
+    const result = await handler({
       input: {
         eventOrganizerId: organizer.id,
         eventId: event.id,
@@ -49,7 +49,7 @@ describe("organizer event adjust-inventory handler", () => {
     const other = await seedFixture();
 
     await expect(
-      adjustInventoryHandler({
+      handler({
         input: {
           eventOrganizerId: organizer.id,
           eventId: event.id,
@@ -70,7 +70,7 @@ describe("organizer event adjust-inventory handler", () => {
     const other = await seedFixture();
 
     await expect(
-      adjustInventoryHandler({
+      handler({
         input: {
           eventOrganizerId: organizer.id,
           eventId: event.id,
@@ -90,7 +90,7 @@ describe("organizer event adjust-inventory handler", () => {
     const { organizer, editor, performance, seatCategory } = await seedFixture();
 
     await expect(
-      adjustInventoryHandler({
+      handler({
         input: {
           eventOrganizerId: organizer.id,
           eventId: "00000000-0000-0000-0000-000000000000",
@@ -116,7 +116,7 @@ describe("organizer event adjust-inventory handler", () => {
     });
 
     await expect(
-      adjustInventoryHandler({
+      handler({
         input: {
           eventOrganizerId: organizer.id,
           eventId: event.id,
