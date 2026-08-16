@@ -1,6 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
-import { checkSpecs } from "./check-spec";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import { checkSpecs, formatStatus, readSpecSnapshot, runCli } from "./check-spec";
 
 type SpecOverrides = {
   status?: string;
@@ -167,7 +171,7 @@ describe("checkSpecs", () => {
       {
         path: "docs/spec/0001-event-list.md",
         rule: "spec/open-questions",
-        message: "## 未決事項 はチェックボックスで書く。論点が無い場合は `- なし` と明記する",
+        message: "## 未決事項 はチェックボックスで書く。論点が無い場合は `- なし` だけを書く",
       },
     ]);
   });
@@ -297,8 +301,276 @@ describe("checkSpecs", () => {
       {
         path: "docs/spec/0001-event-list.md",
         rule: "spec/index",
-        message: "docs/INDEX.md にこのspecへのリンクを追記する",
+        message: "docs/INDEX.md にこのspecへのリンク（spec/0001-event-list.md）を追記する",
       },
     ]);
+  });
+
+  it("docs/INDEX.md のリンク先ファイル名が実体と違うと落ちる", () => {
+    const issues = checkSpecs({
+      specs: [{ path: "docs/spec/0001-event-list.md", content: buildSpec() }],
+      indexContent: "- [spec/0001-old-name.md](./spec/0001-old-name.md): 旧名。\n",
+    });
+
+    expect(issues).toEqual([
+      {
+        path: "docs/spec/0001-event-list.md",
+        rule: "spec/index",
+        message: "docs/INDEX.md にこのspecへのリンク（spec/0001-event-list.md）を追記する",
+      },
+    ]);
+  });
+
+  it("「- なし」と未解決の論点が併記されていてもゲートは開かない", () => {
+    const issues = checkSpecs({
+      specs: [
+        {
+          path: "docs/spec/0001-event-list.md",
+          content: buildSpec({
+            status: "確定",
+            openQuestions: ["- なし", "- [ ] Q-1: 過去公演のデフォルト表示範囲"].join("\n"),
+          }),
+        },
+      ],
+      indexContent,
+    });
+
+    expect(issues).toEqual([
+      {
+        path: "docs/spec/0001-event-list.md",
+        rule: "spec/open-questions",
+        message:
+          "未解決の未決事項が 1 件残っているため、ステータスを 確定 にできない。実装前に人間に確認する",
+      },
+    ]);
+  });
+
+  it("「- なし」に散文の論点が併記されているとチェックボックス不備として落ちる", () => {
+    const issues = checkSpecs({
+      specs: [
+        {
+          path: "docs/spec/0001-event-list.md",
+          content: buildSpec({
+            openQuestions: ["- なし", "- Q-1: 過去公演の表示範囲は要相談"].join("\n"),
+          }),
+        },
+      ],
+      indexContent,
+    });
+
+    expect(issues).toEqual([
+      {
+        path: "docs/spec/0001-event-list.md",
+        rule: "spec/open-questions",
+        message: "## 未決事項 はチェックボックスで書く。論点が無い場合は `- なし` だけを書く",
+      },
+    ]);
+  });
+
+  it("実装中も未解決の未決事項があると落ちる", () => {
+    const issues = checkSpecs({
+      specs: [
+        {
+          path: "docs/spec/0001-event-list.md",
+          content: buildSpec({
+            status: "実装中",
+            openQuestions: "- [ ] Q-1: 過去公演のデフォルト表示範囲",
+          }),
+        },
+      ],
+      indexContent,
+    });
+
+    expect(issues).toEqual([
+      {
+        path: "docs/spec/0001-event-list.md",
+        rule: "spec/open-questions",
+        message:
+          "未解決の未決事項が 1 件残っているため、ステータスを 実装中 にできない。実装前に人間に確認する",
+      },
+    ]);
+  });
+
+  it("破棄は未解決の未決事項が残っていてもよい", () => {
+    const issues = checkSpecs({
+      specs: [
+        {
+          path: "docs/spec/0001-event-list.md",
+          content: buildSpec({
+            status: "破棄",
+            openQuestions: "- [ ] Q-1: 過去公演のデフォルト表示範囲",
+          }),
+        },
+      ],
+      indexContent,
+    });
+
+    expect(issues).toEqual([]);
+  });
+
+  it("必須セクションの順序が入れ替わっていると落ちる", () => {
+    const content = buildSpec()
+      .replace("## スコープ\n\n- 主催者向けイベント一覧\n\n", "")
+      .replace("## 非スコープ", "## 非スコープ\n\n- 一覧からの一括編集\n\n## スコープ");
+
+    const issues = checkSpecs({
+      specs: [{ path: "docs/spec/0001-event-list.md", content }],
+      indexContent,
+    });
+
+    expect(issues).toEqual([
+      {
+        path: "docs/spec/0001-event-list.md",
+        rule: "spec/sections",
+        message:
+          "必須セクションは ## ステータス → ## 目的 → ## スコープ → ## 非スコープ → ## 受け入れ条件 → ## 検証方法 → ## 未決事項 → ## 参照 の順に並べる",
+      },
+    ]);
+  });
+
+  it("コードフェンス内の見出しとチェックボックスは仕様として解釈しない", () => {
+    const content = buildSpec({
+      status: "確定",
+      openQuestions: [
+        "- [x] Q-1: 解決済み",
+        "",
+        "書式の例:",
+        "",
+        "```md",
+        "## ステータス",
+        "",
+        "- [ ] Q-9: これは例示なので未決事項ではない",
+        "```",
+      ].join("\n"),
+    });
+
+    const issues = checkSpecs({
+      specs: [{ path: "docs/spec/0001-event-list.md", content }],
+      indexContent,
+    });
+
+    expect(issues).toEqual([]);
+  });
+
+  it("サブディレクトリに置かれたspecは置き場所違反として落ちる", () => {
+    const issues = checkSpecs({
+      specs: [{ path: "docs/spec/archive/0002-hidden.md", content: buildSpec() }],
+      indexContent,
+    });
+
+    expect(issues).toEqual([
+      {
+        path: "docs/spec/archive/0002-hidden.md",
+        rule: "spec/location",
+        message: "specは docs/spec 直下に置く。サブディレクトリは使わない",
+      },
+    ]);
+  });
+
+  it("見出しが1行目に無いと落ちる", () => {
+    const content = `前書き\n\n${buildSpec()}`;
+
+    const issues = checkSpecs({
+      specs: [{ path: "docs/spec/0001-event-list.md", content }],
+      indexContent,
+    });
+
+    expect(issues).toEqual([
+      {
+        path: "docs/spec/0001-event-list.md",
+        rule: "spec/title",
+        message: "1行目の見出しを `# spec NNNN: <タイトル>` にする",
+      },
+    ]);
+  });
+});
+
+describe("readSpecSnapshot / runCli", () => {
+  let cwd: string;
+
+  beforeEach(() => {
+    cwd = mkdtempSync(join(tmpdir(), "check-spec-"));
+    mkdirSync(join(cwd, "docs", "spec"), { recursive: true });
+    writeSpecFixture("README.md", "# spec の書き方\n");
+    writeSpecFixture("TEMPLATE.md", "# spec NNNN: <タイトル>\n");
+    writeFileSync(join(cwd, "docs", "INDEX.md"), indexContent, "utf8");
+  });
+
+  afterEach(() => {
+    rmSync(cwd, { recursive: true, force: true });
+    vi.restoreAllMocks();
+  });
+
+  function writeSpecFixture(relativePath: string, content: string) {
+    const path = join(cwd, "docs", "spec", relativePath);
+    mkdirSync(join(path, ".."), { recursive: true });
+    writeFileSync(path, content, "utf8");
+  }
+
+  it("README.md と TEMPLATE.md は検査対象から除外する", () => {
+    const snapshot = readSpecSnapshot(cwd);
+
+    expect(snapshot.specs).toEqual([]);
+    expect(checkSpecs(snapshot)).toEqual([]);
+  });
+
+  it("サブディレクトリのspecも拾って置き場所違反にする", () => {
+    writeSpecFixture("archive/0002-hidden.md", buildSpec());
+
+    const issues = checkSpecs(readSpecSnapshot(cwd));
+
+    expect(issues).toEqual([
+      {
+        path: "docs/spec/archive/0002-hidden.md",
+        rule: "spec/location",
+        message: "specは docs/spec 直下に置く。サブディレクトリは使わない",
+      },
+    ]);
+  });
+
+  it("問題があれば終了コード1を返す", () => {
+    writeSpecFixture(
+      "0001-event-list.md",
+      buildSpec({ status: "確定", openQuestions: "- [ ] Q-1: 未回答" }),
+    );
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    expect(runCli(cwd, [])).toBe(1);
+    expect(error.mock.calls[0]?.[0]).toContain("spec/open-questions");
+  });
+
+  it("問題が無ければ終了コード0を返す", () => {
+    writeSpecFixture("0001-event-list.md", buildSpec());
+    vi.spyOn(console, "log").mockImplementation(() => {});
+
+    expect(runCli(cwd, [])).toBe(0);
+  });
+
+  it("--status は進行中のspecと未決事項の件数を表示する", () => {
+    writeSpecFixture(
+      "0001-event-list.md",
+      buildSpec({ status: "draft", openQuestions: "- [ ] Q-1: 未回答" }),
+    );
+
+    expect(formatStatus(readSpecSnapshot(cwd))).toBe(
+      [
+        "進行中のspec（docs/loop-engineering.md）:",
+        "  docs/spec/0001-event-list.md [draft] 受け入れ条件 0/1 / 未決事項 1件 → 実装前に人間へ確認する",
+      ].join("\n"),
+    );
+  });
+
+  it("--status は完了したspecを表示しない", () => {
+    writeSpecFixture(
+      "0001-event-list.md",
+      buildSpec({
+        status: "完了",
+        acceptanceCriteria: "- [x] AC-1: 下書きイベントだけが表示される",
+      }),
+    );
+
+    expect(formatStatus(readSpecSnapshot(cwd))).toBe(
+      "進行中のspecはありません（docs/loop-engineering.md）",
+    );
   });
 });
