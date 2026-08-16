@@ -4,14 +4,11 @@
 //   - 「A-1」という整形済みの文字列はDBに保存しない。表示のたびにこの関数で組み立てる
 //     券面・保有チケット一覧・主催者管理画面・もぎりで表記がずれないよう、組み立ては必ずここに集約する
 
-// 接頭辞に使える文字。券面の可読性と入場列での読み上げやすさを優先し、半角英数字の大文字だけに限定する
-// 区切り文字「-」は表示時に付けるので接頭辞自体には含めない
-export const ENTRY_NUMBER_PREFIX_PATTERN = /^[A-Z0-9]{1,4}$/;
-
 const ENTRY_NUMBER_SEPARATOR = "-";
 
 type FormatEntryNumberInput = {
   // TicketCategory.entryNumberPrefix。接頭辞なしの席種では null
+  // DBには空文字を保存せず、API層の入力で空文字は null に正規化する（ADR 0008）
   prefix: string | null;
   // InventorySlot.entryNumber。注文に割り当てるまでは未採番なので null
   entryNumber: number | null;
@@ -28,6 +25,7 @@ export function formatEntryNumber({ prefix, entryNumber }: FormatEntryNumberInpu
     return null;
   }
 
+  // 空文字は正規化漏れだが、券面の表示を壊すより接頭辞なしとして扱う方が害が小さい
   if (prefix === null || prefix === "") {
     return String(entryNumber);
   }
