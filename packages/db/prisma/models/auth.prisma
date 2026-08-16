@@ -1,5 +1,5 @@
 model User {
-  id        String   @id @default(uuid())
+  id        String   @id @default(cuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -14,13 +14,13 @@ model User {
   tickets              Ticket[]
   organizerMembers     OrganizerMember[]
   organizerInvitations OrganizerInvitation[]
-  lotteryApplications  LotteryApplication[]
+  applications         Application[]
 
   @@map("user")
 }
 
 model Session {
-  id        String   @id @default(uuid())
+  id        String   @id @default(cuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -37,7 +37,7 @@ model Session {
 }
 
 model Account {
-  id        String   @id @default(uuid())
+  id        String   @id @default(cuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -59,7 +59,7 @@ model Account {
 }
 
 model Verification {
-  id        String   @id @default(uuid())
+  id        String   @id @default(cuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

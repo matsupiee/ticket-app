@@ -4,26 +4,21 @@
 
 ## 基本方針
 
-技術レイヤー単位ではなく、**ドメイン・機能単位の縦割り構成**を採用する。
+技術レイヤー単位の構成は避ける。コンポーネント、hooks、schema、純粋関数をアプリ全体で一括管理すると、関連するコードが離れ、変更範囲を把握しにくくなるため。
 
 ```txt
-# 避ける構成
-components/
-hooks/
-schemas/
-utils/
+.
+└── src/
+    ├── components
+    ├── hooks
+    ├── libs
+    ├── routes
+    ├── schemas
+    ├── types
+    └── utils
 ```
 
-コンポーネント、hooks、schema、純粋関数をアプリ全体で一括管理すると、関連するコードが離れ、変更範囲を把握しにくくなる。
-
-各機能・ページが、自身に必要な次の実装を所有する。
-
-- UIコンポーネント
-- hooks
-- schema
-- 純粋関数
-- ページ本体
-
+**ドメイン・機能単位の縦割り構成**を採用する。
 関連ファイルは、できるだけ同じ機能ディレクトリ内に配置する。
 
 ## ディレクトリ構成
@@ -171,7 +166,10 @@ APIのinput・output型は、`packages/api`で定義した型を使用する。
 フロントエンド側で同じ型を再定義しない。
 
 ```ts
-import type { GetEventInput, GetEventOutput } from "@project/api/routers/fan/event/get/route";
+import type {
+  GetEventInput,
+  GetEventOutput,
+} from "@project/api/routers/fan/event/get/route";
 ```
 
 次のものはimportしない。

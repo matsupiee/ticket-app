@@ -21,6 +21,32 @@
 
 利用者種別ごとにルートを分離することで、認証・認可の設定漏れを防ぎ、各APIが誰のためのものかを明確にする。
 
+ネストを深くさせないようにように注意する
+
+```
+.
+└── fan/
+    └── user/
+        ├── profile/
+        │   ├── get
+        │   └── update
+        └── verify-phone/
+            ├── confirm
+            └── request
+```
+
+fan / organizer / platform の配下は1階層だけにする
+
+```
+.
+└── fan/
+    └── user/
+        ├── get-profile
+        ├── update-profile
+        ├── confirm-phone-number
+        └── request-phone-number
+```
+
 ## APIルートの構成
 
 1つのAPIルートにつき、1つのディレクトリを作成する。
@@ -60,7 +86,6 @@ handler.integration.test.ts
 └── routers/
     ├── index.ts
     └── fan/
-        ├── index.ts
         ├── application/
         │   └── submit/
         │       ├── route.ts
@@ -79,12 +104,7 @@ handler.integration.test.ts
 
 ```txt
 packages/api/src/routers/index.ts
-packages/api/src/routers/fan/index.ts
-packages/api/src/routers/organizer/index.ts
-packages/api/src/routers/platform/index.ts
 ```
-
-各利用者種別の`index.ts`では、その配下にあるすべてのAPIルートを集約する。
 
 中間ディレクトリや各APIディレクトリには`index.ts`を置かない。
 
@@ -95,6 +115,30 @@ routers/fan/event/get/index.ts
 ```
 
 不要なre-exportを避け、import元と実装ファイルの対応を明確にするためである。
+
+## `route.ts`の書き方
+
+### APIインターフェースの型定義
+
+各APIの`route.ts`で、input schemaとoutput schemaを明示的に定義する。
+Prismaが自動生成する型をそのままAPIのinputまたはoutputとして使用しない。DB側の変更がそのままAPIの破壊的変更になることを防ぐためである。
+API間でinput / output型を無理に共有する必要はない。似た形のレスポンスであっても、別のAPIである以上、将来それぞれが独立して変更される可能性があるためである。
+
+### 変数名
+
+```
+ルート名 + { InputSchema | OutputSchema | Route }
+```
+
+例えば、event/get という API であれば以下のように定義する
+
+```ts
+const eventGetInputSchema = z.object({..});
+
+const eventGetOutputSchema = z.object({..});
+
+export const eventGetRoute = ...
+```
 
 ## 統合テスト
 
@@ -147,11 +191,16 @@ function toFanEventDetail(event: EventForPresenter) {
       id: performance.id,
       name: performance.name,
       venueName: performance.venue.name,
-      doorsOpenAt: (performance.doorsOpenAt ?? performance.startsAt).toISOString(),
+      doorsOpenAt: (
+        performance.doorsOpenAt ?? performance.startsAt
+      ).toISOString(),
       startsAt: performance.startsAt.toISOString(),
-      admissionMethod: performance.inventoryPools[0]?.admissionMethod ?? "GENERAL_ADMISSION",
+      admissionMethod:
+        performance.inventoryPools[0]?.admissionMethod ?? "GENERAL_ADMISSION",
     })),
-    saleWindows: event.saleWindows.map((saleWindow) => toFanSaleWindow(saleWindow)),
+    saleWindows: event.saleWindows.map((saleWindow) =>
+      toFanSaleWindow(saleWindow),
+    ),
   };
 }
 ```
@@ -203,25 +252,6 @@ build-event-sales.ts
 
 同じ概念を扱う関数がすでに存在する場合は、新しい関数を追加する前に既存処理へ統合できないか確認する。
 
-## APIインターフェースの型定義
-
-各APIの`route.ts`で、input schemaとoutput schemaを明示的に定義する。
-
-```ts
-const inputSchema = z.object({
-  eventId: z.string().uuid(),
-});
-
-const outputSchema = z.object({
-  id: z.string().uuid(),
-  name: z.string(),
-});
-```
-
-Prismaが自動生成する型をそのままAPIのinputまたはoutputとして使用しない。DB側の変更がそのままAPIの破壊的変更になることを防ぐためである。
-
-API間でinput / output型を無理に共有する必要はない。似た形のレスポンスであっても、別のAPIである以上、将来それぞれが独立して変更される可能性があるためである。
-
 ## APIルートの作成
 
 ### procedureの選択
@@ -272,8 +302,9 @@ offer.saleOfferEntitlements[0];
 必要な要素は、意味のある条件で明示的に選択する。
 
 ```ts
-const earliestPerformance = event.performances.reduce((earliest, performance) =>
-  performance.startsAt < earliest.startsAt ? performance : earliest,
+const earliestPerformance = event.performances.reduce(
+  (earliest, performance) =>
+    performance.startsAt < earliest.startsAt ? performance : earliest,
 );
 
 const targetInventoryPool = performance.inventoryPools.find(

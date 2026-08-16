@@ -15,7 +15,7 @@ datasource db {
 // ============================================================
 
 model Event {
-  id        String   @id @default(uuid())
+  id        String   @id @default(cuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
@@ -35,7 +35,7 @@ model Event {
 }
 
 model Stage {
-  id        String   @id @default(uuid())
+  id        String   @id @default(cuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
@@ -63,7 +63,7 @@ model Stage {
 }
 
 model Artist {
-  id        String   @id @default(uuid())
+  id        String   @id @default(cuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
@@ -73,7 +73,7 @@ model Artist {
 }
 
 model StageArtist {
-  id        String   @id @default(uuid())
+  id        String   @id @default(cuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
@@ -85,7 +85,7 @@ model StageArtist {
 }
 
 model Venue {
-  id        String   @id @default(uuid())
+  id        String   @id @default(cuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
@@ -104,7 +104,7 @@ model Venue {
 // ============================================================
 
 model TicketCategory {
-  id        String   @id @default(uuid())
+  id        String   @id @default(cuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
@@ -140,7 +140,7 @@ enum TicketCategoryKind {
 // ============================================================
 
 model RateType {
-  id        String   @id @default(uuid())
+  id        String   @id @default(cuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
@@ -243,7 +243,7 @@ model RateType {
 // ============================================================
 
 model SaleWindow {
-  id        String   @id @default(uuid())
+  id        String   @id @default(cuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
@@ -269,9 +269,9 @@ model SaleWindow {
 
   event Event @relation(fields: [eventId], references: [id])
 
-  saleOffers          SaleOffer[]
-  lotteryApplications LotteryApplication[]
-  feeRules            FeeRule[]
+  saleOffers   SaleOffer[]
+  applications Application[]
+  feeRules     FeeRule[]
 }
 
 enum SaleMethod {
@@ -302,7 +302,7 @@ enum SaleMethod {
 // ============================================================
 
 model SaleOffer {
-  id        String   @id @default(uuid())
+  id        String   @id @default(cuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
@@ -327,7 +327,7 @@ model SaleOffer {
 }
 
 model SaleOfferRate {
-  id        String   @id @default(uuid())
+  id        String   @id @default(cuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
@@ -339,8 +339,7 @@ model SaleOfferRate {
   saleOffer SaleOffer @relation(fields: [saleOfferId], references: [id])
   rateType  RateType  @relation(fields: [rateTypeId], references: [id])
 
-  lotteryApplicationItems LotteryApplicationItem[]
-  orderItems              OrderItem[]
+  applicationItems ApplicationItem[]
 
   @@unique([saleOfferId, rateTypeId])
 }
@@ -350,7 +349,7 @@ model SaleOfferRate {
 // ============================================================
 
 model FeeRule {
-  id        String   @id @default(uuid())
+  id        String   @id @default(cuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
@@ -385,7 +384,7 @@ model FeeRule {
   saleWindow SaleWindow? @relation(fields: [saleWindowId], references: [id])
   saleOffer  SaleOffer?  @relation(fields: [saleOfferId], references: [id])
 
-  orderItemFees OrderItemFee[]
+  applicationItemFees ApplicationItemFee[]
 }
 
 enum FeePayer {
@@ -409,7 +408,7 @@ enum FeePayer {
 // ============================================================
 
 model SaleOfferEntitlement {
-  id        String   @id @default(uuid())
+  id        String   @id @default(cuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
@@ -429,7 +428,7 @@ model SaleOfferEntitlement {
 // ============================================================
 
 model InventoryPool {
-  id        String   @id @default(uuid())
+  id        String   @id @default(cuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
@@ -455,7 +454,7 @@ model InventoryPool {
 }
 
 model InventorySlot {
-  id        String   @id @default(uuid())
+  id        String   @id @default(cuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
@@ -503,95 +502,107 @@ enum InventorySlotStatus {
 // ============================================================
 
 model InventorySlotHold {
-  id        String   @id @default(uuid())
+  id        String   @id @default(cuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
   // 1つの在庫枠を同時に複数の申し込みが確保できないようにする
-  inventorySlotId String @unique
+  inventorySlotId   String @unique
   // どの申し込みが確保しているか
   // 抽選は当選確定時に OrderItem が作られる（LotteryApplicationItem.orderItemId）ため、
   // 先着・抽選のどちらも OrderItem を辿れば申込元に到達できる
-  orderItemId     String
+  applicationItemId String
 
   // 自動解放期限はカラムとして設ける必要はないと判断した
   // カード決済時の仮確保期間: 計算で導き出せる
   // コンビニ払いの支払期限： 計算で導き出せる
   // expiresAt DateTime?
 
-  inventorySlot InventorySlot @relation(fields: [inventorySlotId], references: [id])
-  orderItem     OrderItem     @relation(fields: [orderItemId], references: [id])
-
-  @@index([orderItemId]) // 入金時に「この注文が押さえている枠」を引くため
+  inventorySlot   InventorySlot   @relation(fields: [inventorySlotId], references: [id])
+  applicationItem ApplicationItem @relation(fields: [applicationItemId], references: [id])
 }
 
 // ============================================================
-// 注文・決済・返金
+// 申込
 // ============================================================
 
-model Order {
-  id        String   @id @default(uuid())
+//      Application
+//      /           \
+// FIRST_COME     LOTTERY
+// │                 │
+// │              抽選結果
+// │             /       \
+// │          LOST       WON
+// │                      │
+// └──────────┬───────────┘
+//            ↓
+//          Order
+//            ↓
+//         Payment
+
+model Application {
+  id        String   @id @default(cuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  userId String
+  userId       String
+  saleWindowId String
 
-  status OrderStatus @default(PROCESSING)
+  paymentMethod PaymentMethod
 
-  subtotalAmount Int // 手数料を除いた価格部分の合計
-  totalFeeAmount Int // 手数料の合計
-  totalAmount    Int // 価格部分の合計 + 手数料の合計
+  user       User       @relation(fields: [userId], references: [id])
+  saleWindow SaleWindow @relation(fields: [saleWindowId], references: [id])
 
-  user User @relation(fields: [userId], references: [id])
-
-  orderItems OrderItem[]
-  payments   Payment[]
-  refunds    Refund[]
+  applicationItems                ApplicationItem[]
+  applicationPaymentAuthorization ApplicationPaymentAuthorization?
+  order                           Order?
 }
 
-enum OrderStatus {
-  PROCESSING
-  PAID
-  CANCELED
-  EXPIRED
-  REFUNDED
-}
-
-model OrderItem {
-  id        String   @id @default(uuid())
+model ApplicationItem {
+  id        String   @id @default(cuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  orderId         String
+  applicationId   String
   saleOfferRateId String
 
-  quantity  Int
-  unitPrice Int
+  unitPrice      Int
+  quantity       Int
+  preferenceRank Int // 第1希望→1 第2希望→2 第3希望→3
+  lotteryResult  LotteryResult?
 
-  order         Order         @relation(fields: [orderId], references: [id])
+  application   Application   @relation(fields: [applicationId], references: [id])
   saleOfferRate SaleOfferRate @relation(fields: [saleOfferRateId], references: [id])
 
-  tickets                Ticket[]
-  refundItems            RefundItem[]
-  orderItemFees          OrderItemFee[]
-  lotteryApplicationItem LotteryApplicationItem?
-  inventorySlotHolds     InventorySlotHold[]
+  applicationItemFees ApplicationItemFee[]
+  inventorySlotHolds  InventorySlotHold[]
+  refundItems         RefundItem[]
+  tickets             Ticket[]
+
+  @@unique([applicationId, preferenceRank])
+}
+
+enum LotteryResult {
+  PENDING // 当落を出してない
+  WON // 当選
+  LOST // 落選
 }
 
 // ============================================================
-// 注文時に適用された手数料明細
+// saleOfferごとに表示される手数料
+// 申込時に画面上に表示される手数料
 //
-// 注文後に FeeRule が変更されても購入者請求・主催者精算・返金判断を
+// 申込後に FeeRule が変更されても購入者請求・主催者精算・返金判断を
 // 監査できるように、計算条件と計算結果をスナップショットとして保持する。
 // ============================================================
 
-model OrderItemFee {
-  id        String   @id @default(uuid())
+model ApplicationItemFee {
+  id        String   @id @default(cuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  orderItemId String
-  feeRuleId   String
+  applicationItemId String
+  feeRuleId         String
 
   // 以下のカラムは FeeRule からそのままコピーした値を入れる
   displayOrder    Int
@@ -600,18 +611,81 @@ model OrderItemFee {
   rateBasisPoints Int
   flatAmount      Int
 
-  orderItem OrderItem @relation(fields: [orderItemId], references: [id])
-  feeRule   FeeRule   @relation(fields: [feeRuleId], references: [id])
+  // 実際に計算された額も保存しておく（丸め処理や計算仕様変が更時した際に困らないようにするため）
+  amount Int
+
+  applicationItem ApplicationItem @relation(fields: [applicationItemId], references: [id])
+  feeRule         FeeRule         @relation(fields: [feeRuleId], references: [id])
+}
+
+// 与信枠確保
+// 抽選の場合だけ記録される
+//
+// 通常抽選の場合
+// - 第1希望 20,000 円
+// - 当落を出した際に 20,000 円を Capture
+// 希望制抽選の場合
+// - 第1希望 20,000 円 第2希望 15,000 円 第3希望 10,000 円 → 20,000 円を与信確保
+// - 当落を出した際に必要な金額だけを Capture する。不要分は返金
+model ApplicationPaymentAuthorization {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  applicationId String @unique
+
+  provider          PaymentProvider
+  providerPaymentId String
+  authorizedAmount  Int // 与信枠として確保された金額
+  releasedAt        DateTime? // いつ与信が解放されたか？
+
+  application Application @relation(fields: [applicationId], references: [id])
+}
+
+// ============================================================
+// 注文
+//
+// 「購入する内容が確定し、販売側が注文として受け付けたもの」を表す
+//
+// 先着: application と applicationItem 作成時点で注文が成立
+// 抽選: application と applicationItem 作成時点で注文が成立しない
+// ============================================================
+
+model Order {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  userId        String
+  applicationId String @unique
+
+  status         OrderStatus
+  subtotalAmount Int // 手数料を除いた価格部分の合計
+  totalFeeAmount Int // 手数料の合計
+  totalAmount    Int // 価格部分の合計 + 手数料の合計
+
+  user        User        @relation(fields: [userId], references: [id])
+  application Application @relation(fields: [applicationId], references: [id])
+
+  payments Payment[]
+  refunds  Refund[]
+}
+
+enum OrderStatus {
+  PAYMENT_PROCESSING // 決済処理中
+  COMPLETED // 完了
+  CANCELED // キャンセル
 }
 
 // order : payment = 1 : N
 // 決済が1回失敗して再試行したら成功したという場合は、1 order に対して 複数 payment が作成される
+// 0円チケットの場合は payment が作成されない
 model Payment {
-  id        String   @id @default(uuid())
+  id        String   @id @default(cuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  orderId String
+  applicationId String
 
   paymentMethod     PaymentMethod
   provider          PaymentProvider
@@ -623,7 +697,7 @@ model Payment {
   succeededAt       DateTime?
   failedAt          DateTime?
 
-  order   Order    @relation(fields: [orderId], references: [id])
+  order   Order    @relation(fields: [applicationId], references: [id])
   refunds Refund[]
 
   @@unique([provider, providerPaymentId])
@@ -638,23 +712,23 @@ enum PaymentProvider {
   STRIPE
 }
 
+// ユーザー都合で返金はできない
+// 主催者の都合で払い戻しを行うことが可能
 model Refund {
-  id        String   @id @default(uuid())
+  id        String   @id @default(cuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  // ※ 部分返金ができる前提？
-  // * stripe の機能で部分返金があるのか？
-  // * コンビニ決済の返金は銀行振込になる？
   orderId   String @unique
   paymentId String @unique
 
-  providerRefundId String @unique
+  providerRefundId String @unique // 決済プロバイダーが発行する返金ID
 
-  amount Int
-  reason String
-
-  completedAt DateTime?
+  amount                  Int // 合計返金額
+  reason                  String
+  completedAt             DateTime?
+  bankAccount             Json? // コンビニ決済の場合は銀行振込で返金する
+  bankAccountRegisteredAt DateTime? // 銀行振込返金の場合に記録される（記録された日から3営業日以内に振り込む必要がある）
 
   payment Payment @relation(fields: [paymentId], references: [id])
   order   Order   @relation(fields: [orderId], references: [id])
@@ -663,20 +737,19 @@ model Refund {
 }
 
 model RefundItem {
-  id        String   @id @default(uuid())
+  id        String   @id @default(cuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  refundId    String
-  orderItemId String
+  refundId          String
+  applicationItemId String
 
-  quantity Int
-  amount   Int
+  quantity Int // データモデル自体は部分返金に対応できる設計にしておく。4枚購入中2枚だけ返金するということを可能にしておく
 
-  refund    Refund    @relation(fields: [refundId], references: [id])
-  orderItem OrderItem @relation(fields: [orderItemId], references: [id])
+  refund          Refund          @relation(fields: [refundId], references: [id])
+  applicationItem ApplicationItem @relation(fields: [applicationItemId], references: [id])
 
-  @@unique([refundId, orderItemId])
+  @@unique([refundId, applicationItemId])
 }
 
 // ============================================================
@@ -684,20 +757,20 @@ model RefundItem {
 // ============================================================
 
 model Ticket {
-  id        String   @id @default(uuid())
+  id        String   @id @default(cuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  orderItemId String
-  ownerUserId String // 所有者のID（チケットは分配されることがあるため）
+  applicationItemId String
+  ownerUserId       String // 所有者のID（チケットは分配されることがあるため）
 
-  orderItem OrderItem @relation(fields: [orderItemId], references: [id])
-  owner     User      @relation(fields: [ownerUserId], references: [id])
+  applicationItem ApplicationItem @relation(fields: [applicationItemId], references: [id])
+  owner           User            @relation(fields: [ownerUserId], references: [id])
 
   ticketEntitlements TicketEntitlement[]
   ticketVouchers     TicketVoucher[]
 
-  @@index([orderItemId])
+  @@index([applicationItemId])
 }
 
 // ============================================================
@@ -708,7 +781,7 @@ model Ticket {
 // ============================================================
 
 model TicketEntitlement {
-  id        String   @id @default(uuid())
+  id        String   @id @default(cuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
@@ -741,7 +814,7 @@ model TicketEntitlement {
 // ============================================================
 
 model TicketVoucher {
-  id        String   @id @default(uuid())
+  id        String   @id @default(cuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 

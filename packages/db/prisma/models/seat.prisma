@@ -8,7 +8,7 @@
 // ============================================================
 
 model SeatLayout {
-  id        String   @id @default(uuid())
+  id        String   @id @default(cuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
@@ -34,7 +34,7 @@ model SeatLayout {
 //                   └ Seat: 18列120番
 
 model SeatZone {
-  id        String   @id @default(uuid())
+  id        String   @id @default(cuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
@@ -60,7 +60,7 @@ model SeatZone {
 // ============================================================
 
 model Seat {
-  id        String   @id @default(uuid())
+  id        String   @id @default(cuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 

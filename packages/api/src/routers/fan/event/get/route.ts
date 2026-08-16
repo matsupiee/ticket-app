@@ -3,11 +3,11 @@ import { z } from "zod";
 import { getEventHandler } from "./handler";
 import { publicProcedure } from "../../../../index";
 
-const getEventInputSchema = z.object({
+const eventGetInputSchema = z.object({
   eventId: z.string().min(1),
 });
 
-const eventOutputSchema = z.object({
+const eventGetOutputSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
   description: z.string(),
@@ -29,7 +29,11 @@ const eventOutputSchema = z.object({
       venueName: z.string().min(1),
       doorsOpenAt: z.string().min(1),
       startsAt: z.string().min(1),
-      admissionMethod: z.enum(["GENERAL_ADMISSION", "NUMBERED_ENTRY", "RESERVED_SEAT"]),
+      admissionMethod: z.enum([
+        "GENERAL_ADMISSION",
+        "NUMBERED_ENTRY",
+        "RESERVED_SEAT",
+      ]),
     }),
   ),
   saleWindows: z.array(
@@ -89,12 +93,12 @@ const eventOutputSchema = z.object({
   ),
 });
 
-export const getEventRoute = publicProcedure
+export const eventGetRoute = publicProcedure
   .route({
     method: "GET",
     path: "/fan/events/{eventId}",
     summary: "Get fan-visible event detail",
   })
-  .input(getEventInputSchema)
-  .output(eventOutputSchema)
+  .input(eventGetInputSchema)
+  .output(eventGetOutputSchema)
   .handler(getEventHandler);

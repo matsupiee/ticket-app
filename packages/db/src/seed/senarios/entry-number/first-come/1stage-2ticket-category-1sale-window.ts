@@ -26,8 +26,14 @@ export const SEED_1STAGE_2TICKET_CATEGORY_1SALE_WINDOW = {
   ticketCategoryA: { name: "A席", capacity: 50, price: 5000 },
   // 5% → 500 basis points（FeeRule のコメント参照）
   feeRateBasisPoints: 500,
-  fanUser1: { name: "購入者1", email: "seed-fan-1-1stage2category@example.com" },
-  fanUser2: { name: "購入者2", email: "seed-fan-2-1stage2category@example.com" },
+  fanUser1: {
+    name: "購入者1",
+    email: "seed-fan-1-1stage2category@example.com",
+  },
+  fanUser2: {
+    name: "購入者2",
+    email: "seed-fan-2-1stage2category@example.com",
+  },
 } as const;
 
 const S = SEED_1STAGE_2TICKET_CATEGORY_1SALE_WINDOW;
@@ -70,7 +76,9 @@ export const seed = async () => {
     });
 
     const artist = await tx.artist.create({ data: { name: "アーティスト" } });
-    await tx.stageArtist.create({ data: { stageId: stage.id, artistId: artist.id } });
+    await tx.stageArtist.create({
+      data: { stageId: stage.id, artistId: artist.id },
+    });
 
     // 在庫枠は entryNumber を採番せずに作る。採番は注文作成時（ADR 0005）
     const createPool = async (ticketCategoryId: string, capacity: number) =>
@@ -110,7 +118,9 @@ export const seed = async () => {
     });
     const inventoryPoolA = await createPool(ticketCategoryA.id, S.ticketCategoryA.capacity);
 
-    const rateType = await tx.rateType.create({ data: { eventId: event.id, name: "通常" } });
+    const rateType = await tx.rateType.create({
+      data: { eventId: event.id, name: "通常" },
+    });
 
     const saleWindow = await tx.saleWindow.create({
       data: {
@@ -126,13 +136,24 @@ export const seed = async () => {
 
     const createOffer = async (input: { name: string; price: number; inventoryPoolId: string }) => {
       const saleOffer = await tx.saleOffer.create({
-        data: { saleWindowId: saleWindow.id, name: input.name, description: "" },
+        data: {
+          saleWindowId: saleWindow.id,
+          name: input.name,
+          description: "",
+        },
       });
       const saleOfferRate = await tx.saleOfferRate.create({
-        data: { saleOfferId: saleOffer.id, rateTypeId: rateType.id, price: input.price },
+        data: {
+          saleOfferId: saleOffer.id,
+          rateTypeId: rateType.id,
+          price: input.price,
+        },
       });
       await tx.saleOfferEntitlement.create({
-        data: { saleOfferId: saleOffer.id, inventoryPoolId: input.inventoryPoolId },
+        data: {
+          saleOfferId: saleOffer.id,
+          inventoryPoolId: input.inventoryPoolId,
+        },
       });
 
       return { saleOffer, saleOfferRate };
@@ -163,13 +184,16 @@ export const seed = async () => {
     // 本番の申込処理と同じ順序（枠を取る → 採番 → hold を作る）にしておく。
     const allocateSlots = async (input: {
       inventoryPoolId: string;
-      orderItemId: string;
+      applicationItemId: string;
       quantity: number;
       // コンビニ払いのように入金待ちの場合は支払期限を入れる
       holdExpiresAt: Date | null;
     }) => {
       const slots = await tx.inventorySlot.findMany({
-        where: { inventoryPoolId: input.inventoryPoolId, status: InventorySlotStatus.AVAILABLE },
+        where: {
+          inventoryPoolId: input.inventoryPoolId,
+          status: InventorySlotStatus.AVAILABLE,
+        },
         orderBy: { createdAt: "asc" },
         take: input.quantity,
         select: { id: true },
@@ -201,7 +225,7 @@ export const seed = async () => {
           await tx.inventorySlotHold.create({
             data: {
               inventorySlotId: slot.id,
-              orderItemId: input.orderItemId,
+              applicationItemId: input.applicationItemId,
               expiresAt: input.holdExpiresAt,
             },
           });
@@ -213,15 +237,47 @@ export const seed = async () => {
 
     // ---- ユーザー1: S席2枚をカード決済（入金済み・発券済み） ----
     const fanUser1 = await tx.user.create({
-      data: { name: S.fanUser1.name, email: S.fanUser1.email, emailVerified: true },
+      data: {
+        name: S.fanUser1.name,
+        email: S.fanUser1.email,
+        emailVerified: true,
+      },
     });
 
     const subtotalS = S.ticketCategoryS.price * 2;
     const feeS = calcFeeAmount(subtotalS);
-    const orderS = await tx.order.create({
+    const applicationS = await tx.application.create({
       data: {
         userId: fanUser1.id,
-        status: OrderStatus.PAID,
+        saleWindowId: saleWindow.id,
+        paymentMethod: PaymentMethod.CARD,
+      },
+    });
+    const applicationItemS = await tx.applicationItem.create({
+      data: {
+        applicationId: applicationS.id,
+        saleOfferRateId: offerS.saleOfferRate.id,
+        unitPrice: S.ticketCategoryS.price,
+        quantity: 2,
+        preferenceRank: 1,
+        applicationItemFees: {
+          create: {
+            displayOrder: feeRule.displayOrder,
+            feeRuleId: feeRule.id,
+            name: feeRule.name,
+            payer: feeRule.payer,
+            rateBasisPoints: feeRule.rateBasisPoints,
+            flatAmount: feeRule.flatAmount,
+            amount: 1000,
+          },
+        },
+      },
+    });
+    await tx.order.create({
+      data: {
+        userId: fanUser1.id,
+        applicationId: applicationS.id,
+        status: OrderStatus.COMPLETED,
         subtotalAmount: subtotalS,
         totalFeeAmount: feeS,
         totalAmount: subtotalS + feeS,
@@ -236,30 +292,12 @@ export const seed = async () => {
         },
       },
     });
-    const orderItemS = await tx.orderItem.create({
-      data: {
-        orderId: orderS.id,
-        saleOfferRateId: offerS.saleOfferRate.id,
-        quantity: 2,
-        unitPrice: S.ticketCategoryS.price,
-        orderItemFees: {
-          create: {
-            displayOrder: feeRule.displayOrder,
-            feeRuleId: feeRule.id,
-            name: feeRule.name,
-            payer: feeRule.payer,
-            rateBasisPoints: feeRule.rateBasisPoints,
-            flatAmount: feeRule.flatAmount,
-          },
-        },
-      },
-    });
 
     // カード決済は即時入金なので hold に期限を持たせない
     const allocatedSlotsS = await allocateSlots({
       inventoryPoolId: inventoryPoolS.id,
-      orderItemId: orderItemS.id,
-      quantity: orderItemS.quantity,
+      applicationItemId: applicationItemS.id,
+      quantity: applicationItemS.quantity,
       holdExpiresAt: null,
     });
 
@@ -267,7 +305,7 @@ export const seed = async () => {
     for (const slot of allocatedSlotsS) {
       await tx.ticket.create({
         data: {
-          orderItemId: orderItemS.id,
+          applicationItemId: applicationItemS.id,
           ownerUserId: fanUser1.id,
           ticketEntitlements: {
             create: { stageId: stage.id, inventorySlotId: slot.id },
@@ -278,15 +316,48 @@ export const seed = async () => {
 
     // ---- ユーザー2: A席1枚をコンビニ払い（入金待ち・未発券） ----
     const fanUser2 = await tx.user.create({
-      data: { name: S.fanUser2.name, email: S.fanUser2.email, emailVerified: true },
+      data: {
+        name: S.fanUser2.name,
+        email: S.fanUser2.email,
+        emailVerified: true,
+      },
     });
 
     const subtotalA = S.ticketCategoryA.price;
     const feeA = calcFeeAmount(subtotalA);
-    const orderA = await tx.order.create({
+    const applicationA = await tx.application.create({
       data: {
         userId: fanUser2.id,
-        status: OrderStatus.PROCESSING,
+        saleWindowId: saleWindow.id,
+        paymentMethod: PaymentMethod.KONBINI,
+      },
+    });
+    const applicationItemA = await tx.applicationItem.create({
+      data: {
+        applicationId: applicationA.id,
+        saleOfferRateId: offerA.saleOfferRate.id,
+        quantity: 1,
+        unitPrice: S.ticketCategoryA.price,
+        preferenceRank: 1,
+        applicationItemFees: {
+          create: {
+            displayOrder: feeRule.displayOrder,
+            feeRuleId: feeRule.id,
+            name: feeRule.name,
+            payer: feeRule.payer,
+            rateBasisPoints: feeRule.rateBasisPoints,
+            flatAmount: feeRule.flatAmount,
+            amount: 500,
+          },
+        },
+      },
+    });
+
+    await tx.order.create({
+      data: {
+        userId: fanUser2.id,
+        applicationId: applicationA.id,
+        status: OrderStatus.COMPLETED,
         subtotalAmount: subtotalA,
         totalFeeAmount: feeA,
         totalAmount: subtotalA + feeA,
@@ -301,30 +372,12 @@ export const seed = async () => {
         },
       },
     });
-    const orderItemA = await tx.orderItem.create({
-      data: {
-        orderId: orderA.id,
-        saleOfferRateId: offerA.saleOfferRate.id,
-        quantity: 1,
-        unitPrice: S.ticketCategoryA.price,
-        orderItemFees: {
-          create: {
-            displayOrder: feeRule.displayOrder,
-            feeRuleId: feeRule.id,
-            name: feeRule.name,
-            payer: feeRule.payer,
-            rateBasisPoints: feeRule.rateBasisPoints,
-            flatAmount: feeRule.flatAmount,
-          },
-        },
-      },
-    });
 
     // コンビニ払いは支払期限までの確保。期限切れバッチが解放できるよう expiresAt を入れる
     await allocateSlots({
       inventoryPoolId: inventoryPoolA.id,
-      orderItemId: orderItemA.id,
-      quantity: orderItemA.quantity,
+      applicationItemId: applicationItemA.id,
+      quantity: applicationItemA.quantity,
       holdExpiresAt: addDays(now, 3),
     });
     // 入金前なので Ticket / TicketEntitlement は作らない
