@@ -1,14 +1,14 @@
 import { Link } from "@tanstack/react-router";
 
-import { OrganizerListPanel } from "./_components/organizer-list-panel";
+import { OrganizerListPanel } from "../_components/organizer-list-panel";
 import {
   formatCurrency,
   platformMonthlySales,
   platformOrganizers,
   summarizePlatformSales,
-} from "./_utils/platform";
+} from "../_utils/platform";
 
-export function PlatformDashboardPage() {
+export function PlatformOrganizerListPage() {
   const summary = summarizePlatformSales(platformMonthlySales);
   const underReviewCount = platformOrganizers.filter(
     (organizer) => organizer.status === "UNDER_REVIEW",

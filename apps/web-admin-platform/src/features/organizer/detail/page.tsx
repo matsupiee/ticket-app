@@ -1,12 +1,12 @@
 import { Link } from "@tanstack/react-router";
 
-import { OrganizerStatusBadge } from "./_components/status-badge";
+import { OrganizerStatusBadge } from "../_components/status-badge";
 import {
   type PlatformOrganizer,
   formatCurrency,
   formatDate,
   organizerStatusLabels,
-} from "./_utils/platform";
+} from "../_utils/platform";
 
 export function PlatformOrganizerDetailPage({ organizer }: { organizer: PlatformOrganizer }) {
   return (
