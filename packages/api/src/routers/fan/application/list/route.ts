@@ -3,7 +3,7 @@ import { z } from "zod";
 import { listApplicationsHandler } from "./handler";
 import { protectedProcedure } from "../../../../index";
 
-const paginationInputSchema = z.object({
+const listApplicationsInputSchema = z.object({
   cursor: z.string().min(1).optional(),
   limit: z.number().int().min(1).max(100).optional(),
 });
@@ -31,6 +31,6 @@ export const listApplicationsRoute = protectedProcedure
     path: "/fan/applications",
     summary: "List fan applications",
   })
-  .input(paginationInputSchema)
+  .input(listApplicationsInputSchema)
   .output(listApplicationsOutputSchema)
   .handler(listApplicationsHandler);

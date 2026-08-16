@@ -10,13 +10,13 @@ const cancelSaleWindowInputSchema = z.object({
   cancelReason: z.string().min(1),
 });
 
-const mutationOutputSchema = z.object({
+const cancelSaleWindowOutputSchema = z.object({
   id: z.string().min(1),
   updatedAt: z.string().min(1),
 });
 
 export type CancelSaleWindowInput = z.infer<typeof cancelSaleWindowInputSchema>;
-export type CancelSaleWindowOutput = z.infer<typeof mutationOutputSchema>;
+export type CancelSaleWindowOutput = z.infer<typeof cancelSaleWindowOutputSchema>;
 
 export const cancelSaleWindowRoute = protectedProcedure
   .route({
@@ -25,5 +25,5 @@ export const cancelSaleWindowRoute = protectedProcedure
     summary: "Cancel sale window",
   })
   .input(cancelSaleWindowInputSchema)
-  .output(mutationOutputSchema)
+  .output(cancelSaleWindowOutputSchema)
   .handler(cancelSaleWindowHandler);

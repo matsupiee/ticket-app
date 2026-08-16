@@ -16,13 +16,13 @@ const upsertPerformanceInputSchema = z.object({
   seatLayoutId: z.string().min(1).optional(),
 });
 
-const mutationOutputSchema = z.object({
+const upsertPerformanceOutputSchema = z.object({
   id: z.string().min(1),
   updatedAt: z.string().min(1),
 });
 
 export type UpsertPerformanceInput = z.infer<typeof upsertPerformanceInputSchema>;
-export type UpsertPerformanceOutput = z.infer<typeof mutationOutputSchema>;
+export type UpsertPerformanceOutput = z.infer<typeof upsertPerformanceOutputSchema>;
 
 export const upsertPerformanceRoute = protectedProcedure
   .route({
@@ -31,5 +31,5 @@ export const upsertPerformanceRoute = protectedProcedure
     summary: "Upsert event performance",
   })
   .input(upsertPerformanceInputSchema)
-  .output(mutationOutputSchema)
+  .output(upsertPerformanceOutputSchema)
   .handler(upsertPerformanceHandler);

@@ -14,7 +14,7 @@ const upsertBankAccountInputSchema = z.object({
   holderName: z.string().min(1),
 });
 
-const mutationOutputSchema = z.object({
+const upsertBankAccountOutputSchema = z.object({
   id: z.string().min(1),
   updatedAt: z.string().min(1),
 });
@@ -26,5 +26,5 @@ export const upsertBankAccountRoute = protectedProcedure
     summary: "Upsert organizer bank account",
   })
   .input(upsertBankAccountInputSchema)
-  .output(mutationOutputSchema)
+  .output(upsertBankAccountOutputSchema)
   .handler(upsertBankAccountHandler);

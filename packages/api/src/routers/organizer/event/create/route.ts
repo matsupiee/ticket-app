@@ -26,13 +26,13 @@ const createEventInputSchema = z.object({
     .optional(),
 });
 
-const mutationOutputSchema = z.object({
+const createEventOutputSchema = z.object({
   id: z.string().min(1),
   updatedAt: z.string().min(1),
 });
 
 export type CreateEventInput = z.infer<typeof createEventInputSchema>;
-export type CreateEventOutput = z.infer<typeof mutationOutputSchema>;
+export type CreateEventOutput = z.infer<typeof createEventOutputSchema>;
 
 export const createEventRoute = protectedProcedure
   .route({
@@ -41,5 +41,5 @@ export const createEventRoute = protectedProcedure
     summary: "Create organizer event",
   })
   .input(createEventInputSchema)
-  .output(mutationOutputSchema)
+  .output(createEventOutputSchema)
   .handler(createEventHandler);

@@ -3,7 +3,7 @@ import { z } from "zod";
 import { getProfileHandler } from "./handler";
 import { protectedProcedure } from "../../../../../index";
 
-const profileOutputSchema = z.object({
+const getProfileOutputSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
   email: z.string().email(),
@@ -18,5 +18,5 @@ export const getProfileRoute = protectedProcedure
     path: "/fan/user/profile",
     summary: "Get fan profile",
   })
-  .output(profileOutputSchema)
+  .output(getProfileOutputSchema)
   .handler(getProfileHandler);

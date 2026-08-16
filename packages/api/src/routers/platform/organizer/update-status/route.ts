@@ -9,7 +9,7 @@ const updateStatusInputSchema = z.object({
   reason: z.string().min(1).optional(),
 });
 
-const mutationOutputSchema = z.object({
+const updateStatusOutputSchema = z.object({
   id: z.string().min(1),
   updatedAt: z.string().min(1),
 });
@@ -21,5 +21,5 @@ export const updateStatusRoute = protectedProcedure
     summary: "Update platform organizer status",
   })
   .input(updateStatusInputSchema)
-  .output(mutationOutputSchema)
+  .output(updateStatusOutputSchema)
   .handler(updatePlatformOrganizerStatusHandler);

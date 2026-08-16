@@ -13,13 +13,13 @@ const upsertSeatCategoryInputSchema = z.object({
   displayOrder: z.number().int().min(0),
 });
 
-const mutationOutputSchema = z.object({
+const upsertSeatCategoryOutputSchema = z.object({
   id: z.string().min(1),
   updatedAt: z.string().min(1),
 });
 
 export type UpsertSeatCategoryInput = z.infer<typeof upsertSeatCategoryInputSchema>;
-export type UpsertSeatCategoryOutput = z.infer<typeof mutationOutputSchema>;
+export type UpsertSeatCategoryOutput = z.infer<typeof upsertSeatCategoryOutputSchema>;
 
 export const upsertSeatCategoryRoute = protectedProcedure
   .route({
@@ -28,5 +28,5 @@ export const upsertSeatCategoryRoute = protectedProcedure
     summary: "Upsert seat category",
   })
   .input(upsertSeatCategoryInputSchema)
-  .output(mutationOutputSchema)
+  .output(upsertSeatCategoryOutputSchema)
   .handler(upsertSeatCategoryHandler);

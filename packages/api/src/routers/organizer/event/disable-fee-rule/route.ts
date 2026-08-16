@@ -9,7 +9,7 @@ const disableFeeRuleInputSchema = z.object({
   feeRuleId: z.string().min(1),
 });
 
-const mutationOutputSchema = z.object({
+const disableFeeRuleOutputSchema = z.object({
   id: z.string().min(1),
   updatedAt: z.string().min(1),
 });
@@ -21,5 +21,5 @@ export const disableFeeRuleRoute = protectedProcedure
     summary: "Disable fee rule",
   })
   .input(disableFeeRuleInputSchema)
-  .output(mutationOutputSchema)
+  .output(disableFeeRuleOutputSchema)
   .handler(disableFeeRuleHandler);

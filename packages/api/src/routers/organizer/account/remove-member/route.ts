@@ -8,7 +8,7 @@ const removeMemberInputSchema = z.object({
   memberId: z.string().min(1),
 });
 
-const mutationOutputSchema = z.object({
+const removeMemberOutputSchema = z.object({
   id: z.string().min(1),
   updatedAt: z.string().min(1),
 });
@@ -20,5 +20,5 @@ export const removeMemberRoute = protectedProcedure
     summary: "Remove organizer member",
   })
   .input(removeMemberInputSchema)
-  .output(mutationOutputSchema)
+  .output(removeMemberOutputSchema)
   .handler(removeMemberHandler);

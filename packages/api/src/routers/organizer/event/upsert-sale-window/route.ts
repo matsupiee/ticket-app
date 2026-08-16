@@ -17,13 +17,13 @@ const upsertSaleWindowInputSchema = z.object({
   notifyLotteryResultAt: z.string().min(1).optional(),
 });
 
-const mutationOutputSchema = z.object({
+const upsertSaleWindowOutputSchema = z.object({
   id: z.string().min(1),
   updatedAt: z.string().min(1),
 });
 
 export type UpsertSaleWindowInput = z.infer<typeof upsertSaleWindowInputSchema>;
-export type UpsertSaleWindowOutput = z.infer<typeof mutationOutputSchema>;
+export type UpsertSaleWindowOutput = z.infer<typeof upsertSaleWindowOutputSchema>;
 
 export const upsertSaleWindowRoute = protectedProcedure
   .route({
@@ -32,5 +32,5 @@ export const upsertSaleWindowRoute = protectedProcedure
     summary: "Upsert sale window",
   })
   .input(upsertSaleWindowInputSchema)
-  .output(mutationOutputSchema)
+  .output(upsertSaleWindowOutputSchema)
   .handler(upsertSaleWindowHandler);

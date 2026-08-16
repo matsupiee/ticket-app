@@ -11,13 +11,13 @@ const upsertRateTypeInputSchema = z.object({
   displayOrder: z.number().int().min(0),
 });
 
-const mutationOutputSchema = z.object({
+const upsertRateTypeOutputSchema = z.object({
   id: z.string().min(1),
   updatedAt: z.string().min(1),
 });
 
 export type UpsertRateTypeInput = z.infer<typeof upsertRateTypeInputSchema>;
-export type UpsertRateTypeOutput = z.infer<typeof mutationOutputSchema>;
+export type UpsertRateTypeOutput = z.infer<typeof upsertRateTypeOutputSchema>;
 
 export const upsertRateTypeRoute = protectedProcedure
   .route({
@@ -26,5 +26,5 @@ export const upsertRateTypeRoute = protectedProcedure
     summary: "Upsert rate type",
   })
   .input(upsertRateTypeInputSchema)
-  .output(mutationOutputSchema)
+  .output(upsertRateTypeOutputSchema)
   .handler(upsertRateTypeHandler);

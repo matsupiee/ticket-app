@@ -56,7 +56,7 @@ bun run dev # apiサーバー、web、web-admin-organizer、web-admin-platform �
 - 機械的に検出できない問題はAgent Ruleとして残す。
 - 定型作業はskill化を検討し、1週間以上使われていないskillは削除を検討する。
 
-## 7. Self review
+### 7. Self review
 
 全工程が完了したら、最終回答前にレビュー用サブエージェントを1つ起動する。
 
@@ -69,6 +69,11 @@ bun run dev # apiサーバー、web、web-admin-organizer、web-admin-platform �
 - docs/coding-pattern などで説明されている規約との乖離
 
 メインエージェントは、レビュー結果を確認し、必要な修正を行ってから最終回答する。
+
+### 8. Create PR
+
+- ブランチを切って作業している場合、作業完了後は自動でPRを作成する。
+- PRのタイトル・説明文は日本語で書く。
 
 ## 正しさの検証
 

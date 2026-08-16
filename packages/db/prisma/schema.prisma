@@ -509,8 +509,8 @@ model InventorySlotHold {
   // 1つの在庫枠を同時に複数の申し込みが確保できないようにする
   inventorySlotId   String @unique
   // どの申し込みが確保しているか
-  // 抽選は当選確定時に OrderItem が作られる（LotteryApplicationItem.orderItemId）ため、
-  // 先着・抽選のどちらも OrderItem を辿れば申込元に到達できる
+  // 抽選は当選確定時に対応する ApplicationItem.lotteryResult が WON になり Order が作られるため、
+  // 先着・抽選のどちらも ApplicationItem から Application → Order を辿れば申込元・注文の両方に到達できる
   applicationItemId String
 
   // 自動解放期限はカラムとして設ける必要はないと判断した

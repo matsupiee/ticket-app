@@ -14,13 +14,13 @@ const adjustInventoryInputSchema = z.object({
   reason: z.string().min(1),
 });
 
-const mutationOutputSchema = z.object({
+const adjustInventoryOutputSchema = z.object({
   id: z.string().min(1),
   updatedAt: z.string().min(1),
 });
 
 export type AdjustInventoryInput = z.infer<typeof adjustInventoryInputSchema>;
-export type AdjustInventoryOutput = z.infer<typeof mutationOutputSchema>;
+export type AdjustInventoryOutput = z.infer<typeof adjustInventoryOutputSchema>;
 
 export const adjustInventoryRoute = protectedProcedure
   .route({
@@ -29,5 +29,5 @@ export const adjustInventoryRoute = protectedProcedure
     summary: "Adjust inventory",
   })
   .input(adjustInventoryInputSchema)
-  .output(mutationOutputSchema)
+  .output(adjustInventoryOutputSchema)
   .handler(adjustInventoryHandler);

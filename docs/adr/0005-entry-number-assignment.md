@@ -78,8 +78,10 @@ Accepted
 
 これは実害を伴う。入金通知を受け取ったときに「この注文が押さえている枠はどれか」を特定できないと、注文作成時に採番した整理番号と発券するチケットを結びつけられない。
 
+当初は `Order`/`OrderItem` と `LotteryApplication`/`LotteryApplicationItem` を別モデルとして持ち、抽選の当選確定時に `LotteryApplicationItem.orderItemId` で `OrderItem` を作る設計だった。しかしその後のスキーマ整理で、`Order` は「申込（`Application`）の内容が確定した状態」でしかなく、先着・抽選のどちらでも `Application` と1:1にしかならないことがわかったため、`OrderItem` と `LotteryApplication` / `LotteryApplicationItem` を廃止し `Application` / `ApplicationItem` に統合した。`Order.applicationId` は `@unique` で `Application` に1:1に紐づき、数量・単価・希望順位・抽選結果（`preferenceRank` / `lotteryResult`）は `ApplicationItem` が直接持つ。
+
 - `InventorySlotHold` を追加する。1つの在庫枠を同時に複数の申し込みが確保できないよう `inventorySlotId` に `@unique` を張る。
-- 確保の主体は `orderItemId`（必須）とする。抽選も当選確定時に `OrderItem` が作られる（`LotteryApplicationItem.orderItemId`）ため、先着・抽選のどちらも `OrderItem` を辿れば申込元に到達できる。専用の外部キーは追加しない。
+- 確保の主体は `applicationItemId`（必須）とする。抽選も当選確定時に対応する `ApplicationItem.lotteryResult` が `WON` になり `Order` が作られるため、先着・抽選のどちらも `ApplicationItem` から `Application` → `Order` を辿れば申込元・注文の両方に到達できる。専用の外部キーは追加しない。
 - 解放時は行を削除し、`InventorySlot.status` を `AVAILABLE` に戻す。
 - 発券後もこの行は残す。発券は `TicketEntitlement` が増えるだけであり、「枠が埋まっている」という事実の正本は常に `InventorySlotHold` に置く。
 
@@ -90,12 +92,12 @@ Accepted
 - 整理番号の払い出しは `InventoryPool` の1行を更新するため直列化する。これは「連番を振る」という要件から本質的に避けられない。在庫確保そのものは `InventorySlot` 行への分散した更新のままなので、販売開始直後のバーストは在庫確保側で吸収される。
 - `packages/db/src/seed/` は在庫枠の作成時に `entryNumber: i + 1` を振っており、「`entryNumber` が `null` でない枠は `AVAILABLE` ではない」という不変条件に反する。seedデータも採番なしで作り、購入済みの枠だけ番号を持つ形に直す必要がある。
 - 在庫減少（`adjustInventoryCapacity`）は現在 `entryNumber` の大きい順に `AVAILABLE` を削除しているが、採番タイミングが変わると `AVAILABLE` な枠の `entryNumber` は常に `null` になるため、この順序指定は意味を失う。`createdAt` の新しい順など別の基準に置き換える必要がある。同様に `allocateInventorySlots` の `orderBy: { entryNumber: "asc" }` も外す必要がある。
-- 入金時の発券は「`InventorySlotHold` を `orderItemId` で引く → その枠に `TicketEntitlement` を作る」で完結する。整理番号は注文作成時に確定しているので、入金の早い遅いで番号が変わらない。
+- 入金時の発券は「`InventorySlotHold` を `applicationItemId` で引く → その枠に `TicketEntitlement` を作る」で完結する。整理番号は注文作成時に確定しているので、入金の早い遅いで番号が変わらない。
 - `InventorySlot.status` と `InventorySlotHold` の有無は常に一致していなければならない。両者を同一トランザクションで更新する規律が必要になる。`status` は「空き枠を高速に検索するための非正規化」と位置づけ、正本は `InventorySlotHold` とする。
 - 期限切れ解放バッチは期限を計算して期限切れしている `InventorySlotHold` を削除して `status` を戻すだけでよい。
 - `partialIndexes` はプレビュー機能のため、将来のPrismaのバージョンで構文が変わる可能性がある。GA前に破壊的変更が入った場合は `@@unique` の書き方を追随させる必要がある。
 - **`findUnique` / `update` / `upsert` の `where` に `inventorySlotId` 単体を渡してはいけない。** Prisma は部分インデックスであっても `TicketEntitlementWhereUniqueInput` に `inventorySlotId?: string` を生成するため、型チェックは通ってしまう。しかし実際には「有効な行のうち1件」しか一意でないので、キャンセル済みの行が複数あると一意に定まらない。在庫枠から有効なチケットを引くときは `findFirst({ where: { inventorySlotId, canceledAt: null } })` を使う。
-- 現時点で API 層のコードは現行の `schema.prisma` に追従していない（`InventoryPool.performanceId` / `seatCategoryId`、`Ticket.status`、`SaleWindow.method` など、現在のスキーマに存在しない名前を参照しており `bun run check-types` が通らない）。本ADRの採番方式は、この追従作業と合わせて実装する。
+- 現時点で API 層のコードは現行の `schema.prisma` に追従していない。追従すべき差分の詳細は ADR 0007 を参照。本ADRに関係する差分としては、`packages/api/src/shared/ticketing.ts` が `OrderItem` / `order.orderItems` / `InventorySlotHold.orderItemId` など、`Application` / `ApplicationItem` への統合で廃止済みのモデル・カラム名をまだ参照しており、`ApplicationItem` / `InventorySlotHold.applicationItemId` に置き換える必要がある。本ADRの採番方式は、この追従作業と合わせて実装する。
 - Prismaだけでは表現できない次の制約は、アプリケーション層で補強する。
   - `TicketCategory.kind = RESERVED_SEAT` のとき `InventorySlot.seatId` 必須・`entryNumber` は常に `null`。
   - `TicketCategory.kind = ENTRY_NUMBER` のとき `InventorySlot.seatId` は常に `null`。

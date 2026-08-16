@@ -10,7 +10,7 @@ const updateProfileInputSchema = z.object({
   inquiryPhoneNumber: z.string().min(1).optional(),
 });
 
-const mutationOutputSchema = z.object({
+const updateProfileOutputSchema = z.object({
   id: z.string().min(1),
   updatedAt: z.string().min(1),
 });
@@ -22,5 +22,5 @@ export const updateProfileRoute = protectedProcedure
     summary: "Update organizer profile",
   })
   .input(updateProfileInputSchema)
-  .output(mutationOutputSchema)
+  .output(updateProfileOutputSchema)
   .handler(updateOrganizerProfileHandler);

@@ -27,13 +27,13 @@ const updateEventInputSchema = z.object({
     .optional(),
 });
 
-const mutationOutputSchema = z.object({
+const updateEventOutputSchema = z.object({
   id: z.string().min(1),
   updatedAt: z.string().min(1),
 });
 
 export type UpdateEventInput = z.infer<typeof updateEventInputSchema>;
-export type UpdateEventOutput = z.infer<typeof mutationOutputSchema>;
+export type UpdateEventOutput = z.infer<typeof updateEventOutputSchema>;
 
 export const updateEventRoute = protectedProcedure
   .route({
@@ -42,5 +42,5 @@ export const updateEventRoute = protectedProcedure
     summary: "Update organizer event settings",
   })
   .input(updateEventInputSchema)
-  .output(mutationOutputSchema)
+  .output(updateEventOutputSchema)
   .handler(updateEventHandler);

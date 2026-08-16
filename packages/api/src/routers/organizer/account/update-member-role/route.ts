@@ -9,7 +9,7 @@ const updateMemberRoleInputSchema = z.object({
   role: z.enum(["VIEWER", "EDITOR"]),
 });
 
-const mutationOutputSchema = z.object({
+const updateMemberRoleOutputSchema = z.object({
   id: z.string().min(1),
   updatedAt: z.string().min(1),
 });
@@ -21,5 +21,5 @@ export const updateMemberRoleRoute = protectedProcedure
     summary: "Update organizer member role",
   })
   .input(updateMemberRoleInputSchema)
-  .output(mutationOutputSchema)
+  .output(updateMemberRoleOutputSchema)
   .handler(updateMemberRoleHandler);

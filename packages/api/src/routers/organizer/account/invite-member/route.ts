@@ -9,7 +9,7 @@ const inviteMemberInputSchema = z.object({
   role: z.enum(["VIEWER", "EDITOR"]),
 });
 
-const mutationOutputSchema = z.object({
+const inviteMemberOutputSchema = z.object({
   id: z.string().min(1),
   updatedAt: z.string().min(1),
 });
@@ -21,5 +21,5 @@ export const inviteMemberRoute = protectedProcedure
     summary: "Invite organizer member",
   })
   .input(inviteMemberInputSchema)
-  .output(mutationOutputSchema)
+  .output(inviteMemberOutputSchema)
   .handler(inviteMemberHandler);

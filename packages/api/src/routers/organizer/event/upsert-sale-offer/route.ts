@@ -31,13 +31,13 @@ const upsertSaleOfferInputSchema = z.object({
   ),
 });
 
-const mutationOutputSchema = z.object({
+const upsertSaleOfferOutputSchema = z.object({
   id: z.string().min(1),
   updatedAt: z.string().min(1),
 });
 
 export type UpsertSaleOfferInput = z.infer<typeof upsertSaleOfferInputSchema>;
-export type UpsertSaleOfferOutput = z.infer<typeof mutationOutputSchema>;
+export type UpsertSaleOfferOutput = z.infer<typeof upsertSaleOfferOutputSchema>;
 
 export const upsertSaleOfferRoute = protectedProcedure
   .route({
@@ -46,5 +46,5 @@ export const upsertSaleOfferRoute = protectedProcedure
     summary: "Upsert sale offer",
   })
   .input(upsertSaleOfferInputSchema)
-  .output(mutationOutputSchema)
+  .output(upsertSaleOfferOutputSchema)
   .handler(upsertSaleOfferHandler);

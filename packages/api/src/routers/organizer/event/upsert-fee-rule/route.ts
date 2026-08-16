@@ -17,7 +17,7 @@ const upsertFeeRuleInputSchema = z.object({
   flatAmount: z.number().int().min(0),
 });
 
-const mutationOutputSchema = z.object({
+const upsertFeeRuleOutputSchema = z.object({
   id: z.string().min(1),
   updatedAt: z.string().min(1),
 });
@@ -29,5 +29,5 @@ export const upsertFeeRuleRoute = protectedProcedure
     summary: "Upsert fee rule",
   })
   .input(upsertFeeRuleInputSchema)
-  .output(mutationOutputSchema)
+  .output(upsertFeeRuleOutputSchema)
   .handler(upsertFeeRuleHandler);
