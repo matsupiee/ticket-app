@@ -4,7 +4,7 @@ import { e2eEnv } from "./utils/env";
 
 export default defineConfig({
   testDir: "./spec",
-  // fan / organizer の Page Object が未実装のため、seedシナリオのspecはまだ実行対象から外す
+  // 対象APIが ADR 0007 の書き直し待ち（NOT_IMPLEMENTED）のため、seedシナリオのspecはまだ実行対象から外す
   testIgnore: ["**/entry-number/**"],
 
   // ローカルはフレーキーテストを炙り出したい → リトライなし・並列多め

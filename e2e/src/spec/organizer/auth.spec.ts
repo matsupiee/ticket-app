@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+
 import { expect, test } from "../../fixtures/app.fixture";
 import { e2eEnv } from "../../utils/env";
 
@@ -6,7 +8,7 @@ test.describe("主催者の新規登録・ログイン", () => {
     app,
     page,
   }) => {
-    const suffix = Date.now();
+    const suffix = `${randomUUID().slice(0, 8)}-${Date.now()}`;
     const email = `organizer-signup-${suffix}@example.com`;
     const password = "organizer-e2e-password";
     const organizerName = `E2E主催者 新規登録 ${suffix}`;
@@ -26,6 +28,7 @@ test.describe("主催者の新規登録・ログイン", () => {
       await app.organizer.signUp().clickSubmit();
     });
 
+    // イベント一覧APIは ADR 0007 の書き直し待ちのため、ここでは遷移できることまでを確認する
     await test.step("主催者ダッシュボードに遷移することを確認する。", async () => {
       await expect(page).toHaveURL(`${e2eEnv.organizerAdminUrl}/`);
       await expect(app.organizer.dashboard().heading).toBeVisible();
@@ -37,7 +40,7 @@ test.describe("主催者の新規登録・ログイン", () => {
     page,
     request,
   }) => {
-    const suffix = Date.now();
+    const suffix = `${randomUUID().slice(0, 8)}-${Date.now()}`;
     const email = `organizer-signin-${suffix}@example.com`;
     const password = "organizer-e2e-password";
     const organizerName = `E2E主催者 ログイン ${suffix}`;
@@ -77,6 +80,7 @@ test.describe("主催者の新規登録・ログイン", () => {
       await app.organizer.signIn().clickSubmit();
     });
 
+    // イベント一覧APIは ADR 0007 の書き直し待ちのため、ここでは遷移できることまでを確認する
     await test.step("主催者ダッシュボードに遷移することを確認する。", async () => {
       await expect(page).toHaveURL(`${e2eEnv.organizerAdminUrl}/`);
       await expect(app.organizer.dashboard().heading).toBeVisible();
@@ -88,7 +92,7 @@ test.describe("主催者の新規登録・ログイン", () => {
     page,
     request,
   }) => {
-    const email = `organizer-no-account-${Date.now()}@example.com`;
+    const email = `organizer-no-account-${randomUUID().slice(0, 8)}-${Date.now()}@example.com`;
     const password = "organizer-e2e-password";
 
     await test.step("主催者アカウントを作らずにユーザーだけ作成する。", async () => {

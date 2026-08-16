@@ -12,6 +12,19 @@ import { client } from "@/lib/orpc";
 
 export function OrganizerSignUpPage() {
   const navigate = useNavigate();
+  const { data: session } = authClient.useSession();
+  const createOrganizerAccount = async (organizerName: string) => {
+    try {
+      await client.organizer.account.signUp({ organizerName });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "主催者アカウントの作成に失敗しました");
+      return;
+    }
+
+    toast.success("主催者アカウントを作成しました");
+    navigate({ to: "/" });
+  };
+
   const form = useForm({
     defaultValues: {
       name: "",
@@ -20,6 +33,13 @@ export function OrganizerSignUpPage() {
       password: "",
     },
     onSubmit: async ({ value }) => {
+      // 登録はユーザー作成と主催者アカウント作成の2段階になる。主催者アカウント作成だけ失敗すると
+      // ログイン済みかつ主催者未所属で詰むため、セッションがある場合はユーザー作成を飛ばしてやり直せるようにする
+      if (session) {
+        await createOrganizerAccount(value.organizerName);
+        return;
+      }
+
       await authClient.signUp.email(
         {
           name: value.name,
@@ -27,21 +47,9 @@ export function OrganizerSignUpPage() {
           password: value.password,
         },
         {
+          // ユーザー作成だけでは主催者管理画面に入れないため、続けて主催者アカウントを作る
           onSuccess: async () => {
-            // ユーザー作成だけでは主催者管理画面に入れないため、続けて主催者アカウントを作る
-            try {
-              await client.organizer.account.signUp({
-                organizerName: value.organizerName,
-              });
-            } catch (error) {
-              toast.error(
-                error instanceof Error ? error.message : "主催者アカウントの作成に失敗しました",
-              );
-              return;
-            }
-
-            toast.success("主催者アカウントを作成しました");
-            navigate({ to: "/" });
+            await createOrganizerAccount(value.organizerName);
           },
           onError: (error) => {
             toast.error(error.error.message || error.error.statusText);
@@ -50,19 +58,62 @@ export function OrganizerSignUpPage() {
       );
     },
     validators: {
-      onSubmit: z.object({
-        name: z.string().min(2, "名前は2文字以上で入力してください"),
-        organizerName: z.string().min(2, "主催者名は2文字以上で入力してください"),
-        email: z.email("メールアドレスを入力してください"),
-        password: z.string().min(8, "パスワードは8文字以上で入力してください"),
-      }),
+      // セッションがある場合はユーザー作成を行わないため、主催者名だけを検証する
+      onSubmit: z
+        .object({
+          name: z.string(),
+          organizerName: z.string(),
+          email: z.string(),
+          password: z.string(),
+        })
+        .superRefine((value, ctx) => {
+          if (value.organizerName.length < 2) {
+            ctx.addIssue({
+              code: "custom",
+              path: ["organizerName"],
+              message: "主催者名は2文字以上で入力してください",
+            });
+          }
+
+          if (session) {
+            return;
+          }
+
+          if (value.name.length < 2) {
+            ctx.addIssue({
+              code: "custom",
+              path: ["name"],
+              message: "名前は2文字以上で入力してください",
+            });
+          }
+
+          if (!z.email().safeParse(value.email).success) {
+            ctx.addIssue({
+              code: "custom",
+              path: ["email"],
+              message: "メールアドレスを入力してください",
+            });
+          }
+
+          if (value.password.length < 8) {
+            ctx.addIssue({
+              code: "custom",
+              path: ["password"],
+              message: "パスワードは8文字以上で入力してください",
+            });
+          }
+        }),
     },
   });
 
   return (
     <AuthPanelLayout
       title="主催者登録"
-      description="主催者アカウントを作成すると、イベントの作成と販売管理ができます。"
+      description={
+        session
+          ? "ログイン中のユーザーに紐づく主催者アカウントを作成します。"
+          : "主催者アカウントを作成すると、イベントの作成と販売管理ができます。"
+      }
       footer={
         <Link to="/sign-in" className="text-sm font-medium underline underline-offset-4">
           ログインに戻る
@@ -77,25 +128,27 @@ export function OrganizerSignUpPage() {
           form.handleSubmit();
         }}
       >
-        <form.Field name="name">
-          {(field) => (
-            <div className="space-y-2">
-              <Label htmlFor={field.name}>名前</Label>
-              <Input
-                id={field.name}
-                name={field.name}
-                value={field.state.value}
-                onBlur={field.handleBlur}
-                onChange={(event) => field.handleChange(event.target.value)}
-              />
-              {field.state.meta.errors.map((error) => (
-                <p key={error?.message} className="text-xs text-destructive">
-                  {error?.message}
-                </p>
-              ))}
-            </div>
-          )}
-        </form.Field>
+        {session ? null : (
+          <form.Field name="name">
+            {(field) => (
+              <div className="space-y-2">
+                <Label htmlFor={field.name}>名前</Label>
+                <Input
+                  id={field.name}
+                  name={field.name}
+                  value={field.state.value}
+                  onBlur={field.handleBlur}
+                  onChange={(event) => field.handleChange(event.target.value)}
+                />
+                {field.state.meta.errors.map((error) => (
+                  <p key={error?.message} className="text-xs text-destructive">
+                    {error?.message}
+                  </p>
+                ))}
+              </div>
+            )}
+          </form.Field>
+        )}
 
         <form.Field name="organizerName">
           {(field) => (
@@ -117,47 +170,51 @@ export function OrganizerSignUpPage() {
           )}
         </form.Field>
 
-        <form.Field name="email">
-          {(field) => (
-            <div className="space-y-2">
-              <Label htmlFor={field.name}>メールアドレス</Label>
-              <Input
-                id={field.name}
-                name={field.name}
-                type="email"
-                value={field.state.value}
-                onBlur={field.handleBlur}
-                onChange={(event) => field.handleChange(event.target.value)}
-              />
-              {field.state.meta.errors.map((error) => (
-                <p key={error?.message} className="text-xs text-destructive">
-                  {error?.message}
-                </p>
-              ))}
-            </div>
-          )}
-        </form.Field>
+        {session ? null : (
+          <form.Field name="email">
+            {(field) => (
+              <div className="space-y-2">
+                <Label htmlFor={field.name}>メールアドレス</Label>
+                <Input
+                  id={field.name}
+                  name={field.name}
+                  type="email"
+                  value={field.state.value}
+                  onBlur={field.handleBlur}
+                  onChange={(event) => field.handleChange(event.target.value)}
+                />
+                {field.state.meta.errors.map((error) => (
+                  <p key={error?.message} className="text-xs text-destructive">
+                    {error?.message}
+                  </p>
+                ))}
+              </div>
+            )}
+          </form.Field>
+        )}
 
-        <form.Field name="password">
-          {(field) => (
-            <div className="space-y-2">
-              <Label htmlFor={field.name}>パスワード</Label>
-              <Input
-                id={field.name}
-                name={field.name}
-                type="password"
-                value={field.state.value}
-                onBlur={field.handleBlur}
-                onChange={(event) => field.handleChange(event.target.value)}
-              />
-              {field.state.meta.errors.map((error) => (
-                <p key={error?.message} className="text-xs text-destructive">
-                  {error?.message}
-                </p>
-              ))}
-            </div>
-          )}
-        </form.Field>
+        {session ? null : (
+          <form.Field name="password">
+            {(field) => (
+              <div className="space-y-2">
+                <Label htmlFor={field.name}>パスワード</Label>
+                <Input
+                  id={field.name}
+                  name={field.name}
+                  type="password"
+                  value={field.state.value}
+                  onBlur={field.handleBlur}
+                  onChange={(event) => field.handleChange(event.target.value)}
+                />
+                {field.state.meta.errors.map((error) => (
+                  <p key={error?.message} className="text-xs text-destructive">
+                    {error?.message}
+                  </p>
+                ))}
+              </div>
+            )}
+          </form.Field>
+        )}
 
         <form.Subscribe
           selector={(state) => ({ canSubmit: state.canSubmit, isSubmitting: state.isSubmitting })}

@@ -15,6 +15,7 @@ vi.mock("@/lib/auth-client", () => ({
     signUp: {
       email: vi.fn(),
     },
+    useSession: vi.fn(),
   },
 }));
 
@@ -32,12 +33,14 @@ const { authClient } = await import("@/lib/auth-client");
 const { client } = await import("@/lib/orpc");
 // better-auth の型は onSuccess を含む広いオプション型のため、テスト側では Mock として扱う
 const signUpEmail = authClient.signUp.email as unknown as Mock;
+const useSession = authClient.useSession as unknown as Mock;
 const signUpOrganizerAccount = client.organizer.account.signUp as unknown as Mock;
 const { OrganizerSignUpPage } = await import("./page");
 
 describe("OrganizerSignUpPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    useSession.mockReturnValue({ data: null });
   });
 
   afterEach(() => {
@@ -102,6 +105,30 @@ describe("OrganizerSignUpPage", () => {
       expect(signUpOrganizerAccount).toHaveBeenCalled();
     });
     expect(navigate).not.toHaveBeenCalled();
+  });
+
+  it("ログイン済みで主催者未所属の場合は、主催者名だけを入力して主催者アカウントを作成できる", async () => {
+    const user = userEvent.setup();
+    useSession.mockReturnValue({ data: { user: { id: "user-1" } } });
+    signUpOrganizerAccount.mockResolvedValue({
+      eventOrganizerId: "organizer-1",
+      name: "オービットワークス",
+      role: "EDITOR",
+    });
+
+    render(<OrganizerSignUpPage />);
+
+    expect(screen.queryByLabelText("メールアドレス")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("パスワード")).not.toBeInTheDocument();
+
+    await user.type(screen.getByLabelText("主催者名"), "オービットワークス");
+    await user.click(screen.getByRole("button", { name: "登録" }));
+
+    await waitFor(() => {
+      expect(signUpOrganizerAccount).toHaveBeenCalledWith({ organizerName: "オービットワークス" });
+    });
+    expect(signUpEmail).not.toHaveBeenCalled();
+    expect(navigate).toHaveBeenCalledWith({ to: "/" });
   });
 
   it("入力が不正な場合はエラーを表示し、登録APIを呼び出さない", async () => {

@@ -11,11 +11,17 @@ export function ForbiddenPage() {
           <h1 className="text-3xl font-semibold tracking-normal">権限がありません</h1>
           <p className="text-sm leading-7 text-muted-foreground">
             この主催者管理画面にアクセスできるアカウントでログインしてください。
+            ログイン中のユーザーがまだ主催者アカウントを持っていない場合は、主催者登録から作成できます。
           </p>
         </div>
-        <Link to="/sign-in" className={buttonVariants({ variant: "outline" })}>
-          ログインへ
-        </Link>
+        <div className="grid gap-2">
+          <Link to="/sign-in" className={buttonVariants({ variant: "outline" })}>
+            ログインへ
+          </Link>
+          <Link to="/sign-up" className={buttonVariants({ variant: "outline" })}>
+            主催者登録へ
+          </Link>
+        </div>
       </section>
     </main>
   );

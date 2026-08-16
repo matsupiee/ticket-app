@@ -1,9 +1,12 @@
+import { randomUUID } from "node:crypto";
+
 import { expect, test } from "../../fixtures/app.fixture";
 import { e2eEnv } from "../../utils/env";
 
 test.describe("購入者の新規登録・ログイン", () => {
   test("未登録の購入者が新規登録すると、そのままマイページを開ける。", async ({ app, page }) => {
-    const email = `fan-signup-${Date.now()}@example.com`;
+    const suffix = `${randomUUID().slice(0, 8)}-${Date.now()}`;
+    const email = `fan-signup-${suffix}@example.com`;
     const password = "fan-e2e-password";
 
     await test.step("新規登録ページを開く。", async () => {
@@ -25,7 +28,8 @@ test.describe("購入者の新規登録・ログイン", () => {
   });
 
   test("登録済みの購入者がログインすると、マイページを開ける。", async ({ app, page, request }) => {
-    const email = `fan-signin-${Date.now()}@example.com`;
+    const suffix = `${randomUUID().slice(0, 8)}-${Date.now()}`;
+    const email = `fan-signin-${suffix}@example.com`;
     const password = "fan-e2e-password";
 
     await test.step("ログイン対象の購入者アカウントを事前に作成する。", async () => {
