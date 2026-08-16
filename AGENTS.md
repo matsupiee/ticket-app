@@ -13,17 +13,21 @@
 
 | 種類 | 置き場所 |
 | --- | --- |
-| コードの書き方・ディレクトリ構成 | [`docs/coding-pattern/*.md`](./docs/coding-pattern/) |
-| テストの書き方・配置 | [`docs/coding-pattern/test.md`](./docs/coding-pattern/test.md) |
+| コードの書き方・ディレクトリ構成・テスト・E2E | [`docs/coding-pattern/`](./docs/coding-pattern/) の該当ファイル |
 | 個別機能の仕様・受け入れ条件 | [`docs/spec/`](./docs/spec/) |
 | システム横断の設計判断とその背景 | [`docs/adr/`](./docs/adr/) |
-| 作業の進め方 | この `AGENTS.md` 本体 |
-| 上記に収まらず、機械的に検出もできないAgentの失敗パターン | [`docs/agent-rules.md`](./docs/agent-rules.md) |
+| 開発ループの回し方 | [`docs/loop-engineering.md`](./docs/loop-engineering.md) |
+| 作業フローの各ステップで守ること | この `AGENTS.md` 本体 |
+| ローカル環境構築・実行手順 | [`docs/development-setup.md`](./docs/development-setup.md) |
+| seedデータの作り方 | [`docs/db-seed-data.md`](./docs/db-seed-data.md) |
 | プロダクト要件 | [`docs/requirement.md`](./docs/requirement.md) |
+| 上記のどこにも収まらず、機械的に検出もできないAgentの失敗パターン | [`docs/agent-rules.md`](./docs/agent-rules.md) |
+
+`docs/` にファイルを追加・移動したら、同じPR内で [`docs/INDEX.md`](./docs/INDEX.md) にも反映する。INDEX.md が入口として機能しなくなると、この表も空振りする。
 
 決定論的に検出できるものは、**どこにも書かずに検査を追加する**（`scripts/check-*.ts`・linter・テスト・lefthook）。ドキュメントに書くのは、検査にできないと判断したときだけである。
 
-レビュー指摘やPRコメントをそのまま時系列で溜めるファイルは作らない。GitHubが正本であり、リポジトリ内に複製しても読まれずに肥大化する。指摘から得た知識は、上表の該当箇所に反映して初めて価値になる。
+レビュー指摘やPRコメントをそのまま時系列で溜めるファイルは作らない。GitHubが正本であり、リポジトリ内に複製しても読まれずに肥大化する。指摘から得た知識は、上表の該当箇所に反映して初めて価値になる。**繰り返し発生しているかを判断する材料も、GitHubのレビュー履歴を検索して得る。**
 
 ## 作業フロー
 
@@ -76,9 +80,8 @@ specがある場合、**すべての受け入れ条件が `- [x]` になるま�
 ### 6. Improve
 
 - 決定論的に検出できる問題は、**1回目でも**linter・テスト・`scripts/check-*.ts`・lefthookで機械的に防ぐ。3回待つ必要はない。
-- 機械的に検出できない問題は、同じミスを3回以上繰り返した時点で [`docs/agent-rules.md`](./docs/agent-rules.md) にAgent Ruleとして残す。書式と、そこに書かないものの基準は同ファイルを参照する。
-- コードの書き方に落ちる指摘は、Agent Ruleではなく `docs/coding-pattern/*.md` に反映する（「知識の置き場所」を参照）。
-- 検査に置き換えられたAgent Ruleは削除する。検査とルールの両方を残さない。
+- 機械的に検出できない問題は、同じミスを3回以上繰り返した時点で [`docs/agent-rules.md`](./docs/agent-rules.md) にAgent Ruleとして残す。回数の根拠はGitHubのレビュー履歴を検索して示す。書式と運用は同ファイルを参照する。
+- コードの書き方に落ちる指摘は、Agent Ruleではなく `docs/coding-pattern/` に反映する（「知識の置き場所」を参照）。
 - 定型作業はskill化を検討し、1週間以上使われていないskillは削除を検討する。
 
 ### 7. Self review
