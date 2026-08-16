@@ -9,10 +9,13 @@
 
 ## 作業フロー
 
+作業フローは [`docs/loop-engineering.md`](./docs/loop-engineering.md) のループを1周として回す。仕様が固まる前に実装へ進まないことを最優先する。
+
 ### 1. Plan
 
 - 関連するコードと `docs/` を直接確認する。
-- 受け入れ条件が曖昧な場合は、実装前に質問する。
+- 機能追加・仕様変更は、[`docs/spec/`](./docs/spec/) にspecを書いてから実装する。バグ修正・リファクタ・ドキュメント更新はspec不要（判断基準は [`docs/loop-engineering.md`](./docs/loop-engineering.md)）。
+- 受け入れ条件が曖昧な点は**推測で埋めず**、specの `## 未決事項` に積んで人間に質問する。未決事項が残っている限り、specのステータスを `確定` にせず、実装にも着手しない。
 - システム全体に影響する設計・仕様変更は、実装前に [`docs/adr/`](./docs/adr/) のADRを追加または更新する。
 
 ### 2. Test Design
@@ -26,23 +29,26 @@
 
 ### 3. Implement
 
+- specの受け入れ条件を1つずつ潰し、1つ閉じるごとに Verify を回す。
 - 1 PRを1つの論理的変更に収め、変更を小さく保つ。
 - 既存の重複実装がないか確認する。
 - 関数を細分化しすぎず、処理全体を追える構造にする。
+- 実装中に仕様の穴が見つかったら、勝手に決めずspecのステータスを `draft` に戻し、`## 未決事項` に積んで人間に確認する。穴に依存しない受け入れ条件は進めてよい。
 
 ### 4. Verify
 
 コードの変更を行う場合、以下がすべて成功するまで完了としない。(mdファイルの編集を行なっただけの場合、検証作業は不要)
 
 ```sh
-bun test:unit
-bun test:int
-bun test:e2e
+bun run verify # check:spec + check:patterns + lint + format:check + typecheck + test:unit + test:int
+bun test:e2e   # 実行時間が長いため、完了判定の直前に1回流す
 
 bun run dev # apiサーバー、web、web-admin-organizer、web-admin-platform がエラーなく立ち上がることを確認する
 ```
 
 テスト失敗は根本原因を修正する。テストの無効化や、例外を握りつぶす回避は禁止する。
+
+specがある場合、**すべての受け入れ条件が `- [x]` になるまで完了としない**。全部閉じたらステータスを `完了` にする。
 
 ### 5. Document
 
