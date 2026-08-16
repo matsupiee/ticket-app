@@ -1,3 +1,4 @@
+import { ORPCError } from "@orpc/client";
 import { Outlet, createFileRoute, redirect } from "@tanstack/react-router";
 
 import { authClient } from "@/lib/auth-client";
@@ -20,10 +21,25 @@ export const Route = createFileRoute("/(authenticated)")({
       const platformAccount = await client.platform.account.me({});
 
       return { session, platformAccount };
-    } catch {
-      throw redirect({
-        to: "/forbidden",
-      });
+    } catch (error) {
+      if (!(error instanceof ORPCError)) {
+        throw error;
+      }
+
+      if (error.code === "UNAUTHORIZED") {
+        throw redirect({
+          to: "/sign-in",
+        });
+      }
+
+      if (error.code === "FORBIDDEN") {
+        throw redirect({
+          to: "/forbidden",
+        });
+      }
+
+      // 通信エラーやサーバーエラーを「権限がない」と見せないよう、そのまま投げる
+      throw error;
     }
   },
 });

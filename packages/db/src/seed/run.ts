@@ -1,3 +1,5 @@
+import { hashPassword } from "better-auth/crypto";
+
 import { db } from "../index";
 import type { Prisma, PrismaClient } from "../generated/prisma/client";
 import {
@@ -143,6 +145,25 @@ async function upsertSeedPlatformAdmin(tx: SeedClient) {
       name: seedPlatformUser.name,
       email: seedPlatformUser.email,
       emailVerified: true,
+    },
+  });
+
+  // better-auth のメール・パスワードログインは credential の Account を見るため、seedでも作る
+  const password = await hashPassword(seedPlatformUser.password);
+
+  await tx.account.upsert({
+    where: {
+      id: "seed-platform-admin-account",
+    },
+    update: {
+      password,
+    },
+    create: {
+      id: "seed-platform-admin-account",
+      accountId: seedPlatformUser.id,
+      providerId: "credential",
+      userId: seedPlatformUser.id,
+      password,
     },
   });
 

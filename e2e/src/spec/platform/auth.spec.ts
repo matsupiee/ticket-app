@@ -38,6 +38,7 @@ test.describe("プラットフォーム管理者の新規登録・ログイン",
   }) => {
     const email = `platform-signin-${Date.now()}@example.com`;
     const password = "platform-e2e-password";
+    let platformUserId = "";
 
     await test.step("ログイン対象の管理者アカウントを事前に作成する。", async () => {
       const response = await request.post(`${e2eEnv.apiServerUrl}/api/auth/sign-up/email`, {
@@ -47,6 +48,7 @@ test.describe("プラットフォーム管理者の新規登録・ログイン",
       expect(response.ok()).toBe(true);
 
       const { user } = (await response.json()) as { user: { id: string } };
+      platformUserId = user.id;
 
       await db.platformMember.create({
         data: {
@@ -70,6 +72,10 @@ test.describe("プラットフォーム管理者の新規登録・ログイン",
       await expect(page).toHaveURL(`${e2eEnv.platformAdminUrl}/organizers`);
       await expect(app.platform.organizerList().heading).toBeVisible();
       await expect(app.platform.organizerList().list).toBeVisible();
+    });
+
+    await test.step("テストで付与した管理者権限を削除する。", async () => {
+      await db.platformMember.delete({ where: { userId: platformUserId } });
     });
   });
 

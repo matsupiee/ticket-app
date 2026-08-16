@@ -9,6 +9,9 @@ export async function requirePlatformMember(userId: string) {
     where: {
       userId,
     },
+    include: {
+      user: true,
+    },
   });
 
   if (!platformMember) {

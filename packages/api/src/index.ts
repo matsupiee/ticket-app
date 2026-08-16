@@ -20,19 +20,12 @@ const requireAuth = o.middleware(async ({ context, next }) => {
 
 export const protectedProcedure = publicProcedure.use(requireAuth);
 
-const requirePlatformAccess = o.middleware(async ({ context, next }) => {
-  const user = context.session?.user;
-
-  if (!user) {
-    throw new ORPCError("UNAUTHORIZED");
-  }
-
+// プラットフォーム管理者向けAPIは必ずこのprocedureを使う
+// 認証は requireAuth、認可は requirePlatformMember が担当する
+export const platformProcedure = protectedProcedure.use(async ({ context, next }) => {
   return next({
     context: {
-      platformMember: await requirePlatformMember(user.id),
+      platformMember: await requirePlatformMember(context.session.user.id),
     },
   });
 });
-
-// プラットフォーム管理者向けAPIは必ずこのprocedureを使う
-export const platformProcedure = protectedProcedure.use(requirePlatformAccess);

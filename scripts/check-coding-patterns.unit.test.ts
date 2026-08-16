@@ -241,4 +241,83 @@ describe("checkCodingPatterns", () => {
       ]),
     );
   });
+  it("platform 配下の route.ts が platformProcedure を使っていない場合は指摘する", () => {
+    const issues = checkCodingPatterns({
+      files: [
+        "packages/api/src/routers/index.ts",
+        "packages/api/src/routers/fan/index.ts",
+        "packages/api/src/routers/organizer/index.ts",
+        "packages/api/src/routers/platform/index.ts",
+        "packages/api/src/routers/platform/organizer/list/route.ts",
+        "packages/api/src/routers/platform/organizer/list/handler.ts",
+        "packages/api/src/routers/platform/organizer/list/handler.integration.test.ts",
+      ],
+      sources: [
+        {
+          path: "packages/api/src/routers/platform/organizer/list/route.ts",
+          source:
+            'import { protectedProcedure } from "../../../../index";\n\nexport const listOrganizersRoute = protectedProcedure;\n',
+        },
+      ],
+    });
+
+    expect(issues).toEqual([
+      {
+        path: "packages/api/src/routers/platform/organizer/list/route.ts",
+        rule: "backend platform procedure",
+        message:
+          "platform 配下の route.ts は platformProcedure を使ってください。protectedProcedure だけでは PlatformMember の確認が行われません。",
+      },
+    ]);
+  });
+
+  it("platform 配下の route.ts が platformProcedure を使っている場合は指摘しない", () => {
+    const issues = checkCodingPatterns({
+      files: [
+        "packages/api/src/routers/index.ts",
+        "packages/api/src/routers/fan/index.ts",
+        "packages/api/src/routers/organizer/index.ts",
+        "packages/api/src/routers/platform/index.ts",
+        "packages/api/src/routers/platform/organizer/list/route.ts",
+        "packages/api/src/routers/platform/organizer/list/handler.ts",
+        "packages/api/src/routers/platform/organizer/list/handler.integration.test.ts",
+      ],
+      sources: [
+        {
+          path: "packages/api/src/routers/platform/organizer/list/route.ts",
+          source:
+            'import { platformProcedure } from "../../../../index";\n\nexport const listOrganizersRoute = platformProcedure;\n',
+        },
+      ],
+    });
+
+    expect(issues).toEqual([]);
+  });
+  it("platform 配下の route.ts に protectedProcedure が残っている場合は指摘する", () => {
+    const issues = checkCodingPatterns({
+      files: [
+        "packages/api/src/routers/index.ts",
+        "packages/api/src/routers/fan/index.ts",
+        "packages/api/src/routers/organizer/index.ts",
+        "packages/api/src/routers/platform/index.ts",
+        "packages/api/src/routers/platform/organizer/list/route.ts",
+        "packages/api/src/routers/platform/organizer/list/handler.ts",
+        "packages/api/src/routers/platform/organizer/list/handler.integration.test.ts",
+      ],
+      sources: [
+        {
+          path: "packages/api/src/routers/platform/organizer/list/route.ts",
+          source:
+            'import { protectedProcedure } from "../../../../index";\n\nexport const listOrganizersRoute = platformProcedure;\n',
+        },
+      ],
+    });
+
+    expect(issues).toEqual([
+      expect.objectContaining({
+        path: "packages/api/src/routers/platform/organizer/list/route.ts",
+        rule: "backend platform procedure",
+      }),
+    ]);
+  });
 });

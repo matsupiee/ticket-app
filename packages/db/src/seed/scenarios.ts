@@ -144,11 +144,13 @@ export const seedOrganizerUser = {
 };
 
 // 開発環境で プラットフォーム管理画面 を開くための初期管理者
+// 開発環境でそのままログインできるよう、better-auth のパスワード認証情報も作る
 // 本番環境の初期管理者は手動INSERTで作る
 export const seedPlatformUser = {
   id: "seed-platform-admin",
   name: "Seed Platform Admin",
   email: "seed-platform@example.com",
+  password: "seed-platform-password",
   role: "OWNER",
 } as const;
 
