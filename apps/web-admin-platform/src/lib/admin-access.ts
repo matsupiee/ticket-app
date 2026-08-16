@@ -15,12 +15,27 @@ export function parseAllowedEmails(emailConfig: string | undefined, fallbackEmai
   return configuredEmails.length > 0 ? configuredEmails : fallbackEmails;
 }
 
+/**
+ * 許可リストの要素は「メールアドレス完全一致」と「@ 始まりのドメイン一致」の2種類を受け付ける。
+ * ドメイン指定は、社内ドメイン全体やE2E用ドメインをまとめて許可するために使う。
+ */
 export function isAllowedAdminEmail(email: string | null | undefined, allowedEmails: string[]) {
   if (!email) {
     return false;
   }
 
-  return allowedEmails.includes(email.toLocaleLowerCase("ja-JP"));
+  const normalizedEmail = email.trim().toLocaleLowerCase("ja-JP");
+  const atIndex = normalizedEmail.lastIndexOf("@");
+
+  if (atIndex <= 0 || atIndex === normalizedEmail.length - 1) {
+    return false;
+  }
+
+  const domain = normalizedEmail.slice(atIndex);
+
+  return allowedEmails.some((allowedEmail) =>
+    allowedEmail.startsWith("@") ? allowedEmail === domain : allowedEmail === normalizedEmail,
+  );
 }
 
 export function hasPlatformAdminAccess(sessionData: SessionDataWithEmail) {

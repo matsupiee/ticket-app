@@ -49,6 +49,9 @@ VITE_PLATFORM_ADMIN_EMAILS=platform@example.com
 
 `apps/web-admin-organizer/.env.example` と `apps/web-admin-platform/.env.example` はそのままコピーして使える。
 
+`VITE_PLATFORM_ADMIN_EMAILS` はカンマ区切りで、メールアドレス完全一致と `@example.com` 形式のドメイン指定を混在できる。
+プラットフォーム管理画面のE2Eは、テストごとにユニークなメールアドレスで新規登録するため、`apps/web-admin-platform/playwright.config.ts` から E2E 用ドメインを許可リストに渡している。
+
 ## Supabase DB を起動する
 
 Docker を起動してから、リポジトリルートで次を実行する。

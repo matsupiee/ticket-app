@@ -30,7 +30,7 @@ export function PlatformDashboardPage() {
 
           <div className="grid gap-3 md:grid-cols-4">
             <Kpi label="総流通額" value={formatCurrency(summary.grossSales)} />
-            <Kpi label="平台手数料" value={formatCurrency(summary.platformFeeAmount)} />
+            <Kpi label="プラットフォーム手数料" value={formatCurrency(summary.platformFeeAmount)} />
             <Kpi label="精算予定額" value={formatCurrency(summary.payoutAmount)} />
             <Kpi label="審査中主催者" value={`${underReviewCount}件`} />
           </div>

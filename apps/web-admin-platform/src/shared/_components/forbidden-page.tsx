@@ -10,10 +10,10 @@ export function ForbiddenPage() {
         <div className="space-y-3">
           <h1 className="text-3xl font-semibold tracking-normal">権限がありません</h1>
           <p className="text-sm leading-7 text-muted-foreground">
-            この平台管理画面にアクセスできるアカウントでログインしてください。
+            このプラットフォーム管理画面にアクセスできるアカウントでログインしてください。
           </p>
         </div>
-        <Link to="/login" className={buttonVariants({ variant: "outline" })}>
+        <Link to="/sign-in" className={buttonVariants({ variant: "outline" })}>
           ログインへ
         </Link>
       </section>

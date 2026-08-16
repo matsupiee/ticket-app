@@ -9,7 +9,7 @@ import {
 } from "./platform";
 
 describe("platform admin domain", () => {
-  it("月別売上から総流通額、平台手数料、精算額を集計する", () => {
+  it("月別売上から総流通額、プラットフォーム手数料、精算額を集計する", () => {
     const summary = summarizePlatformSales(platformMonthlySales);
 
     expect(summary.grossSales).toBe(13_971_600);

@@ -15,4 +15,22 @@ describe("platform admin access", () => {
       "platform@example.com",
     ]);
   });
+
+  it("@始まりの設定はドメイン一致で判定する", () => {
+    const allowedEmails = parseAllowedEmails("@Platform.example.com", []);
+
+    expect(isAllowedAdminEmail("ops@platform.example.com", allowedEmails)).toBe(true);
+    expect(isAllowedAdminEmail("ops@other.example.com", allowedEmails)).toBe(false);
+    expect(isAllowedAdminEmail("ops@sub.platform.example.com", allowedEmails)).toBe(false);
+  });
+
+  it("メールアドレスとして成立しない値は許可しない", () => {
+    const allowedEmails = parseAllowedEmails("@example.com,platform@example.com", []);
+
+    expect(isAllowedAdminEmail("", allowedEmails)).toBe(false);
+    expect(isAllowedAdminEmail(null, allowedEmails)).toBe(false);
+    expect(isAllowedAdminEmail("platform", allowedEmails)).toBe(false);
+    expect(isAllowedAdminEmail("@example.com", allowedEmails)).toBe(false);
+    expect(isAllowedAdminEmail("platform@", allowedEmails)).toBe(false);
+  });
 });

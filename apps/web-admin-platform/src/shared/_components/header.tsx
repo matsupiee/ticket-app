@@ -14,7 +14,7 @@ export default function Header() {
       <div className="flex flex-row items-center justify-between px-4 py-3">
         <nav className="flex items-center gap-4 text-sm">
           <Link to="/" className="font-semibold text-foreground">
-            平台管理
+            プラットフォーム管理
           </Link>
           {links.map(({ to, label }) => (
             <Link

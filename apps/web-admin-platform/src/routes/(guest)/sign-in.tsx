@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { SignInPanel } from "@/shared/_components/sign-in-panel";
+import { PlatformSignInPage } from "@/features/auth/sign-in/page";
 
 export const Route = createFileRoute("/(guest)/sign-in")({
-  component: SignInPanel,
+  component: PlatformSignInPage,
 });

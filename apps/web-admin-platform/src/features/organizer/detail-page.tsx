@@ -47,7 +47,10 @@ export function PlatformOrganizerDetailPage({ organizer }: { organizer: Platform
           <h2 className="text-sm font-semibold text-muted-foreground">イベントと精算</h2>
           <div className="grid gap-3 md:grid-cols-3">
             <Kpi label="総流通額" value={formatCurrency(organizer.grossSales)} />
-            <Kpi label="平台手数料" value={formatCurrency(organizer.platformFeeAmount)} />
+            <Kpi
+              label="プラットフォーム手数料"
+              value={formatCurrency(organizer.platformFeeAmount)}
+            />
             <Kpi label="精算額" value={formatCurrency(organizer.payoutAmount)} />
           </div>
           <div className="divide-y border-y">
