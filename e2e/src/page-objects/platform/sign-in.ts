@@ -3,13 +3,15 @@ import type { Locator, Page } from "@playwright/test";
 // /sign-in
 export class PlatformSignInPage {
   readonly page: Page;
+  readonly baseUrl: string;
   readonly heading: Locator;
   readonly emailInput: Locator;
   readonly passwordInput: Locator;
   readonly submitButton: Locator;
 
-  constructor(page: Page) {
+  constructor(page: Page, baseUrl: string) {
     this.page = page;
+    this.baseUrl = baseUrl;
     // ヘッダーにも「ログイン」ボタンがあるため、フォームは main 配下に限定して指す
     const main = page.getByRole("main");
     this.heading = main.getByRole("heading", { name: "プラットフォーム管理ログイン" });
@@ -19,7 +21,7 @@ export class PlatformSignInPage {
   }
 
   async goto() {
-    await this.page.goto("/sign-in");
+    await this.page.goto(`${this.baseUrl}/sign-in`);
   }
 
   async fillCredentials(args: { email: string; password: string }) {
