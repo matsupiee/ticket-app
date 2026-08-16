@@ -7,6 +7,24 @@
 - `docs/` を探す・追加・移動する前に、必ず [`docs/INDEX.md`](./docs/INDEX.md) を確認する。
 - 再利用すべき設計判断や非自明な知識は、同じPR内でリポジトリに残す。
 
+## 知識の置き場所
+
+残すべき知識が出てきたら、種類に応じて次の場所に書く。**時系列の記録ではなく、それが使われる場所に置く。**
+
+| 種類 | 置き場所 |
+| --- | --- |
+| コードの書き方・ディレクトリ構成 | [`docs/coding-pattern/*.md`](./docs/coding-pattern/) |
+| テストの書き方・配置 | [`docs/coding-pattern/test.md`](./docs/coding-pattern/test.md) |
+| 個別機能の仕様・受け入れ条件 | [`docs/spec/`](./docs/spec/) |
+| システム横断の設計判断とその背景 | [`docs/adr/`](./docs/adr/) |
+| 作業の進め方 | この `AGENTS.md` 本体 |
+| 上記に収まらず、機械的に検出もできないAgentの失敗パターン | [`docs/agent-rules.md`](./docs/agent-rules.md) |
+| プロダクト要件 | [`docs/requirement.md`](./docs/requirement.md) |
+
+決定論的に検出できるものは、**どこにも書かずに検査を追加する**（`scripts/check-*.ts`・linter・テスト・lefthook）。ドキュメントに書くのは、検査にできないと判断したときだけである。
+
+レビュー指摘やPRコメントをそのまま時系列で溜めるファイルは作らない。GitHubが正本であり、リポジトリ内に複製しても読まれずに肥大化する。指摘から得た知識は、上表の該当箇所に反映して初めて価値になる。
+
 ## 作業フロー
 
 作業フローは [`docs/loop-engineering.md`](./docs/loop-engineering.md) のループを1周として回す。仕様が固まる前に実装へ進まないことを最優先する。
@@ -57,9 +75,10 @@ specがある場合、**すべての受け入れ条件が `- [x]` になるま�
 
 ### 6. Improve
 
-- 同じミスを3回以上繰り返した場合、再発防止策を追加する。
-- 決定論的に検出できる問題は、linter・テスト・lefthookなどで機械的に防ぐ。
-- 機械的に検出できない問題はAgent Ruleとして残す。
+- 決定論的に検出できる問題は、**1回目でも**linter・テスト・`scripts/check-*.ts`・lefthookで機械的に防ぐ。3回待つ必要はない。
+- 機械的に検出できない問題は、同じミスを3回以上繰り返した時点で [`docs/agent-rules.md`](./docs/agent-rules.md) にAgent Ruleとして残す。書式と、そこに書かないものの基準は同ファイルを参照する。
+- コードの書き方に落ちる指摘は、Agent Ruleではなく `docs/coding-pattern/*.md` に反映する（「知識の置き場所」を参照）。
+- 検査に置き換えられたAgent Ruleは削除する。検査とルールの両方を残さない。
 - 定型作業はskill化を検討し、1週間以上使われていないskillは削除を検討する。
 
 ### 7. Self review
@@ -73,6 +92,7 @@ specがある場合、**すべての受け入れ条件が `- [x]` になるま�
 - セキュリティ・権限・データ整合性リスク
 - 不要な複雑化や既存方針との不一致
 - docs/coding-pattern などで説明されている規約との乖離
+- [`docs/agent-rules.md`](./docs/agent-rules.md) のルールへの違反（該当するルールIDを添えて指摘させる）
 
 メインエージェントは、レビュー結果を確認し、必要な修正を行ってから最終回答する。
 

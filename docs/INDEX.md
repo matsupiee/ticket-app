@@ -14,6 +14,12 @@
 - [coding-pattern/backend.md](./coding-pattern/backend.md): API実装とディレクトリ構成の規約。
 - [coding-pattern/frontend.md](./coding-pattern/frontend.md): フロントエンド実装とディレクトリ構成の規約。
 - [coding-pattern/test.md](./coding-pattern/test.md): テスト配置とテストデータ作成の規約。
+- [coding-pattern/playwright.md](./coding-pattern/playwright.md): E2E（Playwright）の実装規約。
+- [coding-pattern/playwright-page-object.md](./coding-pattern/playwright-page-object.md): E2EのPage Objectの規約。
+
+## Agent Rules
+
+- [agent-rules.md](./agent-rules.md): 機械的に検出できないAgentの失敗パターンと、その再発防止ルール。
 
 ## spec
 
