@@ -15,6 +15,7 @@ model User {
   organizerMembers     OrganizerMember[]
   organizerInvitations OrganizerInvitation[]
   applications         Application[]
+  platformMember       PlatformMember?
 
   @@map("user")
 }

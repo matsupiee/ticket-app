@@ -1,0 +1,20 @@
+// プラットフォーム運営者（ticket-app 自身の運営メンバー）を管理するテーブル
+// プラットフォーム管理画面・platform.* APIの認可は、このテーブルの有無だけを正とする
+// フロントのビルド時定数やメールアドレスの許可リストで判定しない
+// 主催者側の OrganizerMember と同じ考え方で、ユーザーとロールをDBで持つ
+model PlatformMember {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  userId String             @unique // 1ユーザーにつき1レコード
+  role   PlatformMemberRole
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+enum PlatformMemberRole {
+  OWNER // 運営メンバーの追加・削除を含むすべての操作が可能
+  OPERATOR // 主催者の審査・状態変更など日常運用が可能
+  VIEWER // 閲覧だけ
+}

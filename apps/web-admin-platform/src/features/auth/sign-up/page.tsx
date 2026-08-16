@@ -47,7 +47,7 @@ export function PlatformSignUpPage() {
   return (
     <AuthPanelLayout
       title="プラットフォーム管理者の新規登録"
-      description="登録後は、許可されたメールアドレスのアカウントだけがプラットフォーム管理画面を利用できます。"
+      description="登録後は、プラットフォーム管理者として登録されたアカウントだけがプラットフォーム管理画面を利用できます。"
       footer={
         <Link to="/sign-in" className="text-sm font-medium underline underline-offset-4">
           ログインに戻る

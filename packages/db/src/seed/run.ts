@@ -5,6 +5,7 @@ import {
   seedCompany,
   seedOrganizer,
   seedOrganizerUser,
+  seedPlatformUser,
   type SeedEventScenario,
 } from "./scenarios";
 
@@ -34,6 +35,7 @@ export async function seedDatabase(
     }
 
     await upsertSeedOwner(tx);
+    await upsertSeedPlatformAdmin(tx);
     await createSeedScenarios(tx, scenarios);
 
     return {
@@ -122,6 +124,39 @@ async function upsertSeedOwner(tx: SeedClient) {
       userId: seedOrganizerUser.id,
       organizerId: seedOrganizer.id,
       role: "EDITOR",
+    },
+  });
+}
+
+async function upsertSeedPlatformAdmin(tx: SeedClient) {
+  await tx.user.upsert({
+    where: {
+      id: seedPlatformUser.id,
+    },
+    update: {
+      name: seedPlatformUser.name,
+      email: seedPlatformUser.email,
+      emailVerified: true,
+    },
+    create: {
+      id: seedPlatformUser.id,
+      name: seedPlatformUser.name,
+      email: seedPlatformUser.email,
+      emailVerified: true,
+    },
+  });
+
+  await tx.platformMember.upsert({
+    where: {
+      userId: seedPlatformUser.id,
+    },
+    update: {
+      role: seedPlatformUser.role,
+    },
+    create: {
+      id: "seed-platform-admin-member",
+      userId: seedPlatformUser.id,
+      role: seedPlatformUser.role,
     },
   });
 }

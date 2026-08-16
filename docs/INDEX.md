@@ -23,3 +23,4 @@
 - [adr/0005-entry-number-assignment.md](./adr/0005-entry-number-assignment.md): 整理番号を注文作成時に採番し、座席・在庫枠の確保と排他を整理する判断。
 - [adr/0006-e2e-payment-provider-stub.md](./adr/0006-e2e-payment-provider-stub.md): E2Eの決済連携を stripe-mock と自前webhookエンドポイントに分ける判断。
 - [adr/0007-api-rewrite-premises.md](./adr/0007-api-rewrite-premises.md): スキーマを正としてAPI層を書き直す際の前提（通貨・数量・手数料・通し券）。
+- [adr/0008-platform-member-authorization.md](./adr/0008-platform-member-authorization.md): プラットフォーム管理者の認可をDBの `PlatformMember` で行う判断。

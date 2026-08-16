@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { listPlatformOrganizersHandler } from "./handler";
-import { protectedProcedure } from "../../../../index";
+import { platformProcedure } from "../../../../index";
 
 const listOrganizersInputSchema = z.object({
   cursor: z.string().min(1).optional(),
@@ -28,7 +28,7 @@ const listOrganizersOutputSchema = z.object({
   nextCursor: z.string().min(1).optional(),
 });
 
-export const listOrganizersRoute = protectedProcedure
+export const listOrganizersRoute = platformProcedure
   .route({
     method: "GET",
     path: "/platform/organizers",

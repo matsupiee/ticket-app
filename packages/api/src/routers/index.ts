@@ -27,6 +27,7 @@ import { upsertRateTypeRoute } from "./organizer/event/upsert-rate-type/route";
 import { upsertSaleOfferRoute } from "./organizer/event/upsert-sale-offer/route";
 import { upsertSaleWindowRoute } from "./organizer/event/upsert-sale-window/route";
 import { upsertSeatCategoryRoute } from "./organizer/event/upsert-seat-category/route";
+import { getMyPlatformAccountRoute } from "./platform/account/me/route";
 import { getOrganizerRoute } from "./platform/organizer/get/route";
 import { listOrganizersRoute } from "./platform/organizer/list/route";
 import { updateStatusRoute } from "./platform/organizer/update-status/route";
@@ -83,6 +84,9 @@ export const appRouter = {
     },
   },
   platform: {
+    account: {
+      me: getMyPlatformAccountRoute,
+    },
     organizer: {
       get: getOrganizerRoute,
       list: listOrganizersRoute,

@@ -16,4 +16,36 @@ describe("platform organizer get handler", () => {
 
     expect(response.status).toBe(401);
   });
+
+  it("ログイン済みでもPlatformMemberに登録されていない場合はFORBIDDENを返す", async () => {
+    const signUpResponse = await fetch(`${serverUrl}/api/auth/sign-up/email`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        name: "権限なし ユーザー",
+        email: `platform-organizer-get-${Date.now()}@example.com`,
+        password: "platform-integration-password",
+      }),
+    });
+
+    expect(signUpResponse.ok).toBe(true);
+
+    // better-auth はセッションcookieを1つだけ返すため、先頭の name=value だけを取り出す
+    const cookie = (signUpResponse.headers.get("set-cookie") ?? "").split(";")[0] ?? "";
+
+    const response = await fetch(`${serverUrl}/rpc/platform/organizer/get`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        cookie,
+      },
+      body: JSON.stringify({
+        json: { organizerId: "not-exist-organizer" },
+      }),
+    });
+
+    expect(response.status).toBe(403);
+  });
 });

@@ -143,6 +143,15 @@ export const seedOrganizerUser = {
   email: "seed-organizer@example.com",
 };
 
+// 開発環境で プラットフォーム管理画面 を開くための初期管理者
+// 本番環境の初期管理者は手動INSERTで作る
+export const seedPlatformUser = {
+  id: "seed-platform-admin",
+  name: "Seed Platform Admin",
+  email: "seed-platform@example.com",
+  role: "OWNER",
+} as const;
+
 export const seedCompany = {
   id: "seed-ticket-company",
   name: "Seed Ticket Company",

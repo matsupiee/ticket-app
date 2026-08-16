@@ -1,8 +1,14 @@
+import { db, disconnectDb } from "@ticket-app/db";
+
 import { expect, test } from "../../fixtures/app.fixture";
 import { e2eEnv } from "../../utils/env";
 
+test.afterAll(async () => {
+  await disconnectDb();
+});
+
 test.describe("プラットフォーム管理者の新規登録・ログイン", () => {
-  test("未登録の管理者が新規登録すると、そのままプラットフォーム管理画面を開ける。", async ({
+  test("プラットフォーム管理者として登録されていないユーザーは、新規登録しても管理画面を開けない。", async ({
     app,
     page,
   }) => {
@@ -19,14 +25,13 @@ test.describe("プラットフォーム管理者の新規登録・ログイン",
       await app.platform.signUp().clickSubmit();
     });
 
-    await test.step("主催者一覧ページに遷移し、主催者一覧が表示されることを確認する。", async () => {
-      await expect(page).toHaveURL(`${e2eEnv.platformAdminUrl}/organizers`);
-      await expect(app.platform.organizerList().heading).toBeVisible();
-      await expect(app.platform.organizerList().list).toBeVisible();
+    await test.step("権限エラーページに遷移し、主催者一覧を開けないことを確認する。", async () => {
+      await expect(page).toHaveURL(`${e2eEnv.platformAdminUrl}/forbidden`);
+      await expect(app.platform.forbidden().heading).toBeVisible();
     });
   });
 
-  test("登録済みの管理者がログインすると、プラットフォーム管理画面を開ける。", async ({
+  test("プラットフォーム管理者として登録済みのユーザーがログインすると、プラットフォーム管理画面を開ける。", async ({
     app,
     page,
     request,
@@ -40,6 +45,15 @@ test.describe("プラットフォーム管理者の新規登録・ログイン",
       });
 
       expect(response.ok()).toBe(true);
+
+      const { user } = (await response.json()) as { user: { id: string } };
+
+      await db.platformMember.create({
+        data: {
+          userId: user.id,
+          role: "OPERATOR",
+        },
+      });
     });
 
     await test.step("ログインページを開く。", async () => {
