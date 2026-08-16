@@ -17,6 +17,8 @@ pre-push:
   parallel: false
   files: git ls-files
   jobs:
+    - name: spec
+      run: bun run check:spec
     - name: directory-patterns
       run: sh -c 'bun run check:patterns' -- {files}
     - name: typecheck

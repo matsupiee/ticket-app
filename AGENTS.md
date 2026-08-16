@@ -7,12 +7,37 @@
 - `docs/` を探す・追加・移動する前に、必ず [`docs/INDEX.md`](./docs/INDEX.md) を確認する。
 - 再利用すべき設計判断や非自明な知識は、同じPR内でリポジトリに残す。
 
+## 知識の置き場所
+
+残すべき知識が出てきたら、種類に応じて次の場所に書く。**時系列の記録ではなく、それが使われる場所に置く。**
+
+| 種類 | 置き場所 |
+| --- | --- |
+| コードの書き方・ディレクトリ構成・テスト・E2E | [`docs/coding-pattern/`](./docs/coding-pattern/) の該当ファイル |
+| 個別機能の仕様・受け入れ条件 | [`docs/spec/`](./docs/spec/) |
+| システム横断の設計判断とその背景 | [`docs/adr/`](./docs/adr/) |
+| 開発ループの回し方 | [`docs/loop-engineering.md`](./docs/loop-engineering.md) |
+| 作業フローの各ステップで守ること | この `AGENTS.md` 本体 |
+| ローカル環境構築・実行手順 | [`docs/development-setup.md`](./docs/development-setup.md) |
+| seedデータの作り方 | [`docs/db-seed-data.md`](./docs/db-seed-data.md) |
+| プロダクト要件 | [`docs/requirement.md`](./docs/requirement.md) |
+| 上記のどこにも収まらず、機械的に検出もできないAgentの失敗パターン | [`docs/agent-rules.md`](./docs/agent-rules.md) |
+
+`docs/` にファイルを追加・移動したら、同じPR内で [`docs/INDEX.md`](./docs/INDEX.md) にも反映する。INDEX.md が入口として機能しなくなると、この表も空振りする。
+
+決定論的に検出できるものは、**どこにも書かずに検査を追加する**（`scripts/check-*.ts`・linter・テスト・lefthook）。ドキュメントに書くのは、検査にできないと判断したときだけである。
+
+レビュー指摘やPRコメントをそのまま時系列で溜めるファイルは作らない。GitHubが正本であり、リポジトリ内に複製しても読まれずに肥大化する。指摘から得た知識は、上表の該当箇所に反映して初めて価値になる。**繰り返し発生しているかを判断する材料も、GitHubのレビュー履歴を検索して得る。**
+
 ## 作業フロー
+
+作業フローは [`docs/loop-engineering.md`](./docs/loop-engineering.md) のループを1周として回す。仕様が固まる前に実装へ進まないことを最優先する。
 
 ### 1. Plan
 
 - 関連するコードと `docs/` を直接確認する。
-- 受け入れ条件が曖昧な場合は、実装前に質問する。
+- 機能追加・仕様変更は、[`docs/spec/`](./docs/spec/) にspecを書いてから実装する。バグ修正・リファクタ・ドキュメント更新はspec不要（判断基準は [`docs/loop-engineering.md`](./docs/loop-engineering.md)）。
+- 受け入れ条件が曖昧な点は**推測で埋めず**、specの `## 未決事項` に積んで人間に質問する。未決事項が残っている限り、specのステータスを `確定` にせず、実装にも着手しない。
 - システム全体に影響する設計・仕様変更は、実装前に [`docs/adr/`](./docs/adr/) のADRを追加または更新する。
 
 ### 2. Test Design
@@ -26,23 +51,26 @@
 
 ### 3. Implement
 
+- specの受け入れ条件を1つずつ潰し、1つ閉じるごとに Verify を回す。
 - 1 PRを1つの論理的変更に収め、変更を小さく保つ。
 - 既存の重複実装がないか確認する。
 - 関数を細分化しすぎず、処理全体を追える構造にする。
+- 実装中に仕様の穴が見つかったら、勝手に決めずspecのステータスを `draft` に戻し、`## 未決事項` に積んで人間に確認する。穴に依存しない受け入れ条件は進めてよい。
 
 ### 4. Verify
 
 コードの変更を行う場合、以下がすべて成功するまで完了としない。(mdファイルの編集を行なっただけの場合、検証作業は不要)
 
 ```sh
-bun test:unit
-bun test:int
-bun test:e2e
+bun run verify # check:spec + check:patterns + lint + format:check + typecheck + test:unit + test:int
+bun test:e2e   # 実行時間が長いため、完了判定の直前に1回流す
 
 bun run dev # apiサーバー、web、web-admin-organizer、web-admin-platform がエラーなく立ち上がることを確認する
 ```
 
 テスト失敗は根本原因を修正する。テストの無効化や、例外を握りつぶす回避は禁止する。
+
+specがある場合、**すべての受け入れ条件が `- [x]` になるまで完了としない**。全部閉じたらステータスを `完了` にする。
 
 ### 5. Document
 
@@ -51,9 +79,9 @@ bun run dev # apiサーバー、web、web-admin-organizer、web-admin-platform �
 
 ### 6. Improve
 
-- 同じミスを3回以上繰り返した場合、再発防止策を追加する。
-- 決定論的に検出できる問題は、linter・テスト・lefthookなどで機械的に防ぐ。
-- 機械的に検出できない問題はAgent Ruleとして残す。
+- 決定論的に検出できる問題は、**1回目でも**linter・テスト・`scripts/check-*.ts`・lefthookで機械的に防ぐ。3回待つ必要はない。
+- 機械的に検出できない問題は、同じミスを3回以上繰り返した時点で [`docs/agent-rules.md`](./docs/agent-rules.md) にAgent Ruleとして残す。回数の根拠はGitHubのレビュー履歴を検索して示す。書式と運用は同ファイルを参照する。
+- コードの書き方に落ちる指摘は、Agent Ruleではなく `docs/coding-pattern/` に反映する（「知識の置き場所」を参照）。
 - 定型作業はskill化を検討し、1週間以上使われていないskillは削除を検討する。
 
 ### 7. Self review
@@ -67,6 +95,7 @@ bun run dev # apiサーバー、web、web-admin-organizer、web-admin-platform �
 - セキュリティ・権限・データ整合性リスク
 - 不要な複雑化や既存方針との不一致
 - docs/coding-pattern などで説明されている規約との乖離
+- [`docs/agent-rules.md`](./docs/agent-rules.md) のルールへの違反（該当するルールIDを添えて指摘させる）
 
 メインエージェントは、レビュー結果を確認し、必要な修正を行ってから最終回答する。
 

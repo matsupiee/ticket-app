@@ -5,6 +5,7 @@
 ## 入口
 
 - [requirement.md](./requirement.md): 現時点のプロダクト要件。
+- [loop-engineering.md](./loop-engineering.md): Agentに開発を任せるときの進め方（Spec Loop / Impl Loop と機械ゲート）。
 - [development-setup.md](./development-setup.md): ローカル開発環境のセットアップ手順。
 - [db-seed-data.md](./db-seed-data.md): 開発用DB seedデータのパターンと実行方法。
 
@@ -13,6 +14,18 @@
 - [coding-pattern/backend.md](./coding-pattern/backend.md): API実装とディレクトリ構成の規約。
 - [coding-pattern/frontend.md](./coding-pattern/frontend.md): フロントエンド実装とディレクトリ構成の規約。
 - [coding-pattern/test.md](./coding-pattern/test.md): テスト配置とテストデータ作成の規約。
+- [coding-pattern/playwright.md](./coding-pattern/playwright.md): E2E（Playwright）の実装規約。
+- [coding-pattern/playwright-page-object.md](./coding-pattern/playwright-page-object.md): E2EのPage Objectの規約。
+
+## Agent Rules
+
+- [agent-rules.md](./agent-rules.md): 機械的に検出できないAgentの失敗パターンと、その再発防止ルール。
+
+## spec
+
+個別機能の仕様。書き方は [spec/README.md](./spec/README.md)、新規作成は [spec/TEMPLATE.md](./spec/TEMPLATE.md) をコピーする。
+
+- （まだありません）
 
 ## ADR
 
