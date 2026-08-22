@@ -11,6 +11,7 @@
         "@testing-library/react": "^16.3.2",
         "@testing-library/user-event": "^14.6.1",
         "@ticket-app/config": "workspace:*",
+        "@ticket-app/db": "workspace:*",
         "@types/node": "catalog:",
         "jsdom": "^29.1.1",
         "knip": "^6.27.0",
@@ -108,9 +109,11 @@
       "name": "web-admin-platform",
       "version": "0.0.0",
       "dependencies": {
+        "@orpc/client": "catalog:",
         "@tailwindcss/vite": "^4.3.2",
         "@tanstack/react-form": "^1.33.0",
         "@tanstack/react-router": "^1.170.17",
+        "@ticket-app/api": "workspace:*",
         "@ticket-app/ui": "workspace:*",
         "better-auth": "catalog:",
         "lucide-react": "catalog:",
@@ -167,6 +170,7 @@
         "@prisma/adapter-pg": "7.8.0",
         "@prisma/client": "7.8.0",
         "@ticket-app/env": "workspace:*",
+        "better-auth": "catalog:",
       },
       "devDependencies": {
         "@ticket-app/config": "workspace:*",

@@ -1,12 +1,21 @@
+import { randomUUID } from "node:crypto";
+
+import { db, disconnectDb } from "@ticket-app/db";
+
 import { expect, test } from "../../fixtures/app.fixture";
 import { e2eEnv } from "../../utils/env";
 
+test.afterAll(async () => {
+  await disconnectDb();
+});
+
 test.describe("プラットフォーム管理者の新規登録・ログイン", () => {
-  test("未登録の管理者が新規登録すると、そのままプラットフォーム管理画面を開ける。", async ({
+  test("プラットフォーム管理者として登録されていないユーザーは、新規登録しても管理画面を開けない。", async ({
     app,
     page,
   }) => {
-    const email = `platform-signup-${Date.now()}@example.com`;
+    const suffix = `${randomUUID().slice(0, 8)}-${Date.now()}`;
+    const email = `platform-signup-${suffix}@example.com`;
     const password = "platform-e2e-password";
 
     await test.step("新規登録ページを開く。", async () => {
@@ -19,20 +28,21 @@ test.describe("プラットフォーム管理者の新規登録・ログイン",
       await app.platform.signUp().clickSubmit();
     });
 
-    await test.step("主催者一覧ページに遷移し、主催者一覧が表示されることを確認する。", async () => {
-      await expect(page).toHaveURL(`${e2eEnv.platformAdminUrl}/organizers`);
-      await expect(app.platform.organizerList().heading).toBeVisible();
-      await expect(app.platform.organizerList().list).toBeVisible();
+    await test.step("権限エラーページに遷移し、主催者一覧を開けないことを確認する。", async () => {
+      await expect(page).toHaveURL(`${e2eEnv.platformAdminUrl}/forbidden`);
+      await expect(app.platform.forbidden().heading).toBeVisible();
     });
   });
 
-  test("登録済みの管理者がログインすると、プラットフォーム管理画面を開ける。", async ({
+  test("プラットフォーム管理者として登録済みのユーザーがログインすると、プラットフォーム管理画面を開ける。", async ({
     app,
     page,
     request,
   }) => {
-    const email = `platform-signin-${Date.now()}@example.com`;
+    const suffix = `${randomUUID().slice(0, 8)}-${Date.now()}`;
+    const email = `platform-signin-${suffix}@example.com`;
     const password = "platform-e2e-password";
+    let platformUserId = "";
 
     await test.step("ログイン対象の管理者アカウントを事前に作成する。", async () => {
       const response = await request.post(`${e2eEnv.apiServerUrl}/api/auth/sign-up/email`, {
@@ -40,6 +50,16 @@ test.describe("プラットフォーム管理者の新規登録・ログイン",
       });
 
       expect(response.ok()).toBe(true);
+
+      const { user } = (await response.json()) as { user: { id: string } };
+      platformUserId = user.id;
+
+      await db.platformMember.create({
+        data: {
+          userId: user.id,
+          role: "EDITOR",
+        },
+      });
     });
 
     await test.step("ログインページを開く。", async () => {
@@ -56,6 +76,10 @@ test.describe("プラットフォーム管理者の新規登録・ログイン",
       await expect(page).toHaveURL(`${e2eEnv.platformAdminUrl}/organizers`);
       await expect(app.platform.organizerList().heading).toBeVisible();
       await expect(app.platform.organizerList().list).toBeVisible();
+    });
+
+    await test.step("テストで付与した管理者権限を削除する。", async () => {
+      await db.platformMember.delete({ where: { userId: platformUserId } });
     });
   });
 

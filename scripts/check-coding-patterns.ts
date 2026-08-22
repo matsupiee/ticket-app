@@ -12,6 +12,12 @@ export type CheckIssue = {
 type ProjectSnapshot = {
   files: string[];
   directories?: string[];
+  sources?: SourceFileSnapshot[];
+};
+
+type SourceFileSnapshot = {
+  path: string;
+  source: string;
 };
 
 const backendRoutersRoot = "packages/api/src/routers";
@@ -30,6 +36,9 @@ const backendRequiredRouteDirectoryFiles = [
   "handler.integration.test.ts",
 ];
 const backendAllowedRouteDirectoryFiles = new Set(backendRequiredRouteDirectoryFiles);
+const backendPlatformRoutePattern = /^packages\/api\/src\/routers\/platform\/.+\/route\.ts$/;
+const backendPlatformProcedureName = "platformProcedure";
+const backendProtectedProcedureName = "protectedProcedure";
 
 const frontendAllowedSrcDirs = new Set(["features", "shared", "lib", "routes", "test"]);
 const frontendAllowedSharedDirs = new Set(["_components", "_hooks", "_utils"]);
@@ -85,6 +94,7 @@ export function checkCodingPatterns(snapshot: ProjectSnapshot): CheckIssue[] {
 
   return sortIssues([
     ...checkBackendPatterns(files, directories),
+    ...checkPlatformProcedurePatterns(snapshot.sources ?? []),
     ...checkApiTestPlacementPatterns(files),
     ...checkFrontendPatterns(files, directories),
     ...checkFileNamePatterns(files),
@@ -121,9 +131,20 @@ export function formatIssues(issues: CheckIssue[]) {
   ].join("\n");
 }
 
+export function collectPlatformRouteSources(files: string[], cwd = process.cwd()) {
+  return files
+    .filter((file) => backendPlatformRoutePattern.test(file))
+    .map((file) => ({
+      path: file,
+      source: readFileSync(join(cwd, file), "utf8"),
+    }));
+}
+
 export function runCli(cwd = process.cwd()) {
+  const files = collectProjectFiles(cwd);
   const issues = checkCodingPatterns({
-    files: collectProjectFiles(cwd),
+    files,
+    sources: collectPlatformRouteSources(files, cwd),
   });
 
   if (issues.length > 0) {
@@ -270,6 +291,33 @@ function checkBackendPatterns(files: string[], directories: string[]): CheckIssu
   issues.push(...checkRouteRegistration(routerFiles));
 
   return dedupeIssues(issues);
+}
+
+// platform配下のAPIは認可漏れの影響が大きいため、platformProcedure の使用を機械的に確認する
+function checkPlatformProcedurePatterns(sources: SourceFileSnapshot[]): CheckIssue[] {
+  const issues: CheckIssue[] = [];
+
+  for (const source of sources) {
+    if (!backendPlatformRoutePattern.test(normalizeProjectPath(source.path))) {
+      continue;
+    }
+
+    const usesPlatformProcedure = source.source.includes(backendPlatformProcedureName);
+    const usesProtectedProcedure = source.source.includes(backendProtectedProcedureName);
+
+    if (usesPlatformProcedure && !usesProtectedProcedure) {
+      continue;
+    }
+
+    issues.push({
+      path: normalizeProjectPath(source.path),
+      rule: "backend platform procedure",
+      message:
+        "platform 配下の route.ts は platformProcedure を使ってください。protectedProcedure だけでは PlatformMember の確認が行われません。",
+    });
+  }
+
+  return issues;
 }
 
 // route.ts は利用者種別をまたいで同じ export 名を持つことがあり

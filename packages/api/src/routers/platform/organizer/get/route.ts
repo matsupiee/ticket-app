@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { handler } from "./handler";
-import { protectedProcedure } from "../../../../index";
+import { platformProcedure } from "../../../../index";
 
 const getOrganizerInputSchema = z.object({
   organizerId: z.string().min(1),
@@ -53,7 +53,7 @@ const getOrganizerOutputSchema = z.object({
     .optional(),
 });
 
-export const getOrganizerRoute = protectedProcedure
+export const getOrganizerRoute = platformProcedure
   .route({
     method: "GET",
     path: "/platform/organizers/{organizerId}",

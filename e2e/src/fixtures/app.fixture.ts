@@ -7,6 +7,7 @@ import { OrganizerDashboardPage } from "../page-objects/organizer/dashboard";
 import { OrganizerForbiddenPage } from "../page-objects/organizer/forbidden";
 import { OrganizerSignInPage } from "../page-objects/organizer/sign-in";
 import { OrganizerSignUpPage } from "../page-objects/organizer/sign-up";
+import { PlatformForbiddenPage } from "../page-objects/platform/forbidden";
 import { PlatformOrganizerListPage } from "../page-objects/platform/organizers";
 import { PlatformSignInPage } from "../page-objects/platform/sign-in";
 import { PlatformSignUpPage } from "../page-objects/platform/sign-up";
@@ -28,6 +29,7 @@ type App = {
     signIn: () => PlatformSignInPage;
     signUp: () => PlatformSignUpPage;
     organizerList: () => PlatformOrganizerListPage;
+    forbidden: () => PlatformForbiddenPage;
   };
 };
 
@@ -53,6 +55,7 @@ export const test = base.extend<{ app: App }>({
         signIn: () => new PlatformSignInPage(page, platformAdminUrl),
         signUp: () => new PlatformSignUpPage(page, platformAdminUrl),
         organizerList: () => new PlatformOrganizerListPage(page, platformAdminUrl),
+        forbidden: () => new PlatformForbiddenPage(page, platformAdminUrl),
       },
     });
   },

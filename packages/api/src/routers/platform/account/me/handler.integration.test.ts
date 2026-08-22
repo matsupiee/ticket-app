@@ -3,9 +3,9 @@ import { describe, expect, inject, it } from "vitest";
 
 const { serverUrl } = inject("apiIntegration");
 
-describe("platform organizer list handler", () => {
+describe("platform account me handler", () => {
   it("未ログインの場合はUNAUTHORIZEDを返す", async () => {
-    const response = await fetch(`${serverUrl}/rpc/platform/organizer/list`, {
+    const response = await fetch(`${serverUrl}/rpc/platform/account/me`, {
       method: "POST",
       headers: {
         "content-type": "application/json",
@@ -26,7 +26,7 @@ describe("platform organizer list handler", () => {
       },
       body: JSON.stringify({
         name: "権限なし ユーザー",
-        email: `platform-organizer-list-${Date.now()}@example.com`,
+        email: `platform-account-me-${Date.now()}@example.com`,
         password: "platform-integration-password",
       }),
     });
@@ -36,7 +36,7 @@ describe("platform organizer list handler", () => {
     // better-auth はセッションcookieを1つだけ返すため、先頭の name=value だけを取り出す
     const cookie = (signUpResponse.headers.get("set-cookie") ?? "").split(";")[0] ?? "";
 
-    const response = await fetch(`${serverUrl}/rpc/platform/organizer/list`, {
+    const response = await fetch(`${serverUrl}/rpc/platform/account/me`, {
       method: "POST",
       headers: {
         "content-type": "application/json",
@@ -49,7 +49,9 @@ describe("platform organizer list handler", () => {
 
     expect(response.status).toBe(403);
   });
-  it("PlatformMemberに登録済みの場合はFORBIDDENにならない", async () => {
+
+  it("PlatformMemberに登録済みの場合は自分のアカウント情報とロールを返す", async () => {
+    const email = `platform-account-me-${Date.now()}@example.com`;
     const signUpResponse = await fetch(`${serverUrl}/api/auth/sign-up/email`, {
       method: "POST",
       headers: {
@@ -57,7 +59,7 @@ describe("platform organizer list handler", () => {
       },
       body: JSON.stringify({
         name: "運営 太郎",
-        email: `platform-organizer-list-member-${Date.now()}@example.com`,
+        email,
         password: "platform-integration-password",
       }),
     });
@@ -76,7 +78,7 @@ describe("platform organizer list handler", () => {
     // better-auth はセッションcookieを1つだけ返すため、先頭の name=value だけを取り出す
     const cookie = (signUpResponse.headers.get("set-cookie") ?? "").split(";")[0] ?? "";
 
-    const response = await fetch(`${serverUrl}/rpc/platform/organizer/list`, {
+    const response = await fetch(`${serverUrl}/rpc/platform/account/me`, {
       method: "POST",
       headers: {
         "content-type": "application/json",
@@ -87,7 +89,14 @@ describe("platform organizer list handler", () => {
       }),
     });
 
-    expect(response.status).not.toBe(401);
-    expect(response.status).not.toBe(403);
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      json: {
+        userId: user.id,
+        name: "運営 太郎",
+        email,
+        role: "EDITOR",
+      },
+    });
   });
 });

@@ -1,3 +1,5 @@
+import { hashPassword } from "better-auth/crypto";
+
 import { db } from "../index";
 import type { Prisma, PrismaClient } from "../generated/prisma/client";
 import {
@@ -5,6 +7,7 @@ import {
   seedCompany,
   seedOrganizer,
   seedOrganizerUser,
+  seedPlatformUser,
   type SeedEventScenario,
 } from "./scenarios";
 
@@ -34,6 +37,7 @@ export async function seedDatabase(
     }
 
     await upsertSeedOwner(tx);
+    await upsertSeedPlatformAdmin(tx);
     await createSeedScenarios(tx, scenarios);
 
     return {
@@ -122,6 +126,58 @@ async function upsertSeedOwner(tx: SeedClient) {
       userId: seedOrganizerUser.id,
       organizerId: seedOrganizer.id,
       role: "EDITOR",
+    },
+  });
+}
+
+async function upsertSeedPlatformAdmin(tx: SeedClient) {
+  await tx.user.upsert({
+    where: {
+      id: seedPlatformUser.id,
+    },
+    update: {
+      name: seedPlatformUser.name,
+      email: seedPlatformUser.email,
+      emailVerified: true,
+    },
+    create: {
+      id: seedPlatformUser.id,
+      name: seedPlatformUser.name,
+      email: seedPlatformUser.email,
+      emailVerified: true,
+    },
+  });
+
+  // better-auth のメール・パスワードログインは credential の Account を見るため、seedでも作る
+  const password = await hashPassword(seedPlatformUser.password);
+
+  await tx.account.upsert({
+    where: {
+      id: "seed-platform-admin-account",
+    },
+    update: {
+      password,
+    },
+    create: {
+      id: "seed-platform-admin-account",
+      accountId: seedPlatformUser.id,
+      providerId: "credential",
+      userId: seedPlatformUser.id,
+      password,
+    },
+  });
+
+  await tx.platformMember.upsert({
+    where: {
+      userId: seedPlatformUser.id,
+    },
+    update: {
+      role: seedPlatformUser.role,
+    },
+    create: {
+      id: "seed-platform-admin-member",
+      userId: seedPlatformUser.id,
+      role: seedPlatformUser.role,
     },
   });
 }

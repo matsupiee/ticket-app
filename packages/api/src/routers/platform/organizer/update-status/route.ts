@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { handler } from "./handler";
-import { protectedProcedure } from "../../../../index";
+import { platformProcedure } from "../../../../index";
 
 const updateStatusInputSchema = z.object({
   organizerId: z.string().min(1),
@@ -14,7 +14,7 @@ const updateStatusOutputSchema = z.object({
   updatedAt: z.string().min(1),
 });
 
-export const updateStatusRoute = protectedProcedure
+export const updateStatusRoute = platformProcedure
   .route({
     method: "PATCH",
     path: "/platform/organizers/{organizerId}/status",

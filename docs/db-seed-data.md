@@ -25,6 +25,9 @@ bun run db:seed
 - 指定席 + 抽選
 
 合計で24イベントを作成する。
+あわせて、プラットフォーム管理画面を開発環境で開くための初期管理者（`seed-platform-admin` / `PlatformMember` の `OWNER`）を作る。
+better-auth のパスワード認証情報も作るため、`seed-platform@example.com` / `seed-platform-password` でそのままログインできる。
+本番環境の初期管理者は手動 INSERT で作る。
 データは `[Seed]` から始まるイベント名と `seed-` prefix のIDを持つ。
 既定の `db:seed` は同じ seed マスタを削除してから作り直す。
 seed イベントに注文・チケットなどの取引データを追加している場合、外部キー制約で削除が止まることがある。
