@@ -2,8 +2,9 @@
 //
 // 状態:
 //   - S席 20枠 / A席 50枠。どちらも整理番号方式で、未販売の枠は entryNumber が null（ADR 0005）
-//   - ユーザー1がS席を2枚カード決済で購入（入金済み・発券済み・整理番号 1, 2）
-//   - ユーザー2がA席を1枚コンビニ払いで購入（入金待ち・未発券・整理番号 1）
+//   - 席種ごとに整理番号の接頭辞を持つ（S席→"S" / A席→"A"）（ADR 0008）
+//   - ユーザー1がS席を2枚カード決済で購入（入金済み・発券済み・整理番号 S-1, S-2）
+//   - ユーザー2がA席を1枚コンビニ払いで購入（入金待ち・未発券・整理番号 A-1）
 //
 // コンビニ払いの枠は入金前でも InventorySlotHold で押さえられ、整理番号も確定している。
 // 発券（Ticket / TicketEntitlement）は入金後にしか作られない。
@@ -22,8 +23,9 @@ export const SEED_1STAGE_2TICKET_CATEGORY_1SALE_WINDOW = {
   eventName: "1公演 2チケット種別 1受付",
   stageName: "1公演 2チケット種別 1受付 公演",
   venueName: "東京ドーム",
-  ticketCategoryS: { name: "S席", capacity: 20, price: 10000 },
-  ticketCategoryA: { name: "A席", capacity: 50, price: 5000 },
+  // entryNumberPrefix は整理番号の接頭辞。S席1番は「S-1」、A席1番は「A-1」と表示される（ADR 0008）
+  ticketCategoryS: { name: "S席", entryNumberPrefix: "S", capacity: 20, price: 10000 },
+  ticketCategoryA: { name: "A席", entryNumberPrefix: "A", capacity: 50, price: 5000 },
   // 5% → 500 basis points（FeeRule のコメント参照）
   feeRateBasisPoints: 500,
   fanUser1: {
@@ -101,6 +103,7 @@ export const seed = async () => {
         eventId: event.id,
         kind: TicketCategoryKind.ENTRY_NUMBER,
         name: S.ticketCategoryS.name,
+        entryNumberPrefix: S.ticketCategoryS.entryNumberPrefix,
         description: "",
         displayOrder: 0,
       },
@@ -112,6 +115,7 @@ export const seed = async () => {
         eventId: event.id,
         kind: TicketCategoryKind.ENTRY_NUMBER,
         name: S.ticketCategoryA.name,
+        entryNumberPrefix: S.ticketCategoryA.entryNumberPrefix,
         description: "",
         displayOrder: 1,
       },
