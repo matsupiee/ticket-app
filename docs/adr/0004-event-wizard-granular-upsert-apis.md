@@ -2,7 +2,12 @@
 
 ## Status
 
-Accepted
+Accepted（一部を ADR 0008 で更新）
+
+次の2点は ADR 0008 で判断を変更した。
+
+- 「既存の `create` / `update`（`publicTicketing` 丸ごと版）は単発イベントの即時作成という別用途のために残し、廃止しない」→ 呼び出し元が作られなかったため `publicTicketing` を削除した。
+- 「`SeatCategory` は `upsertSeatCategory` の `active: false` で無効化できる」→ `TicketCategory` に `active` カラムが無いため成立しない。
 
 ## Context
 

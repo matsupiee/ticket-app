@@ -2,26 +2,27 @@ import type { RouterClient } from "@orpc/server";
 
 import { listApplicationsRoute } from "./fan/application/list/route";
 import { submitApplicationRoute } from "./fan/application/submit/route";
+import { eventGetRoute } from "./fan/event/get/route";
+import { listEventsRoute as listFanEventsRoute } from "./fan/event/list/route";
 import { listTicketsRoute } from "./fan/ticket/list/route";
 import { useTicketRoute } from "./fan/ticket/use/route";
 import { getProfileRoute } from "./fan/user/profile/get/route";
+import { updateProfileRoute as updateFanProfileRoute } from "./fan/user/profile/update/route";
 import { verifyPhoneRoute } from "./fan/user/verify-phone/confirm/route";
 import { requestPhoneVerificationRoute } from "./fan/user/verify-phone/request/route";
-import { updateProfileRoute } from "./organizer/account/update-profile/route";
-import { getEventRoute } from "./organizer/event/get/route";
-import { listEventsRoute } from "./organizer/event/list/route";
 import { inviteMemberRoute } from "./organizer/account/invite-member/route";
 import { getMyOrganizerAccountRoute } from "./organizer/account/me/route";
 import { removeMemberRoute } from "./organizer/account/remove-member/route";
 import { signUpOrganizerAccountRoute } from "./organizer/account/sign-up/route";
 import { updateMemberRoleRoute } from "./organizer/account/update-member-role/route";
+import { updateProfileRoute as updateOrganizerProfileRoute } from "./organizer/account/update-profile/route";
 import { upsertBankAccountRoute } from "./organizer/account/upsert-bank-account/route";
 import { adjustInventoryRoute } from "./organizer/event/adjust-inventory/route";
 import { cancelSaleWindowRoute } from "./organizer/event/cancel-sale-window/route";
 import { createEventRoute } from "./organizer/event/create/route";
-import { disableFeeRuleRoute } from "./organizer/event/disable-fee-rule/route";
+import { getEventRoute } from "./organizer/event/get/route";
+import { listEventsRoute as listOrganizerEventsRoute } from "./organizer/event/list/route";
 import { updateEventRoute } from "./organizer/event/update/route";
-import { upsertFeeRuleRoute } from "./organizer/event/upsert-fee-rule/route";
 import { upsertPerformanceRoute } from "./organizer/event/upsert-performance/route";
 import { upsertRateTypeRoute } from "./organizer/event/upsert-rate-type/route";
 import { upsertSaleOfferRoute } from "./organizer/event/upsert-sale-offer/route";
@@ -38,8 +39,8 @@ export const appRouter = {
       submit: submitApplicationRoute,
     },
     event: {
-      get: getEventRoute,
-      list: listEventsRoute,
+      get: eventGetRoute,
+      list: listFanEventsRoute,
     },
     ticket: {
       list: listTicketsRoute,
@@ -48,7 +49,7 @@ export const appRouter = {
     user: {
       profile: {
         get: getProfileRoute,
-        update: updateProfileRoute,
+        update: updateFanProfileRoute,
       },
       verifyPhone: {
         request: requestPhoneVerificationRoute,
@@ -63,18 +64,16 @@ export const appRouter = {
       removeMember: removeMemberRoute,
       signUp: signUpOrganizerAccountRoute,
       updateMemberRole: updateMemberRoleRoute,
-      updateProfile: updateProfileRoute,
+      updateProfile: updateOrganizerProfileRoute,
       upsertBankAccount: upsertBankAccountRoute,
     },
     event: {
       adjustInventory: adjustInventoryRoute,
       cancelSaleWindow: cancelSaleWindowRoute,
       create: createEventRoute,
-      disableFeeRule: disableFeeRuleRoute,
       get: getEventRoute,
-      list: listEventsRoute,
+      list: listOrganizerEventsRoute,
       update: updateEventRoute,
-      upsertFeeRule: upsertFeeRuleRoute,
       upsertPerformance: upsertPerformanceRoute,
       upsertRateType: upsertRateTypeRoute,
       upsertSaleOffer: upsertSaleOfferRoute,
