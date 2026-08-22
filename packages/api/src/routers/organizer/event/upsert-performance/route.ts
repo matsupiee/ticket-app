@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { upsertPerformanceHandler } from "./handler";
+import { handler } from "./handler";
 import { protectedProcedure } from "../../../../index";
 
 const upsertPerformanceInputSchema = z.object({
@@ -32,4 +32,4 @@ export const upsertPerformanceRoute = protectedProcedure
   })
   .input(upsertPerformanceInputSchema)
   .output(upsertPerformanceOutputSchema)
-  .handler(upsertPerformanceHandler);
+  .handler(handler);

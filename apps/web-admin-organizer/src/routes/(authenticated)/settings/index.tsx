@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { AccountSettingsPage } from "@/features/account/page";
+import { SettingsPage } from "@/features/settings/page";
 
 export const Route = createFileRoute("/(authenticated)/settings/")({
-  component: AccountSettingsPage,
+  component: SettingsPage,
 });

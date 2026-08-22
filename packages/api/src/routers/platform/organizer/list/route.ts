@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { listPlatformOrganizersHandler } from "./handler";
+import { handler } from "./handler";
 import { protectedProcedure } from "../../../../index";
 
 const listOrganizersInputSchema = z.object({
@@ -36,4 +36,4 @@ export const listOrganizersRoute = protectedProcedure
   })
   .input(listOrganizersInputSchema)
   .output(listOrganizersOutputSchema)
-  .handler(listPlatformOrganizersHandler);
+  .handler(handler);

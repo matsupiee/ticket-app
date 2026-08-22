@@ -1,7 +1,7 @@
 import { db } from "@ticket-app/db";
 import { describe, expect, inject, it } from "vitest";
 
-import { upsertPerformanceHandler } from "./handler";
+import { handler } from "./handler";
 
 const { serverUrl } = inject("apiIntegration");
 
@@ -23,7 +23,7 @@ describe("organizer event upsert-performance handler", () => {
   it("performanceIdを指定しない場合、会場と公演を新規作成する", async () => {
     const { organizer, editor, event } = await seedEditorWithEvent();
 
-    const result = await upsertPerformanceHandler({
+    const result = await handler({
       input: {
         eventOrganizerId: organizer.id,
         eventId: event.id,
@@ -52,7 +52,7 @@ describe("organizer event upsert-performance handler", () => {
   it("同一イベント内で同名の会場を指定すると、Venueを新規作成せず再利用する", async () => {
     const { organizer, editor, event } = await seedEditorWithEvent();
 
-    const first = await upsertPerformanceHandler({
+    const first = await handler({
       input: {
         eventOrganizerId: organizer.id,
         eventId: event.id,
@@ -64,7 +64,7 @@ describe("organizer event upsert-performance handler", () => {
       },
       context: { session: { user: { id: editor.id } } },
     });
-    const second = await upsertPerformanceHandler({
+    const second = await handler({
       input: {
         eventOrganizerId: organizer.id,
         eventId: event.id,
@@ -89,7 +89,7 @@ describe("organizer event upsert-performance handler", () => {
 
   it("performanceIdを指定すると、既存の公演を更新する", async () => {
     const { organizer, editor, event } = await seedEditorWithEvent();
-    const created = await upsertPerformanceHandler({
+    const created = await handler({
       input: {
         eventOrganizerId: organizer.id,
         eventId: event.id,
@@ -102,7 +102,7 @@ describe("organizer event upsert-performance handler", () => {
       context: { session: { user: { id: editor.id } } },
     });
 
-    const updated = await upsertPerformanceHandler({
+    const updated = await handler({
       input: {
         eventOrganizerId: organizer.id,
         eventId: event.id,
@@ -132,7 +132,7 @@ describe("organizer event upsert-performance handler", () => {
     const { organizer, editor, event } = await seedEditorWithEvent();
 
     await expect(
-      upsertPerformanceHandler({
+      handler({
         input: {
           eventOrganizerId: organizer.id,
           eventId: event.id,
@@ -150,7 +150,7 @@ describe("organizer event upsert-performance handler", () => {
   it("開場日時と開演日時が同時刻の場合は保存できる", async () => {
     const { organizer, editor, event } = await seedEditorWithEvent();
 
-    const result = await upsertPerformanceHandler({
+    const result = await handler({
       input: {
         eventOrganizerId: organizer.id,
         eventId: event.id,
@@ -172,7 +172,7 @@ describe("organizer event upsert-performance handler", () => {
     const { organizer, editor, event } = await seedEditorWithEvent();
 
     await expect(
-      upsertPerformanceHandler({
+      handler({
         input: {
           eventOrganizerId: organizer.id,
           eventId: event.id,
@@ -190,7 +190,7 @@ describe("organizer event upsert-performance handler", () => {
   it("他のイベントに属するperformanceIdを指定するとNOT_FOUNDを返す", async () => {
     const { organizer, editor, event } = await seedEditorWithEvent();
     const other = await seedEditorWithEvent();
-    const otherPerformance = await upsertPerformanceHandler({
+    const otherPerformance = await handler({
       input: {
         eventOrganizerId: other.organizer.id,
         eventId: other.event.id,
@@ -204,7 +204,7 @@ describe("organizer event upsert-performance handler", () => {
     });
 
     await expect(
-      upsertPerformanceHandler({
+      handler({
         input: {
           eventOrganizerId: organizer.id,
           eventId: event.id,
@@ -225,7 +225,7 @@ describe("organizer event upsert-performance handler", () => {
     const foreignVenue = await db.venue.create({ data: { name: "無関係の会場" } });
 
     await expect(
-      upsertPerformanceHandler({
+      handler({
         input: {
           eventOrganizerId: organizer.id,
           eventId: event.id,
@@ -245,7 +245,7 @@ describe("organizer event upsert-performance handler", () => {
     const { organizer, editor } = await seedEditorWithEvent();
 
     await expect(
-      upsertPerformanceHandler({
+      handler({
         input: {
           eventOrganizerId: organizer.id,
           eventId: "00000000-0000-0000-0000-000000000000",
@@ -270,7 +270,7 @@ describe("organizer event upsert-performance handler", () => {
     });
 
     await expect(
-      upsertPerformanceHandler({
+      handler({
         input: {
           eventOrganizerId: organizer.id,
           eventId: event.id,
@@ -292,7 +292,7 @@ describe("organizer event upsert-performance handler", () => {
     });
 
     await expect(
-      upsertPerformanceHandler({
+      handler({
         input: {
           eventOrganizerId: organizer.id,
           eventId: event.id,

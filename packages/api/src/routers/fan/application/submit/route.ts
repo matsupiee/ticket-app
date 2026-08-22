@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { submitApplicationHandler } from "./handler";
+import { handler } from "./handler";
 import { protectedProcedure } from "../../../../index";
 
 const submitApplicationInputSchema = z.object({
@@ -46,4 +46,4 @@ export const submitApplicationRoute = protectedProcedure
   })
   .input(submitApplicationInputSchema)
   .output(submitApplicationOutputSchema)
-  .handler(submitApplicationHandler);
+  .handler(handler);

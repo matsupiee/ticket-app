@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { upsertSeatCategoryHandler } from "./handler";
+import { handler } from "./handler";
 import { protectedProcedure } from "../../../../index";
 
 const upsertSeatCategoryInputSchema = z.object({
@@ -29,4 +29,4 @@ export const upsertSeatCategoryRoute = protectedProcedure
   })
   .input(upsertSeatCategoryInputSchema)
   .output(upsertSeatCategoryOutputSchema)
-  .handler(upsertSeatCategoryHandler);
+  .handler(handler);

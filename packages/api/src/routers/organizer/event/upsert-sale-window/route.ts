@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { upsertSaleWindowHandler } from "./handler";
+import { handler } from "./handler";
 import { protectedProcedure } from "../../../../index";
 
 const upsertSaleWindowInputSchema = z.object({
@@ -33,4 +33,4 @@ export const upsertSaleWindowRoute = protectedProcedure
   })
   .input(upsertSaleWindowInputSchema)
   .output(upsertSaleWindowOutputSchema)
-  .handler(upsertSaleWindowHandler);
+  .handler(handler);

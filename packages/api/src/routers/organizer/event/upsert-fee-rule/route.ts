@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { upsertFeeRuleHandler } from "./handler";
+import { handler } from "./handler";
 import { protectedProcedure } from "../../../../index";
 
 const upsertFeeRuleInputSchema = z.object({
@@ -30,4 +30,4 @@ export const upsertFeeRuleRoute = protectedProcedure
   })
   .input(upsertFeeRuleInputSchema)
   .output(upsertFeeRuleOutputSchema)
-  .handler(upsertFeeRuleHandler);
+  .handler(handler);

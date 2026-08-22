@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { adjustInventoryHandler } from "./handler";
+import { handler } from "./handler";
 import { protectedProcedure } from "../../../../index";
 
 const adjustInventoryInputSchema = z.object({
@@ -30,4 +30,4 @@ export const adjustInventoryRoute = protectedProcedure
   })
   .input(adjustInventoryInputSchema)
   .output(adjustInventoryOutputSchema)
-  .handler(adjustInventoryHandler);
+  .handler(handler);
