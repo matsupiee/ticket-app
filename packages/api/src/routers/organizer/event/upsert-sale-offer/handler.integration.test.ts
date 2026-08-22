@@ -1,7 +1,7 @@
 import { db } from "@ticket-app/db";
 import { describe, expect, inject, it } from "vitest";
 
-import { upsertSaleOfferHandler } from "./handler";
+import { handler } from "./handler";
 
 const { serverUrl } = inject("apiIntegration");
 
@@ -23,7 +23,7 @@ describe("organizer event upsert-sale-offer handler", () => {
   it("saleOfferIdを指定しない場合、単一公演の販売商品を新規作成する", async () => {
     const fixture = await seedFixture();
 
-    const result = await upsertSaleOfferHandler({
+    const result = await handler({
       input: {
         eventOrganizerId: fixture.organizer.id,
         eventId: fixture.event.id,
@@ -64,7 +64,7 @@ describe("organizer event upsert-sale-offer handler", () => {
   it("複数の料金種別・複数公演(通し券)を指定して新規作成できる", async () => {
     const fixture = await seedFixture();
 
-    const result = await upsertSaleOfferHandler({
+    const result = await handler({
       input: {
         eventOrganizerId: fixture.organizer.id,
         eventId: fixture.event.id,
@@ -111,7 +111,7 @@ describe("organizer event upsert-sale-offer handler", () => {
 
   it("saleOfferIdを指定すると、価格の更新・料金種別の追加・対象公演の追加ができる", async () => {
     const fixture = await seedFixture();
-    const created = await upsertSaleOfferHandler({
+    const created = await handler({
       input: {
         eventOrganizerId: fixture.organizer.id,
         eventId: fixture.event.id,
@@ -141,7 +141,7 @@ describe("organizer event upsert-sale-offer handler", () => {
       await db.saleOfferRate.findFirstOrThrow({ where: { saleOfferId: created.id } })
     ).id;
 
-    const updated = await upsertSaleOfferHandler({
+    const updated = await handler({
       input: {
         eventOrganizerId: fixture.organizer.id,
         eventId: fixture.event.id,
@@ -195,7 +195,7 @@ describe("organizer event upsert-sale-offer handler", () => {
 
   it("更新時に対象から外したrate/entitlementは削除される", async () => {
     const fixture = await seedFixture();
-    const created = await upsertSaleOfferHandler({
+    const created = await handler({
       input: {
         eventOrganizerId: fixture.organizer.id,
         eventId: fixture.event.id,
@@ -232,7 +232,7 @@ describe("organizer event upsert-sale-offer handler", () => {
       context: { session: { user: { id: fixture.editor.id } } },
     });
 
-    await upsertSaleOfferHandler({
+    await handler({
       input: {
         eventOrganizerId: fixture.organizer.id,
         eventId: fixture.event.id,
@@ -274,7 +274,7 @@ describe("organizer event upsert-sale-offer handler", () => {
     const fixture = await seedFixture();
 
     await expect(
-      upsertSaleOfferHandler({
+      handler({
         input: {
           eventOrganizerId: fixture.organizer.id,
           eventId: fixture.event.id,
@@ -297,7 +297,7 @@ describe("organizer event upsert-sale-offer handler", () => {
     const fixture = await seedFixture();
 
     await expect(
-      upsertSaleOfferHandler({
+      handler({
         input: {
           eventOrganizerId: fixture.organizer.id,
           eventId: fixture.event.id,
@@ -328,7 +328,7 @@ describe("organizer event upsert-sale-offer handler", () => {
     const fixture = await seedFixture();
 
     await expect(
-      upsertSaleOfferHandler({
+      handler({
         input: {
           eventOrganizerId: fixture.organizer.id,
           eventId: fixture.event.id,
@@ -370,7 +370,7 @@ describe("organizer event upsert-sale-offer handler", () => {
     const fixture = await seedFixture();
 
     await expect(
-      upsertSaleOfferHandler({
+      handler({
         input: {
           eventOrganizerId: fixture.organizer.id,
           eventId: fixture.event.id,
@@ -404,7 +404,7 @@ describe("organizer event upsert-sale-offer handler", () => {
     const fixture = await seedFixture();
 
     await expect(
-      upsertSaleOfferHandler({
+      handler({
         input: {
           eventOrganizerId: fixture.organizer.id,
           eventId: fixture.event.id,
@@ -437,7 +437,7 @@ describe("organizer event upsert-sale-offer handler", () => {
     const fixture = await seedFixture();
 
     await expect(
-      upsertSaleOfferHandler({
+      handler({
         input: {
           eventOrganizerId: fixture.organizer.id,
           eventId: fixture.event.id,
@@ -468,7 +468,7 @@ describe("organizer event upsert-sale-offer handler", () => {
 
   it("購入済みのOrderItemが参照している料金設定は削除できない", async () => {
     const fixture = await seedFixture();
-    const created = await upsertSaleOfferHandler({
+    const created = await handler({
       input: {
         eventOrganizerId: fixture.organizer.id,
         eventId: fixture.event.id,
@@ -517,7 +517,7 @@ describe("organizer event upsert-sale-offer handler", () => {
     });
 
     await expect(
-      upsertSaleOfferHandler({
+      handler({
         input: {
           eventOrganizerId: fixture.organizer.id,
           eventId: fixture.event.id,
@@ -552,7 +552,7 @@ describe("organizer event upsert-sale-offer handler", () => {
 
   it("応募済みのApplicationPreferenceItemが参照している料金設定は削除できない", async () => {
     const fixture = await seedFixture();
-    const created = await upsertSaleOfferHandler({
+    const created = await handler({
       input: {
         eventOrganizerId: fixture.organizer.id,
         eventId: fixture.event.id,
@@ -604,7 +604,7 @@ describe("organizer event upsert-sale-offer handler", () => {
     });
 
     await expect(
-      upsertSaleOfferHandler({
+      handler({
         input: {
           eventOrganizerId: fixture.organizer.id,
           eventId: fixture.event.id,
@@ -636,7 +636,7 @@ describe("organizer event upsert-sale-offer handler", () => {
 
   it("発券済みチケットがある公演・席種の組み合わせは削除できない", async () => {
     const fixture = await seedFixture();
-    const created = await upsertSaleOfferHandler({
+    const created = await handler({
       input: {
         eventOrganizerId: fixture.organizer.id,
         eventId: fixture.event.id,
@@ -697,7 +697,7 @@ describe("organizer event upsert-sale-offer handler", () => {
     });
 
     await expect(
-      upsertSaleOfferHandler({
+      handler({
         input: {
           eventOrganizerId: fixture.organizer.id,
           eventId: fixture.event.id,
@@ -740,7 +740,7 @@ describe("organizer event upsert-sale-offer handler", () => {
     });
 
     await expect(
-      upsertSaleOfferHandler({
+      handler({
         input: {
           eventOrganizerId: fixture.organizer.id,
           eventId: fixture.event.id,
@@ -782,7 +782,7 @@ describe("organizer event upsert-sale-offer handler", () => {
         lotteryMode: "AUTO",
       },
     });
-    const otherOffer = await upsertSaleOfferHandler({
+    const otherOffer = await handler({
       input: {
         eventOrganizerId: fixture.organizer.id,
         eventId: fixture.event.id,
@@ -810,7 +810,7 @@ describe("organizer event upsert-sale-offer handler", () => {
     });
 
     await expect(
-      upsertSaleOfferHandler({
+      handler({
         input: {
           eventOrganizerId: fixture.organizer.id,
           eventId: fixture.event.id,
@@ -845,7 +845,7 @@ describe("organizer event upsert-sale-offer handler", () => {
     const other = await seedFixture();
 
     await expect(
-      upsertSaleOfferHandler({
+      handler({
         input: {
           eventOrganizerId: fixture.organizer.id,
           eventId: fixture.event.id,
@@ -879,7 +879,7 @@ describe("organizer event upsert-sale-offer handler", () => {
     const other = await seedFixture();
 
     await expect(
-      upsertSaleOfferHandler({
+      handler({
         input: {
           eventOrganizerId: fixture.organizer.id,
           eventId: fixture.event.id,
@@ -918,7 +918,7 @@ describe("organizer event upsert-sale-offer handler", () => {
     });
 
     await expect(
-      upsertSaleOfferHandler({
+      handler({
         input: {
           eventOrganizerId: fixture.organizer.id,
           eventId: fixture.event.id,

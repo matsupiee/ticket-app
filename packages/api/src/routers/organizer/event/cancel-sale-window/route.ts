@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { cancelSaleWindowHandler } from "./handler";
+import { handler } from "./handler";
 import { protectedProcedure } from "../../../../index";
 
 const cancelSaleWindowInputSchema = z.object({
@@ -26,4 +26,4 @@ export const cancelSaleWindowRoute = protectedProcedure
   })
   .input(cancelSaleWindowInputSchema)
   .output(cancelSaleWindowOutputSchema)
-  .handler(cancelSaleWindowHandler);
+  .handler(handler);

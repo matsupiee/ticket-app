@@ -1,0 +1,27 @@
+import { ORPCError } from "@orpc/server";
+
+import { getFirstOrganizerMembership } from "../../../../shared/organizer-access";
+
+export async function handler({
+  context,
+}: {
+  context: {
+    session: {
+      user: {
+        id: string;
+      };
+    };
+  };
+}) {
+  const membership = await getFirstOrganizerMembership(context.session.user.id);
+
+  if (!membership) {
+    throw new ORPCError("FORBIDDEN");
+  }
+
+  return {
+    eventOrganizerId: membership.organizerId,
+    name: membership.organizer.name,
+    role: membership.role,
+  };
+}

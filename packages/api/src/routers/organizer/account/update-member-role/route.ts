@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { updateMemberRoleHandler } from "./handler";
+import { handler } from "./handler";
 import { protectedProcedure } from "../../../../index";
 
 const updateMemberRoleInputSchema = z.object({
@@ -22,4 +22,4 @@ export const updateMemberRoleRoute = protectedProcedure
   })
   .input(updateMemberRoleInputSchema)
   .output(updateMemberRoleOutputSchema)
-  .handler(updateMemberRoleHandler);
+  .handler(handler);

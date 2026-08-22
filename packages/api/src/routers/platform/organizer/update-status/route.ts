@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { updatePlatformOrganizerStatusHandler } from "./handler";
+import { handler } from "./handler";
 import { platformProcedure } from "../../../../index";
 
 const updateStatusInputSchema = z.object({
@@ -22,4 +22,4 @@ export const updateStatusRoute = platformProcedure
   })
   .input(updateStatusInputSchema)
   .output(updateStatusOutputSchema)
-  .handler(updatePlatformOrganizerStatusHandler);
+  .handler(handler);

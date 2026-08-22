@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { updateProfileHandler } from "./handler";
+import { handler } from "./handler";
 import { protectedProcedure } from "../../../../../index";
 
 const updateProfileInputSchema = z.object({
@@ -25,4 +25,4 @@ export const updateProfileRoute = protectedProcedure
   })
   .input(updateProfileInputSchema)
   .output(updateProfileOutputSchema)
-  .handler(updateProfileHandler);
+  .handler(handler);

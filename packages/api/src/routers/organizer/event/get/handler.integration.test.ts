@@ -1,13 +1,13 @@
 import { db } from "@ticket-app/db";
 import { describe, expect, inject, it } from "vitest";
 
-import { getOrganizerEventHandler } from "./handler";
-import { adjustInventoryHandler } from "../adjust-inventory/handler";
-import { upsertPerformanceHandler } from "../upsert-performance/handler";
-import { upsertRateTypeHandler } from "../upsert-rate-type/handler";
-import { upsertSaleOfferHandler } from "../upsert-sale-offer/handler";
-import { upsertSaleWindowHandler } from "../upsert-sale-window/handler";
-import { upsertSeatCategoryHandler } from "../upsert-seat-category/handler";
+import { handler } from "./handler";
+import { handler as adjustInventoryHandler } from "../adjust-inventory/handler";
+import { handler as upsertPerformanceHandler } from "../upsert-performance/handler";
+import { handler as upsertRateTypeHandler } from "../upsert-rate-type/handler";
+import { handler as upsertSaleOfferHandler } from "../upsert-sale-offer/handler";
+import { handler as upsertSaleWindowHandler } from "../upsert-sale-window/handler";
+import { handler as upsertSeatCategoryHandler } from "../upsert-seat-category/handler";
 
 const { serverUrl } = inject("apiIntegration");
 
@@ -121,7 +121,7 @@ describe("organizer event get handler", () => {
       context: session,
     });
 
-    const result = await getOrganizerEventHandler({
+    const result = await handler({
       input: { eventOrganizerId: organizer.id, eventId: event.id },
       context: session,
     });
@@ -207,7 +207,7 @@ describe("organizer event get handler", () => {
     });
 
     await expect(
-      getOrganizerEventHandler({
+      handler({
         input: { eventOrganizerId: intruderOrganizer.id, eventId: otherEvent.id },
         context: { session: { user: { id: intruder.id } } },
       }),
@@ -231,7 +231,7 @@ describe("organizer event get handler", () => {
     });
 
     await expect(
-      getOrganizerEventHandler({
+      handler({
         input: { eventOrganizerId: organizer.id, eventId: event.id },
         context: { session: { user: { id: viewer.id } } },
       }),

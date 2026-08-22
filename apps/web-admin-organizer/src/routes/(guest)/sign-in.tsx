@@ -1,16 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
 
-import { AuthPanel } from "@/shared/_components/auth-panel";
-
-type AuthMode = "signIn" | "signUp" | "reset";
+import { OrganizerSignInPage } from "@/features/auth/sign-in/page";
 
 export const Route = createFileRoute("/(guest)/sign-in")({
-  component: RouteComponent,
+  component: OrganizerSignInPage,
 });
-
-function RouteComponent() {
-  const [mode, setMode] = useState<AuthMode>("signIn");
-
-  return <AuthPanel mode={mode} onModeChange={setMode} />;
-}

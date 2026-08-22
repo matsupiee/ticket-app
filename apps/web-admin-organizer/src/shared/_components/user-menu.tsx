@@ -23,7 +23,7 @@ export default function UserMenu() {
 
   if (!session) {
     return (
-      <Link to="/login">
+      <Link to="/sign-in">
         <Button variant="outline">ログイン</Button>
       </Link>
     );
@@ -45,7 +45,7 @@ export default function UserMenu() {
               authClient.signOut({
                 fetchOptions: {
                   onSuccess: () => {
-                    navigate({ to: "/login" });
+                    navigate({ to: "/sign-in" });
                   },
                 },
               });

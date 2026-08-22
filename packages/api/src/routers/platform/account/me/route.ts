@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { getMyPlatformAccountHandler } from "./handler";
+import { handler } from "./handler";
 import { platformProcedure } from "../../../../index";
 
 const getMyPlatformAccountInputSchema = z.object({});
@@ -20,4 +20,4 @@ export const getMyPlatformAccountRoute = platformProcedure
   })
   .input(getMyPlatformAccountInputSchema)
   .output(getMyPlatformAccountOutputSchema)
-  .handler(getMyPlatformAccountHandler);
+  .handler(handler);

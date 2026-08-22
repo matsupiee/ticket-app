@@ -1,4 +1,4 @@
-export function getMyPlatformAccountHandler({
+export function handler({
   context,
 }: {
   context: {

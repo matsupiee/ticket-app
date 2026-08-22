@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+
 import { db, disconnectDb } from "@ticket-app/db";
 
 import { expect, test } from "../../fixtures/app.fixture";
@@ -12,7 +14,8 @@ test.describe("プラットフォーム管理者の新規登録・ログイン",
     app,
     page,
   }) => {
-    const email = `platform-signup-${Date.now()}@example.com`;
+    const suffix = `${randomUUID().slice(0, 8)}-${Date.now()}`;
+    const email = `platform-signup-${suffix}@example.com`;
     const password = "platform-e2e-password";
 
     await test.step("新規登録ページを開く。", async () => {
@@ -36,7 +39,8 @@ test.describe("プラットフォーム管理者の新規登録・ログイン",
     page,
     request,
   }) => {
-    const email = `platform-signin-${Date.now()}@example.com`;
+    const suffix = `${randomUUID().slice(0, 8)}-${Date.now()}`;
+    const email = `platform-signin-${suffix}@example.com`;
     const password = "platform-e2e-password";
     let platformUserId = "";
 

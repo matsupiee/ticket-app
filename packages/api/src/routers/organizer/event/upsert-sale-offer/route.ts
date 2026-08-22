@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { upsertSaleOfferHandler } from "./handler";
+import { handler } from "./handler";
 import { protectedProcedure } from "../../../../index";
 
 const upsertSaleOfferInputSchema = z.object({
@@ -47,4 +47,4 @@ export const upsertSaleOfferRoute = protectedProcedure
   })
   .input(upsertSaleOfferInputSchema)
   .output(upsertSaleOfferOutputSchema)
-  .handler(upsertSaleOfferHandler);
+  .handler(handler);
