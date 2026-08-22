@@ -68,7 +68,7 @@
 在庫は公演×席種ごとに整理番号方式（`NUMBERED_ENTRY`）でのみ作成でき、指定席（座席レイアウトの選択）は未対応。
 出演アーティストの登録、および保存済みの公演・料金種別・販売商品の削除は未対応（席種の無効化と販売受付のキャンセルのみ対応）。
 admin 画面のアクセス制御は、主催者管理画面では DB 上の `OrganizerMember`、プラットフォーム管理画面では DB 上の `PlatformMember` で判定する。未ログインの場合は `/sign-in` へ、ログイン済みでも権限がない場合は `/forbidden` へ遷移する。
-`packages/api` の `platform.*` は `platformProcedure` で `PlatformMember` の有無を必ず確認するため、ログイン済みでも管理者として登録されていないユーザーは全ルートが `FORBIDDEN` になる（`docs/adr/0008-platform-member-authorization.md` 参照）。
+`packages/api` の `platform.*` は `platformProcedure` で `PlatformMember` の有無を必ず確認するため、ログイン済みでも管理者として登録されていないユーザーは全ルートが `FORBIDDEN` になる（`docs/adr/0009-platform-member-authorization.md` 参照）。
 プラットフォーム管理者の新規登録画面は better-auth ユーザーを作るだけで、管理画面の利用権限は付与しない。開発環境の初期管理者は `bun run db:seed` が作り、本番環境は手動 INSERT で作る。ロール（`VIEWER` / `EDITOR` / `OWNER`）は定義済みだが、ロールごとの操作制限はまだ行っていない。
 ローカル開発では `CORS_ORIGIN` が localhost 系の場合に `localhost:3001` / `3002` / `3003` を trusted origin として扱う。
 パスワードリセットは better-auth の reset API を有効化し、現時点では開発用にリセット URL をサーバログへ出力する。
@@ -91,6 +91,7 @@ admin 画面のアクセス制御は、主催者管理画面では DB 上の `Or
 購入者向けのパスワードリセットは未対応で、`/reset-password` はプレースホルダーのまま残している。
 先着販売の申し込み確定時は、外部決済プロバイダーへ接続せず、モック決済を成功扱いにして `Order` / `Payment` / `Ticket` / `TicketEntitlement` を同一トランザクションで作成する。
 整理番号方式では、購入時に未販売の `InventoryUnit` を先頭から確保し、発券済みチケットに整理番号を表示する。
+整理番号は席種ごとに接頭辞を設定でき、`S-1` / `A-1` のように同じ公演の別席種を見分けられる（ADR 0008 参照）。接頭辞は任意で、未設定なら数字だけを表示する。通し券では公演ごとに別の整理番号が採番される。
 チケットもぎりは一般ユーザー側のチケット画面で同じチケットを2回タップしたときに実行し、`Ticket` と `TicketEntitlement` を使用済みにする。
 手数料計算は ADR 0002 に合わせ、購入者負担手数料を支払予定額に加算し、主催者負担手数料は精算側の金額として分けて扱う。
 

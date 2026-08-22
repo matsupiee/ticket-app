@@ -1,4 +1,4 @@
-# ADR 0008: プラットフォーム管理者の認可を DB の PlatformMember で行う
+# ADR 0009: プラットフォーム管理者の認可を DB の PlatformMember で行う
 
 ## ステータス
 
