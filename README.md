@@ -1,1 +1,1 @@
-@see docs/INDEX.md
+@see docs/

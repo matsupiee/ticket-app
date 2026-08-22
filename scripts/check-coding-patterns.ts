@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -288,6 +288,8 @@ function checkBackendPatterns(files: string[], directories: string[]): CheckIssu
     }
   }
 
+  issues.push(...checkRouteRegistration(routerFiles));
+
   return dedupeIssues(issues);
 }
 
@@ -316,6 +318,35 @@ function checkPlatformProcedurePatterns(sources: SourceFileSnapshot[]): CheckIss
   }
 
   return issues;
+}
+
+// route.ts は利用者種別をまたいで同じ export 名を持つことがあり
+// （例: fan と organizer の listEventsRoute）、routers/index.ts が別種別の
+// ルートを取り違えて import しても型は通ってしまう。
+// 実際に fan.event.get / fan.event.list / fan.user.profile.update が
+// organizer 配下のルートを指したまま気づけなかったため、
+// 「すべての route.ts が routers/index.ts から import されていること」を機械的に確認する。
+function checkRouteRegistration(routerFiles: string[]): CheckIssue[] {
+  const indexPath = `${backendRoutersRoot}/index.ts`;
+  if (!isExistingFile(indexPath)) {
+    return [];
+  }
+
+  const indexSource = readFileSync(indexPath, "utf8");
+  const importedRoutePaths = new Set(
+    [...indexSource.matchAll(/from\s+"\.\/(.+?)\/route"/g)].map((match) => match[1]),
+  );
+
+  return routerFiles
+    .filter((file) => basename(file) === "route.ts")
+    .map((file) => file.slice(`${backendRoutersRoot}/`.length).replace(/\/route\.ts$/, ""))
+    .filter((routePath) => !importedRoutePaths.has(routePath))
+    .map((routePath) => ({
+      path: `${backendRoutersRoot}/${routePath}/route.ts`,
+      rule: "backend route registration",
+      message:
+        "この route.ts が routers/index.ts から import されていません。appRouter へ登録するか、使わないなら削除してください。",
+    }));
 }
 
 function checkApiTestPlacementPatterns(files: string[]): CheckIssue[] {
