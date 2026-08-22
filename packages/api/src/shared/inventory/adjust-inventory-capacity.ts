@@ -2,104 +2,92 @@ import { ORPCError } from "@orpc/server";
 import type { Prisma } from "@ticket-app/db";
 
 type AdjustInventoryCapacityInput = {
-  performanceId: string;
-  seatCategoryId: string;
-  admissionMethod: "GENERAL_ADMISSION" | "NUMBERED_ENTRY" | "RESERVED_SEAT";
-  seatAllocationMethod: "NONE" | "LOTTERY_LATER" | "IMMEDIATE";
-  capacityDelta: number;
+  stageId: string;
+  inventoryCategoryId: string;
+  // 差分ではなく、あるべき枚数を渡す（ADR 0011）
+  capacity: number;
 };
 
-// 公演×席種ごとの在庫(InventoryPool)を増減する。
-// 増加時は InventoryUnit を entryNumber の連番で追加作成し、
-// 減少時は status: "AVAILABLE" のユニットのみ(entryNumber の大きい方から)削除する。
-// HELD/SOLD のユニットは絶対に削除しない。
+// 公演 × 在庫種別ごとの在庫(InventoryPool)を、指定された枚数になるまで増減する。
+//
+// 増加時は InventorySlot を追加作成する。整理番号は作成時ではなく注文への割り当て時に
+// InventoryPool.nextEntryNumber から採番するため、ここでは entryNumber を入れない（ADR 0005）。
+// 減少時は status: "AVAILABLE" かつ確保も発券もされていない枠だけを削除する。
+// HELD の枠と、発券済み(TicketEntitlement がある)枠は絶対に削除しない。
 export async function adjustInventoryCapacity(
   tx: Prisma.TransactionClient,
   input: AdjustInventoryCapacityInput,
 ) {
-  if (input.admissionMethod === "RESERVED_SEAT") {
-    throw new ORPCError("BAD_REQUEST", {
-      message: "指定席の在庫調整は現在サポートされていません",
-    });
-  }
-
-  if (input.capacityDelta === 0) {
-    throw new ORPCError("BAD_REQUEST", { message: "capacityDeltaは0以外を指定してください" });
+  if (input.capacity < 0) {
+    throw new ORPCError("BAD_REQUEST", { message: "在庫数は0以上で指定してください" });
   }
 
   const existingPool = await tx.inventoryPool.findUnique({
     where: {
-      performanceId_seatCategoryId: {
-        performanceId: input.performanceId,
-        seatCategoryId: input.seatCategoryId,
+      stageId_inventoryCategoryId: {
+        stageId: input.stageId,
+        inventoryCategoryId: input.inventoryCategoryId,
       },
     },
   });
-
-  if (!existingPool && input.capacityDelta < 0) {
-    throw new ORPCError("BAD_REQUEST", { message: "在庫が未作成のため減少できません" });
-  }
-
-  if (
-    existingPool &&
-    (existingPool.admissionMethod !== input.admissionMethod ||
-      existingPool.seatAllocationMethod !== input.seatAllocationMethod)
-  ) {
-    throw new ORPCError("BAD_REQUEST", {
-      message:
-        "既存の在庫と入場方式・座席割当方式が一致しません。方式の変更はサポートされていません",
-    });
-  }
 
   const pool =
     existingPool ??
     (await tx.inventoryPool.create({
       data: {
-        performanceId: input.performanceId,
-        seatCategoryId: input.seatCategoryId,
-        admissionMethod: input.admissionMethod,
-        seatAllocationMethod: input.seatAllocationMethod,
+        stageId: input.stageId,
+        inventoryCategoryId: input.inventoryCategoryId,
         capacity: 0,
       },
     }));
 
-  if (input.capacityDelta > 0) {
-    const maxEntryNumber = await tx.inventoryUnit.aggregate({
-      where: { inventoryPoolId: pool.id },
-      _max: { entryNumber: true },
-    });
-    const nextEntryNumber = (maxEntryNumber._max.entryNumber ?? 0) + 1;
+  // capacity は表示用のキャッシュ値なので、実際の枠数を数えてから増減する
+  const currentSlotCount = await tx.inventorySlot.count({
+    where: { inventoryPoolId: pool.id },
+  });
+  const delta = input.capacity - currentSlotCount;
 
-    await tx.inventoryUnit.createMany({
-      data: Array.from({ length: input.capacityDelta }, (_, index) => ({
-        inventoryPoolId: pool.id,
-        performanceId: input.performanceId,
-        entryNumber: input.admissionMethod === "NUMBERED_ENTRY" ? nextEntryNumber + index : null,
-      })),
+  if (delta === 0) {
+    return pool.capacity === input.capacity
+      ? pool
+      : await tx.inventoryPool.update({
+          where: { id: pool.id },
+          data: { capacity: input.capacity },
+        });
+  }
+
+  if (delta > 0) {
+    await tx.inventorySlot.createMany({
+      data: Array.from({ length: delta }, () => ({ inventoryPoolId: pool.id })),
     });
 
-    return tx.inventoryPool.update({
+    return await tx.inventoryPool.update({
       where: { id: pool.id },
-      data: { capacity: { increment: input.capacityDelta } },
+      data: { capacity: input.capacity },
     });
   }
 
-  const decreaseCount = -input.capacityDelta;
-  const removableUnits = await tx.inventoryUnit.findMany({
-    where: { inventoryPoolId: pool.id, status: "AVAILABLE" },
-    orderBy: [{ entryNumber: "desc" }, { createdAt: "desc" }],
+  const decreaseCount = -delta;
+  const removableSlots = await tx.inventorySlot.findMany({
+    where: {
+      inventoryPoolId: pool.id,
+      status: "AVAILABLE",
+      slotHold: null,
+      ticketEntitlements: { none: { canceledAt: null } },
+    },
+    orderBy: { createdAt: "desc" },
     take: decreaseCount,
     select: { id: true },
   });
 
-  if (removableUnits.length < decreaseCount) {
+  if (removableSlots.length < decreaseCount) {
     throw new ORPCError("BAD_REQUEST", {
-      message: `削除可能な在庫が不足しています(削除可能: ${removableUnits.length}件 / 要求: ${decreaseCount}件)`,
+      message: `販売済み・確保済みの枠は削除できません(削除可能: ${removableSlots.length}件 / 要求: ${decreaseCount}件)`,
     });
   }
 
-  const deleted = await tx.inventoryUnit.deleteMany({
-    where: { id: { in: removableUnits.map((unit) => unit.id) }, status: "AVAILABLE" },
+  const deleted = await tx.inventorySlot.deleteMany({
+    where: { id: { in: removableSlots.map((slot) => slot.id) }, status: "AVAILABLE" },
   });
 
   if (deleted.count !== decreaseCount) {
@@ -108,8 +96,8 @@ export async function adjustInventoryCapacity(
     });
   }
 
-  return tx.inventoryPool.update({
+  return await tx.inventoryPool.update({
     where: { id: pool.id },
-    data: { capacity: { decrement: decreaseCount } },
+    data: { capacity: input.capacity },
   });
 }

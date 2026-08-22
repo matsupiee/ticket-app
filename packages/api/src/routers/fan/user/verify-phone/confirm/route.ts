@@ -3,12 +3,12 @@ import { z } from "zod";
 import { handler } from "./handler";
 import { protectedProcedure } from "../../../../../index";
 
-const verifyPhoneInputSchema = z.object({
+const userVerifyPhoneConfirmInputSchema = z.object({
   verificationId: z.string().min(1),
   code: z.string().min(4).max(10),
 });
 
-const verifyPhoneOutputSchema = z.object({
+const userVerifyPhoneConfirmOutputSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
   email: z.string().email(),
@@ -17,12 +17,12 @@ const verifyPhoneOutputSchema = z.object({
   phoneNumberVerified: z.boolean(),
 });
 
-export const verifyPhoneRoute = protectedProcedure
+export const userVerifyPhoneConfirmRoute = protectedProcedure
   .route({
     method: "POST",
     path: "/fan/user/verify-phone/confirm",
     summary: "Verify fan phone number",
   })
-  .input(verifyPhoneInputSchema)
-  .output(verifyPhoneOutputSchema)
+  .input(userVerifyPhoneConfirmInputSchema)
+  .output(userVerifyPhoneConfirmOutputSchema)
   .handler(handler);

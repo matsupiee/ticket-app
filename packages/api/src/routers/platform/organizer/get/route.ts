@@ -3,11 +3,11 @@ import { z } from "zod";
 import { handler } from "./handler";
 import { protectedProcedure } from "../../../../index";
 
-const getOrganizerInputSchema = z.object({
+const organizerGetInputSchema = z.object({
   organizerId: z.string().min(1),
 });
 
-const getOrganizerOutputSchema = z.object({
+const organizerGetOutputSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
   slug: z.string().min(1),
@@ -53,12 +53,12 @@ const getOrganizerOutputSchema = z.object({
     .optional(),
 });
 
-export const getOrganizerRoute = protectedProcedure
+export const organizerGetRoute = protectedProcedure
   .route({
     method: "GET",
     path: "/platform/organizers/{organizerId}",
     summary: "Get platform organizer detail",
   })
-  .input(getOrganizerInputSchema)
-  .output(getOrganizerOutputSchema)
+  .input(organizerGetInputSchema)
+  .output(organizerGetOutputSchema)
   .handler(handler);

@@ -1,91 +1,79 @@
 import type { RouterClient } from "@orpc/server";
 
-import { listApplicationsRoute } from "./fan/application/list/route";
-import { submitApplicationRoute } from "./fan/application/submit/route";
-import { eventGetRoute } from "./fan/event/get/route";
-import { listEventsRoute as listFanEventsRoute } from "./fan/event/list/route";
-import { listTicketsRoute } from "./fan/ticket/list/route";
-import { useTicketRoute } from "./fan/ticket/use/route";
-import { getProfileRoute } from "./fan/user/profile/get/route";
-import { updateProfileRoute as updateFanProfileRoute } from "./fan/user/profile/update/route";
-import { verifyPhoneRoute } from "./fan/user/verify-phone/confirm/route";
-import { requestPhoneVerificationRoute } from "./fan/user/verify-phone/request/route";
-import { inviteMemberRoute } from "./organizer/account/invite-member/route";
-import { getMyOrganizerAccountRoute } from "./organizer/account/me/route";
-import { removeMemberRoute } from "./organizer/account/remove-member/route";
-import { signUpOrganizerAccountRoute } from "./organizer/account/sign-up/route";
-import { updateMemberRoleRoute } from "./organizer/account/update-member-role/route";
-import { updateProfileRoute as updateOrganizerProfileRoute } from "./organizer/account/update-profile/route";
-import { upsertBankAccountRoute } from "./organizer/account/upsert-bank-account/route";
-import { adjustInventoryRoute } from "./organizer/event/adjust-inventory/route";
-import { cancelSaleWindowRoute } from "./organizer/event/cancel-sale-window/route";
-import { createEventRoute } from "./organizer/event/create/route";
-import { getEventRoute } from "./organizer/event/get/route";
-import { listEventsRoute as listOrganizerEventsRoute } from "./organizer/event/list/route";
-import { updateEventRoute } from "./organizer/event/update/route";
-import { upsertPerformanceRoute } from "./organizer/event/upsert-performance/route";
-import { upsertRateTypeRoute } from "./organizer/event/upsert-rate-type/route";
-import { upsertSaleOfferRoute } from "./organizer/event/upsert-sale-offer/route";
-import { upsertSaleWindowRoute } from "./organizer/event/upsert-sale-window/route";
-import { upsertSeatCategoryRoute } from "./organizer/event/upsert-seat-category/route";
-import { getOrganizerRoute } from "./platform/organizer/get/route";
-import { listOrganizersRoute } from "./platform/organizer/list/route";
-import { updateStatusRoute } from "./platform/organizer/update-status/route";
+import { applicationListRoute } from "./fan/application/list/route";
+import { applicationSubmitRoute } from "./fan/application/submit/route";
+import { eventGetRoute as fanEventGetRoute } from "./fan/event/get/route";
+import { eventListRoute as fanEventListRoute } from "./fan/event/list/route";
+import { ticketListRoute } from "./fan/ticket/list/route";
+import { ticketUseRoute } from "./fan/ticket/use/route";
+import { userProfileGetRoute } from "./fan/user/profile/get/route";
+import { userProfileUpdateRoute } from "./fan/user/profile/update/route";
+import { userVerifyPhoneConfirmRoute } from "./fan/user/verify-phone/confirm/route";
+import { userVerifyPhoneRequestRoute } from "./fan/user/verify-phone/request/route";
+import { accountInviteMemberRoute } from "./organizer/account/invite-member/route";
+import { accountMeRoute } from "./organizer/account/me/route";
+import { accountRemoveMemberRoute } from "./organizer/account/remove-member/route";
+import { accountSignUpRoute } from "./organizer/account/sign-up/route";
+import { accountUpdateMemberRoleRoute } from "./organizer/account/update-member-role/route";
+import { accountUpdateProfileRoute } from "./organizer/account/update-profile/route";
+import { accountUpsertBankAccountRoute } from "./organizer/account/upsert-bank-account/route";
+import { eventCreateRoute } from "./organizer/event/create/route";
+import { eventEditBasicInfoRoute } from "./organizer/event/edit-basic-info/route";
+import { eventEditSalesSettingRoute } from "./organizer/event/edit-sales-setting/route";
+import { eventGetRoute as organizerEventGetRoute } from "./organizer/event/get/route";
+import { eventListRoute as organizerEventListRoute } from "./organizer/event/list/route";
+import { organizerGetRoute } from "./platform/organizer/get/route";
+import { organizerListRoute } from "./platform/organizer/list/route";
+import { organizerUpdateStatusRoute } from "./platform/organizer/update-status/route";
 
 export const appRouter = {
   fan: {
     application: {
-      list: listApplicationsRoute,
-      submit: submitApplicationRoute,
+      list: applicationListRoute,
+      submit: applicationSubmitRoute,
     },
     event: {
-      get: eventGetRoute,
-      list: listFanEventsRoute,
+      get: fanEventGetRoute,
+      list: fanEventListRoute,
     },
     ticket: {
-      list: listTicketsRoute,
-      use: useTicketRoute,
+      list: ticketListRoute,
+      use: ticketUseRoute,
     },
     user: {
       profile: {
-        get: getProfileRoute,
-        update: updateFanProfileRoute,
+        get: userProfileGetRoute,
+        update: userProfileUpdateRoute,
       },
       verifyPhone: {
-        request: requestPhoneVerificationRoute,
-        confirm: verifyPhoneRoute,
+        request: userVerifyPhoneRequestRoute,
+        confirm: userVerifyPhoneConfirmRoute,
       },
     },
   },
   organizer: {
     account: {
-      inviteMember: inviteMemberRoute,
-      me: getMyOrganizerAccountRoute,
-      removeMember: removeMemberRoute,
-      signUp: signUpOrganizerAccountRoute,
-      updateMemberRole: updateMemberRoleRoute,
-      updateProfile: updateOrganizerProfileRoute,
-      upsertBankAccount: upsertBankAccountRoute,
+      inviteMember: accountInviteMemberRoute,
+      me: accountMeRoute,
+      removeMember: accountRemoveMemberRoute,
+      signUp: accountSignUpRoute,
+      updateMemberRole: accountUpdateMemberRoleRoute,
+      updateProfile: accountUpdateProfileRoute,
+      upsertBankAccount: accountUpsertBankAccountRoute,
     },
     event: {
-      adjustInventory: adjustInventoryRoute,
-      cancelSaleWindow: cancelSaleWindowRoute,
-      create: createEventRoute,
-      get: getEventRoute,
-      list: listOrganizerEventsRoute,
-      update: updateEventRoute,
-      upsertPerformance: upsertPerformanceRoute,
-      upsertRateType: upsertRateTypeRoute,
-      upsertSaleOffer: upsertSaleOfferRoute,
-      upsertSaleWindow: upsertSaleWindowRoute,
-      upsertSeatCategory: upsertSeatCategoryRoute,
+      create: eventCreateRoute,
+      editBasicInfo: eventEditBasicInfoRoute,
+      editSalesSetting: eventEditSalesSettingRoute,
+      get: organizerEventGetRoute,
+      list: organizerEventListRoute,
     },
   },
   platform: {
     organizer: {
-      get: getOrganizerRoute,
-      list: listOrganizersRoute,
-      updateStatus: updateStatusRoute,
+      get: organizerGetRoute,
+      list: organizerListRoute,
+      updateStatus: organizerUpdateStatusRoute,
     },
   },
 };

@@ -24,6 +24,14 @@ model Event {
   name        String
   description String // 何もない場合は空文字
 
+  // イベントページを購入者に見せる期間。
+  // publishesAt が null の間は下書きで、購入者側の一覧・詳細に出さない。
+  // closesAt が null なら公開終了日を決めていない状態とする。
+  // 「買えるかどうか」は SaleWindow の申込期間が決めるので、ここはページの露出だけを制御する。
+  // 状態(下書き/公開予定/公開中/終了)はこの2つと現在時刻から導出し、カラムとしては持たない（ADR 0012）
+  publishesAt DateTime?
+  closesAt    DateTime?
+
   organizer Organizer @relation(fields: [organizerId], references: [id])
 
   stages              Stage[]

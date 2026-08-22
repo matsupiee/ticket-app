@@ -3,23 +3,23 @@ import { z } from "zod";
 import { handler } from "./handler";
 import { protectedProcedure } from "../../../../index";
 
-const updateStatusInputSchema = z.object({
+const organizerUpdateStatusInputSchema = z.object({
   organizerId: z.string().min(1),
   status: z.enum(["UNDER_REVIEW", "ACTIVE", "SUSPENDED", "ARCHIVED"]),
   reason: z.string().min(1).optional(),
 });
 
-const updateStatusOutputSchema = z.object({
+const organizerUpdateStatusOutputSchema = z.object({
   id: z.string().min(1),
   updatedAt: z.string().min(1),
 });
 
-export const updateStatusRoute = protectedProcedure
+export const organizerUpdateStatusRoute = protectedProcedure
   .route({
     method: "PATCH",
     path: "/platform/organizers/{organizerId}/status",
     summary: "Update platform organizer status",
   })
-  .input(updateStatusInputSchema)
-  .output(updateStatusOutputSchema)
+  .input(organizerUpdateStatusInputSchema)
+  .output(organizerUpdateStatusOutputSchema)
   .handler(handler);

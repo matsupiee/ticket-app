@@ -39,14 +39,14 @@ test.describe("1公演 / S席・A席の2券種 / 先着の1販売受付", () => 
     });
 
     await test.step("Step3: 在庫種別としてS席・A席を追加し、公演ごとの在庫数を設定する。", async () => {
-      await app.organizer.eventWizard().addSeatCategory();
-      await app.organizer.eventWizard().fillSeatCategory({
+      await app.organizer.eventWizard().addInventoryCategory();
+      await app.organizer.eventWizard().fillInventoryCategory({
         name: inventoryCategoryS.name,
         stageName,
         capacity: inventoryCategoryS.capacity,
       });
-      await app.organizer.eventWizard().addSeatCategory();
-      await app.organizer.eventWizard().fillSeatCategory({
+      await app.organizer.eventWizard().addInventoryCategory();
+      await app.organizer.eventWizard().fillInventoryCategory({
         name: inventoryCategoryA.name,
         stageName,
         capacity: inventoryCategoryA.capacity,
@@ -59,12 +59,12 @@ test.describe("1公演 / S席・A席の2券種 / 先着の1販売受付", () => 
       await app.organizer.eventWizard().fillRateType({ name: "通常" });
       await app.organizer.eventWizard().fillStandardPrice({
         rateTypeName: "通常",
-        seatCategoryName: inventoryCategoryS.name,
+        inventoryCategoryName: inventoryCategoryS.name,
         price: inventoryCategoryS.price,
       });
       await app.organizer.eventWizard().fillStandardPrice({
         rateTypeName: "通常",
-        seatCategoryName: inventoryCategoryA.name,
+        inventoryCategoryName: inventoryCategoryA.name,
         price: inventoryCategoryA.price,
       });
       await app.organizer.eventWizard().clickNext();
@@ -82,13 +82,13 @@ test.describe("1公演 / S席・A席の2券種 / 先着の1販売受付", () => 
       await app.organizer.eventWizard().addOffer({ saleWindowName: "一般販売" });
       await app.organizer.eventWizard().fillOffer({
         stageName,
-        seatCategoryName: inventoryCategoryS.name,
+        inventoryCategoryName: inventoryCategoryS.name,
         rateTypeName: "通常",
       });
       await app.organizer.eventWizard().addOffer({ saleWindowName: "一般販売" });
       await app.organizer.eventWizard().fillOffer({
         stageName,
-        seatCategoryName: inventoryCategoryA.name,
+        inventoryCategoryName: inventoryCategoryA.name,
         rateTypeName: "通常",
       });
     });

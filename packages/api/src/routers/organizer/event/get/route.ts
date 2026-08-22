@@ -3,25 +3,33 @@ import { z } from "zod";
 import { handler } from "./handler";
 import { protectedProcedure } from "../../../../index";
 
-const getEventInputSchema = z.object({
-  eventOrganizerId: z.string().min(1),
-  eventId: z.string().min(1),
-});
-
-const getEventOutputSchema = z.object({
+// 主催者のイベント詳細。イベント詳細ページ（ハブ）と各設定ページがこの1本から復元できることを条件に、
+// 必要なものだけを返す（ADR 0012）。日時はすべてISO文字列。
+const eventGetOutputSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
   description: z.string(),
-  status: z.enum(["DRAFT", "ON_SALE", "ENDED", "CANCELED"]),
-  location: z.string().min(1),
-  tags: z.array(z.string().min(1)),
-  seatCategories: z.array(
+  // 公開期間。publishesAt が null なら下書き（ADR 0012）
+  publishesAt: z.string().nullable(),
+  closesAt: z.string().nullable(),
+  stages: z.array(
     z.object({
       id: z.string().min(1),
       name: z.string().min(1),
+      venueId: z.string().min(1),
+      venueName: z.string().min(1),
+      doorsOpenAt: z.string().min(1),
+      startsAt: z.string().min(1),
+    }),
+  ),
+  inventoryCategories: z.array(
+    z.object({
+      id: z.string().min(1),
+      kind: z.enum(["ENTRY_NUMBER", "RESERVED_SEAT"]),
+      name: z.string().min(1),
       description: z.string(),
-      active: z.boolean(),
       displayOrder: z.number().int().min(0),
+      entryNumberPrefix: z.string().nullable(),
     }),
   ),
   rateTypes: z.array(
@@ -34,70 +42,52 @@ const getEventOutputSchema = z.object({
   inventoryPools: z.array(
     z.object({
       id: z.string().min(1),
-      performanceId: z.string().min(1),
-      seatCategoryId: z.string().min(1),
-      admissionMethod: z.enum(["GENERAL_ADMISSION", "NUMBERED_ENTRY", "RESERVED_SEAT"]),
-      seatAllocationMethod: z.enum(["NONE", "LOTTERY_LATER", "IMMEDIATE"]),
+      stageId: z.string().min(1),
+      inventoryCategoryId: z.string().min(1),
       capacity: z.number().int().min(0),
-      heldCount: z.number().int().min(0),
-      soldCount: z.number().int().min(0),
-    }),
-  ),
-  performances: z.array(
-    z.object({
-      id: z.string().min(1),
-      name: z.string().min(1),
-      venueName: z.string().min(1),
-      venueId: z.string().min(1),
-      seatLayoutId: z.string().min(1).optional(),
-      startsAt: z.string().min(1),
-      doorsOpenAt: z.string().min(1),
-      admissionMethod: z.enum(["GENERAL_ADMISSION", "NUMBERED_ENTRY", "RESERVED_SEAT"]),
+      availableQuantity: z.number().int().min(0),
     }),
   ),
   saleWindows: z.array(
     z.object({
       id: z.string().min(1),
       name: z.string().min(1),
-      saleMethod: z.enum(["FIRST_COME", "LOTTERY"]),
-      opensAt: z.string().min(1),
-      closesAt: z.string().min(1),
-      publishesAt: z.string().min(1).optional(),
+      publishesAt: z.string().nullable(),
+      applicationStartsAt: z.string().min(1),
+      applicationEndsAt: z.string().min(1),
       isSmsAuthRequired: z.boolean(),
-      lotteryMode: z.enum(["MANUAL", "AUTO"]),
-      notifyLotteryResultAt: z.string().min(1).optional(),
-      canceledAt: z.string().min(1).optional(),
-      cancelReason: z.string().min(1).optional(),
+      saleMethod: z.enum(["FIRST_COME", "LOTTERY"]),
+      autoLotteryStartsAt: z.string().nullable(),
+      notifiesLotteryResultAt: z.string().nullable(),
+      maxLotteryItemCount: z.number().int().min(1).nullable(),
+      canceledAt: z.string().nullable(),
+      cancelReason: z.string().nullable(),
       offers: z.array(
         z.object({
           id: z.string().min(1),
           name: z.string().min(1),
           description: z.string(),
-          displayOrder: z.number().int().min(0),
-          seatCategoryName: z.string().min(1),
-          soldQuantity: z.number().int().min(0),
-          availableQuantity: z.number().int().min(0),
-          minPrice: z.number().int().min(0),
           maxQuantityPerOrder: z.number().int().min(1),
+          quantityStep: z.number().int().min(1),
+          displayOrder: z.number().int().min(0),
           rates: z.array(
             z.object({
               id: z.string().min(1),
               rateTypeId: z.string().min(1),
               price: z.number().int().min(0),
-              currency: z.string().length(3),
-              minQuantity: z.number().int().min(1),
-              maxQuantity: z.number().int().min(1),
-              quantityStep: z.number().int().min(1),
-              displayOrder: z.number().int().min(0),
             }),
           ),
           entitlements: z.array(
             z.object({
               id: z.string().min(1),
-              performanceId: z.string().min(1),
-              seatCategoryId: z.string().min(1),
+              inventoryPoolId: z.string().min(1),
+              stageId: z.string().min(1),
+              inventoryCategoryId: z.string().min(1),
             }),
           ),
+          soldQuantity: z.number().int().min(0),
+          availableQuantity: z.number().int().min(0),
+          minPrice: z.number().int().min(0),
         }),
       ),
     }),
@@ -105,25 +95,23 @@ const getEventOutputSchema = z.object({
   sales: z.object({
     grossSales: z.number().int().min(0),
     ticketsSold: z.number().int().min(0),
-    buyerFeeAmount: z.number().int().min(0),
-    organizerFeeAmount: z.number().int().min(0),
-  }),
-  settlement: z.object({
-    status: z.enum(["SCHEDULED", "PROCESSING", "PAID"]),
-    scheduledAt: z.string().min(1),
-    paidAt: z.string().min(1).optional(),
   }),
 });
 
-export type GetEventInput = z.infer<typeof getEventInputSchema>;
-export type GetEventOutput = z.infer<typeof getEventOutputSchema>;
+const eventGetInputSchema = z.object({
+  eventOrganizerId: z.string().min(1),
+  eventId: z.string().min(1),
+});
 
-export const getEventRoute = protectedProcedure
+export type EventGetInput = z.infer<typeof eventGetInputSchema>;
+export type EventGetOutput = z.infer<typeof eventGetOutputSchema>;
+
+export const eventGetRoute = protectedProcedure
   .route({
     method: "GET",
     path: "/organizer/events/{eventId}",
-    summary: "Get organizer event detail",
+    summary: "Get organizer event",
   })
-  .input(getEventInputSchema)
-  .output(getEventOutputSchema)
+  .input(eventGetInputSchema)
+  .output(eventGetOutputSchema)
   .handler(handler);

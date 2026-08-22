@@ -19,7 +19,6 @@ describe("getFirstOrganizerMembership", () => {
     const firstOrganizer = await db.organizer.create({
       data: {
         name: `First Organizer ${suffix}`,
-        slug: `first-organizer-${suffix}`,
         inquiryEmail: `first-${suffix}@example.com`,
         company: {
           create: {
@@ -31,7 +30,6 @@ describe("getFirstOrganizerMembership", () => {
     const secondOrganizer = await db.organizer.create({
       data: {
         name: `Second Organizer ${suffix}`,
-        slug: `second-organizer-${suffix}`,
         inquiryEmail: `second-${suffix}@example.com`,
         company: {
           create: {
@@ -64,7 +62,6 @@ describe("getFirstOrganizerMembership", () => {
       organizer: {
         id: firstOrganizer.id,
         name: firstOrganizer.name,
-        slug: firstOrganizer.slug,
       },
     });
   });
@@ -82,7 +79,6 @@ describe("requireOrganizerEditor", () => {
     const organizer = await db.organizer.create({
       data: {
         name: `Editor Organizer ${suffix}`,
-        slug: `editor-organizer-${suffix}`,
         inquiryEmail: `editor-${suffix}@example.com`,
         company: {
           create: {
@@ -121,7 +117,6 @@ describe("requireOrganizerEditor", () => {
     const organizer = await db.organizer.create({
       data: {
         name: `Viewer Organizer ${suffix}`,
-        slug: `viewer-organizer-${suffix}`,
         inquiryEmail: `viewer-${suffix}@example.com`,
         company: {
           create: {
@@ -159,7 +154,6 @@ describe("requireOrganizerEditor", () => {
     const organizer = await db.organizer.create({
       data: {
         name: `Non Member Organizer ${suffix}`,
-        slug: `non-member-organizer-${suffix}`,
         inquiryEmail: `non-member-${suffix}@example.com`,
         company: {
           create: {

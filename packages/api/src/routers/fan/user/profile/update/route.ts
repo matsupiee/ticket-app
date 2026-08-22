@@ -3,12 +3,12 @@ import { z } from "zod";
 import { handler } from "./handler";
 import { protectedProcedure } from "../../../../../index";
 
-const updateProfileInputSchema = z.object({
+const userProfileUpdateInputSchema = z.object({
   name: z.string().min(1),
   birthDate: z.string().min(1).optional(),
 });
 
-const updateProfileOutputSchema = z.object({
+const userProfileUpdateOutputSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
   email: z.string().email(),
@@ -17,12 +17,12 @@ const updateProfileOutputSchema = z.object({
   phoneNumberVerified: z.boolean(),
 });
 
-export const updateProfileRoute = protectedProcedure
+export const userProfileUpdateRoute = protectedProcedure
   .route({
     method: "PATCH",
     path: "/fan/user/profile",
     summary: "Update fan profile",
   })
-  .input(updateProfileInputSchema)
-  .output(updateProfileOutputSchema)
+  .input(userProfileUpdateInputSchema)
+  .output(userProfileUpdateOutputSchema)
   .handler(handler);

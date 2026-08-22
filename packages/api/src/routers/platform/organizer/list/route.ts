@@ -3,14 +3,14 @@ import { z } from "zod";
 import { handler } from "./handler";
 import { protectedProcedure } from "../../../../index";
 
-const listOrganizersInputSchema = z.object({
+const organizerListInputSchema = z.object({
   cursor: z.string().min(1).optional(),
   limit: z.number().int().min(1).max(100).optional(),
   query: z.string().trim().min(1).optional(),
   status: z.enum(["UNDER_REVIEW", "ACTIVE", "SUSPENDED", "ARCHIVED"]).optional(),
 });
 
-const listOrganizersOutputSchema = z.object({
+const organizerListOutputSchema = z.object({
   items: z.array(
     z.object({
       id: z.string().min(1),
@@ -28,12 +28,12 @@ const listOrganizersOutputSchema = z.object({
   nextCursor: z.string().min(1).optional(),
 });
 
-export const listOrganizersRoute = protectedProcedure
+export const organizerListRoute = protectedProcedure
   .route({
     method: "GET",
     path: "/platform/organizers",
     summary: "List platform organizers",
   })
-  .input(listOrganizersInputSchema)
-  .output(listOrganizersOutputSchema)
+  .input(organizerListInputSchema)
+  .output(organizerListOutputSchema)
   .handler(handler);

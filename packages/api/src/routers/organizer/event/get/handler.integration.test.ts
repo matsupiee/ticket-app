@@ -2,12 +2,6 @@ import { db } from "@ticket-app/db";
 import { describe, expect, inject, it } from "vitest";
 
 import { handler } from "./handler";
-import { handler as adjustInventoryHandler } from "../adjust-inventory/handler";
-import { handler as upsertPerformanceHandler } from "../upsert-performance/handler";
-import { handler as upsertRateTypeHandler } from "../upsert-rate-type/handler";
-import { handler as upsertSaleOfferHandler } from "../upsert-sale-offer/handler";
-import { handler as upsertSaleWindowHandler } from "../upsert-sale-window/handler";
-import { handler as upsertSeatCategoryHandler } from "../upsert-seat-category/handler";
 
 const { serverUrl } = inject("apiIntegration");
 
@@ -33,7 +27,7 @@ describe("organizer event get handler", () => {
     });
     const company = await db.company.create({ data: { name: `テスト会社 ${suffix}` } });
     const organizer = await db.organizer.create({
-      data: { name: `テスト主催者 ${suffix}`, slug: `organizer-${suffix}`, companyId: company.id },
+      data: { name: `テスト主催者 ${suffix}`, companyId: company.id },
     });
     await db.organizerMember.create({
       data: { userId: editor.id, organizerId: organizer.id, role: "EDITOR" },
@@ -43,82 +37,65 @@ describe("organizer event get handler", () => {
     });
     const session = { session: { user: { id: editor.id } } };
 
-    const performance = await upsertPerformanceHandler({
-      input: {
-        eventOrganizerId: organizer.id,
+    // 書き込みAPIの構成に依存しないよう、取得対象のデータはPrismaで直接作る（docs/coding-pattern/test.md）
+    const venue = await db.venue.create({ data: { name: "有明アリーナ" } });
+    const stage = await db.stage.create({
+      data: {
         eventId: event.id,
+        venueId: venue.id,
         name: "DAY 1",
-        venueName: "有明アリーナ",
-        doorsOpenAt: "2026-09-12T17:00:00+09:00",
-        startsAt: "2026-09-12T18:00:00+09:00",
-        admissionMethod: "NUMBERED_ENTRY",
+        doorsOpenAt: new Date("2026-09-12T17:00:00+09:00"),
+        startsAt: new Date("2026-09-12T18:00:00+09:00"),
       },
-      context: session,
     });
-    const seatCategory = await upsertSeatCategoryHandler({
-      input: {
-        eventOrganizerId: organizer.id,
+    const inventoryCategory = await db.inventoryCategory.create({
+      data: {
         eventId: event.id,
+        kind: "ENTRY_NUMBER",
         name: "S席",
         description: "",
-        active: true,
         displayOrder: 0,
       },
-      context: session,
     });
-    const rateType = await upsertRateTypeHandler({
-      input: { eventOrganizerId: organizer.id, eventId: event.id, name: "大人", displayOrder: 0 },
-      context: session,
+    const rateType = await db.rateType.create({
+      data: { eventId: event.id, name: "大人", displayOrder: 0 },
     });
-    await adjustInventoryHandler({
-      input: {
-        eventOrganizerId: organizer.id,
-        eventId: event.id,
-        performanceId: performance.id,
-        seatCategoryId: seatCategory.id,
-        admissionMethod: "NUMBERED_ENTRY",
-        seatAllocationMethod: "IMMEDIATE",
-        capacityDelta: 30,
-        reason: "初期在庫",
+    await db.inventoryPool.create({
+      data: {
+        stageId: stage.id,
+        inventoryCategoryId: inventoryCategory.id,
+        capacity: 30,
+        heldCount: 0,
+        inventorySlots: { createMany: { data: Array.from({ length: 30 }, () => ({})) } },
       },
-      context: session,
     });
-    const saleWindow = await upsertSaleWindowHandler({
-      input: {
-        eventOrganizerId: organizer.id,
+    const saleWindow = await db.saleWindow.create({
+      data: {
         eventId: event.id,
         name: "一般販売",
-        applicationStartsAt: "2026-08-01T10:00:00+09:00",
-        applicationEndsAt: "2026-08-31T23:59:00+09:00",
+        applicationStartsAt: new Date("2026-08-01T10:00:00+09:00"),
+        applicationEndsAt: new Date("2026-08-31T23:59:00+09:00"),
         isSmsAuthRequired: true,
-        method: "FIRST_COME",
-        lotteryMode: "AUTO",
+        saleMethod: "FIRST_COME",
       },
-      context: session,
     });
-    await upsertSaleOfferHandler({
-      input: {
-        eventOrganizerId: organizer.id,
-        eventId: event.id,
+    const saleOffer = await db.saleOffer.create({
+      data: {
         saleWindowId: saleWindow.id,
         name: "S席",
         description: "",
         maxQuantityPerOrder: 4,
         displayOrder: 0,
-        rates: [
-          {
-            rateTypeId: rateType.id,
-            price: 12_000,
-            currency: "JPY",
-            minQuantity: 1,
-            maxQuantity: 4,
-            quantityStep: 1,
-            displayOrder: 0,
-          },
-        ],
-        entitlements: [{ performanceId: performance.id, seatCategoryId: seatCategory.id }],
       },
-      context: session,
+    });
+    await db.saleOfferRate.create({
+      data: { saleOfferId: saleOffer.id, rateTypeId: rateType.id, price: 12_000 },
+    });
+    const inventoryPool = await db.inventoryPool.findFirstOrThrow({
+      where: { stageId: stage.id, inventoryCategoryId: inventoryCategory.id },
+    });
+    await db.saleOfferEntitlement.create({
+      data: { saleOfferId: saleOffer.id, inventoryPoolId: inventoryPool.id },
     });
 
     const result = await handler({
@@ -126,49 +103,68 @@ describe("organizer event get handler", () => {
       context: session,
     });
 
-    expect(result.seatCategories).toEqual([
-      { id: seatCategory.id, name: "S席", description: "", active: true, displayOrder: 0 },
+    expect(result).toMatchObject({
+      id: event.id,
+      name: `テストイベント ${suffix}`,
+      description: "説明文",
+      publishesAt: null,
+      closesAt: null,
+    });
+    expect(result.inventoryCategories).toEqual([
+      {
+        id: inventoryCategory.id,
+        kind: "ENTRY_NUMBER",
+        name: "S席",
+        description: "",
+        displayOrder: 0,
+        entryNumberPrefix: null,
+      },
     ]);
     expect(result.rateTypes).toEqual([{ id: rateType.id, name: "大人", displayOrder: 0 }]);
+    expect(result.stages).toEqual([
+      {
+        id: stage.id,
+        name: "DAY 1",
+        venueId: venue.id,
+        venueName: "有明アリーナ",
+        doorsOpenAt: "2026-09-12T08:00:00.000Z",
+        startsAt: "2026-09-12T09:00:00.000Z",
+      },
+    ]);
     expect(result.inventoryPools).toEqual([
       {
         id: expect.any(String),
-        performanceId: performance.id,
-        seatCategoryId: seatCategory.id,
-        admissionMethod: "NUMBERED_ENTRY",
-        seatAllocationMethod: "IMMEDIATE",
+        stageId: stage.id,
+        inventoryCategoryId: inventoryCategory.id,
         capacity: 30,
-        heldCount: 0,
-        soldCount: 0,
+        availableQuantity: 30,
       },
     ]);
-    expect(result.performances[0]).toMatchObject({
-      id: performance.id,
-      venueName: "有明アリーナ",
-      venueId: expect.any(String),
-    });
     expect(result.saleWindows[0]).toMatchObject({
       id: saleWindow.id,
+      name: "一般販売",
+      saleMethod: "FIRST_COME",
       isSmsAuthRequired: true,
-      lotteryMode: "AUTO",
+      applicationStartsAt: "2026-08-01T01:00:00.000Z",
+      canceledAt: null,
     });
     expect(result.saleWindows[0]?.offers[0]).toMatchObject({
-      rates: [
+      id: saleOffer.id,
+      name: "S席",
+      rates: [{ id: expect.any(String), rateTypeId: rateType.id, price: 12_000 }],
+      entitlements: [
         {
           id: expect.any(String),
-          rateTypeId: rateType.id,
-          price: 12_000,
-          currency: "JPY",
-          minQuantity: 1,
-          maxQuantity: 4,
-          quantityStep: 1,
-          displayOrder: 0,
+          inventoryPoolId: inventoryPool.id,
+          stageId: stage.id,
+          inventoryCategoryId: inventoryCategory.id,
         },
       ],
-      entitlements: [
-        { id: expect.any(String), performanceId: performance.id, seatCategoryId: seatCategory.id },
-      ],
+      soldQuantity: 0,
+      availableQuantity: 30,
+      minPrice: 12_000,
     });
+    expect(result.sales).toEqual({ grossSales: 0, ticketsSold: 0 });
   });
 
   it("他の主催者が所有するeventIdを指定するとNOT_FOUNDを返す", async () => {
@@ -180,7 +176,6 @@ describe("organizer event get handler", () => {
     const ownerOrganizer = await db.organizer.create({
       data: {
         name: `所有者主催者 ${suffix}`,
-        slug: `owner-organizer-${suffix}`,
         companyId: ownerCompany.id,
       },
     });
@@ -198,7 +193,6 @@ describe("organizer event get handler", () => {
     const intruderOrganizer = await db.organizer.create({
       data: {
         name: `侵入者主催者 ${suffix}`,
-        slug: `intruder-organizer-${suffix}`,
         companyId: intruderCompany.id,
       },
     });
@@ -218,7 +212,7 @@ describe("organizer event get handler", () => {
     const suffix = crypto.randomUUID();
     const company = await db.company.create({ data: { name: `テスト会社 ${suffix}` } });
     const organizer = await db.organizer.create({
-      data: { name: `テスト主催者 ${suffix}`, slug: `organizer-${suffix}`, companyId: company.id },
+      data: { name: `テスト主催者 ${suffix}`, companyId: company.id },
     });
     const event = await db.event.create({
       data: { organizerId: organizer.id, name: `テストイベント ${suffix}`, description: "" },

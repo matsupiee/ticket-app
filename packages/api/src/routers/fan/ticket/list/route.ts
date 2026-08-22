@@ -3,22 +3,22 @@ import { z } from "zod";
 import { handler } from "./handler";
 import { protectedProcedure } from "../../../../index";
 
-const listTicketsInputSchema = z.object({
+const ticketListInputSchema = z.object({
   cursor: z.string().min(1).optional(),
   limit: z.number().int().min(1).max(100).optional(),
 });
 
-const listTicketsOutputSchema = z.object({
+const ticketListOutputSchema = z.object({
   items: z.array(
     z.object({
       id: z.string().min(1),
       eventId: z.string().min(1),
       eventName: z.string().min(1),
-      performanceId: z.string().min(1),
-      performanceName: z.string().min(1),
+      stageId: z.string().min(1),
+      stageName: z.string().min(1),
       startsAt: z.string().min(1),
       venueName: z.string().min(1),
-      seatCategoryName: z.string().min(1),
+      inventoryCategoryName: z.string().min(1),
       seatLabel: z.string().min(1).optional(),
       entryNumber: z.number().int().min(1).optional(),
       status: z.enum(["ACTIVE", "USED", "CANCELED", "REFUNDED", "VOIDED"]),
@@ -28,12 +28,12 @@ const listTicketsOutputSchema = z.object({
   nextCursor: z.string().min(1).optional(),
 });
 
-export const listTicketsRoute = protectedProcedure
+export const ticketListRoute = protectedProcedure
   .route({
     method: "GET",
     path: "/fan/tickets",
     summary: "List fan tickets",
   })
-  .input(listTicketsInputSchema)
-  .output(listTicketsOutputSchema)
+  .input(ticketListInputSchema)
+  .output(ticketListOutputSchema)
   .handler(handler);

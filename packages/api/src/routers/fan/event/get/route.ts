@@ -22,7 +22,7 @@ const eventGetOutputSchema = z.object({
       displayOrder: z.number().int().min(0).optional(),
     }),
   ),
-  performances: z.array(
+  stages: z.array(
     z.object({
       id: z.string().min(1),
       name: z.string().min(1),
@@ -44,7 +44,7 @@ const eventGetOutputSchema = z.object({
         z.object({
           id: z.string().min(1),
           name: z.string().min(1),
-          seatCategoryName: z.string().min(1),
+          inventoryCategoryName: z.string().min(1),
           description: z.string(),
           maxQuantityPerOrder: z.number().int().min(1),
           availableQuantity: z.number().int().min(0),
@@ -61,7 +61,7 @@ const eventGetOutputSchema = z.object({
               }),
             )
             .optional(),
-          performanceIds: z.array(z.string().min(1)).min(1),
+          stageIds: z.array(z.string().min(1)).min(1),
           rates: z.array(
             z.object({
               rateTypeId: z.string().min(1),

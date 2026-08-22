@@ -203,6 +203,69 @@ describe("checkCodingPatterns", () => {
     );
   });
 
+  it("reports route.ts whose schema and route variable names do not follow the route name", () => {
+    const issues = checkCodingPatterns({
+      files: [
+        "packages/api/src/routers/index.ts",
+        "packages/api/src/routers/fan/index.ts",
+        "packages/api/src/routers/organizer/index.ts",
+        "packages/api/src/routers/organizer/event/create/handler.ts",
+        "packages/api/src/routers/organizer/event/create/handler.integration.test.ts",
+        "packages/api/src/routers/organizer/event/create/route.ts",
+        "packages/api/src/routers/platform/index.ts",
+      ],
+      // 実ファイルの中身は読まず、この一覧で渡された内容を検査対象にする
+      routeSources: {
+        "packages/api/src/routers/organizer/event/create/route.ts": [
+          "const createEventInputSchema = z.object({});",
+          "const createEventOutputSchema = z.object({});",
+          "export const createEventRoute = protectedProcedure;",
+        ].join("\n"),
+      },
+    });
+
+    expect(issues).toEqual([
+      {
+        path: "packages/api/src/routers/organizer/event/create/route.ts",
+        rule: "backend route naming",
+        message: "InputSchema の変数名は `eventCreateInputSchema` にしてください。",
+      },
+      {
+        path: "packages/api/src/routers/organizer/event/create/route.ts",
+        rule: "backend route naming",
+        message: "OutputSchema の変数名は `eventCreateOutputSchema` にしてください。",
+      },
+      {
+        path: "packages/api/src/routers/organizer/event/create/route.ts",
+        rule: "backend route naming",
+        message: "route の変数名は `eventCreateRoute` にしてください。",
+      },
+    ]);
+  });
+
+  it("accepts route.ts whose variable names follow the route name", () => {
+    const issues = checkCodingPatterns({
+      files: [
+        "packages/api/src/routers/index.ts",
+        "packages/api/src/routers/fan/index.ts",
+        "packages/api/src/routers/organizer/index.ts",
+        "packages/api/src/routers/organizer/event/create/handler.ts",
+        "packages/api/src/routers/organizer/event/create/handler.integration.test.ts",
+        "packages/api/src/routers/organizer/event/create/route.ts",
+        "packages/api/src/routers/platform/index.ts",
+      ],
+      routeSources: {
+        "packages/api/src/routers/organizer/event/create/route.ts": [
+          "const eventCreateInputSchema = z.object({});",
+          "const eventCreateOutputSchema = z.object({});",
+          "export const eventCreateRoute = protectedProcedure;",
+        ].join("\n"),
+      },
+    });
+
+    expect(issues).toEqual([]);
+  });
+
   it("reports implementation files that are not kebab-case", () => {
     const issues = checkCodingPatterns({
       files: [

@@ -1,43 +1,43 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  calculateEventSettlement,
-  filterOrganizerEvents,
-  getOrganizerEventById,
-  organizerEvents,
-  summarizeOrganizerPortfolio,
-} from "./operations";
+import { getEventPublishState } from "./operations";
 
-describe("organizer operations", () => {
-  it("主催者の販売中イベントを含む売上と精算予定額を集計する", () => {
-    const summary = summarizeOrganizerPortfolio(organizerEvents);
+describe("getEventPublishState", () => {
+  const now = new Date("2026-08-01T00:00:00.000Z");
 
-    expect(summary.eventCount).toBe(3);
-    expect(summary.ticketsSold).toBe(1_230);
-    expect(summary.grossSales).toBe(13_971_600);
-    expect(summary.organizerFeeAmount).toBe(679_308);
-    expect(summary.settlementAmount).toBe(13_292_292);
+  it("公開日時が未設定なら下書きになる", () => {
+    expect(getEventPublishState({ publishesAt: null, closesAt: null }, now)).toBe("DRAFT");
+    // 公開終了日だけ入っていても、公開日時が無ければ下書きのまま
+    expect(
+      getEventPublishState({ publishesAt: null, closesAt: "2026-09-01T00:00:00.000Z" }, now),
+    ).toBe("DRAFT");
   });
 
-  it("イベント単位の主催者負担手数料を精算額から差し引く", () => {
-    const event = getOrganizerEventById("tokyo-orbit-2026");
-
-    if (!event) {
-      throw new Error("fixture event is missing");
-    }
-
-    expect(calculateEventSettlement(event)).toEqual({
-      grossSales: 8_942_400,
-      organizerFeeAmount: 447_120,
-      settlementAmount: 8_495_280,
-    });
+  it("公開日時が未来なら公開予定になる", () => {
+    expect(
+      getEventPublishState({ publishesAt: "2026-08-01T00:00:00.001Z", closesAt: null }, now),
+    ).toBe("SCHEDULED");
   });
 
-  it("イベント名、地域、販売方式で絞り込める", () => {
-    expect(filterOrganizerEvents("抽選").map((event) => event.id)).toEqual(["bay-side-fes-2026"]);
-    expect(filterOrganizerEvents("京都").map((event) => event.id)).toEqual(["kyoto-classic-night"]);
-    expect(filterOrganizerEvents("").map((event) => event.id)).toEqual(
-      organizerEvents.map((event) => event.id),
-    );
+  it("公開日時を過ぎていて公開終了日が未設定なら公開中になる", () => {
+    expect(
+      getEventPublishState({ publishesAt: "2026-08-01T00:00:00.000Z", closesAt: null }, now),
+    ).toBe("PUBLISHED");
+  });
+
+  it("公開終了日を過ぎていれば公開終了になる", () => {
+    expect(
+      getEventPublishState(
+        { publishesAt: "2026-07-01T00:00:00.000Z", closesAt: "2026-08-01T00:00:00.000Z" },
+        now,
+      ),
+    ).toBe("CLOSED");
+    // 公開終了日ちょうどは終了扱いにし、その1ミリ秒前は公開中のままにする
+    expect(
+      getEventPublishState(
+        { publishesAt: "2026-07-01T00:00:00.000Z", closesAt: "2026-08-01T00:00:00.001Z" },
+        now,
+      ),
+    ).toBe("PUBLISHED");
   });
 });

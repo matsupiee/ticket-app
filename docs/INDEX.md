@@ -28,3 +28,6 @@
 - [adr/0008-organizer-event-api-surface.md](./adr/0008-organizer-event-api-surface.md): 主催者向けイベントAPIの棚卸しと、appRouterへの登録漏れ防止。
 - [adr/0008-entry-number-prefix.md](./adr/0008-entry-number-prefix.md): 整理番号の接頭辞を在庫種別に持たせ、通し券は公演ごとに独立採番する判断。
 - [adr/0009-inventory-category-rename.md](./adr/0009-inventory-category-rename.md): 席種・券種と呼んでいた `TicketCategory` を、実体に合わせて `InventoryCategory` へ改名する判断。
+- [adr/0010-event-setup-hub.md](./adr/0010-event-setup-hub.md): イベント作成を「基本情報・公演までの作成フォーム」と「詳細ページをハブにした個別設定」に分割する判断。
+- [adr/0011-event-write-api-split.md](./adr/0011-event-write-api-split.md): 主催者イベントの書き込みAPIを create / editBasicInfo / editSalesSetting の3本に再編し、公演を Stage、在庫種別を InventoryCategory に統一する判断。
+- [adr/0012-event-publish-period.md](./adr/0012-event-publish-period.md): イベントの状態カラムを持たず、公開期間(publishesAt / closesAt)で管理し、読み取りAPIを作り直す判断。

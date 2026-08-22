@@ -1,12 +1,18 @@
-import type { GetEventOutput } from "@ticket-app/api/routers/organizer/event/get/route";
+import type { EventGetOutput } from "@ticket-app/api/routers/organizer/event/get/route";
 import { Link } from "@tanstack/react-router";
 import { buttonVariants } from "@ticket-app/ui/components/button";
-import { ChevronLeftIcon, ExternalLinkIcon, PencilIcon } from "lucide-react";
+import { CheckIcon, ChevronLeftIcon, ExternalLinkIcon, PencilIcon } from "lucide-react";
 import type { ReactNode } from "react";
 
-import { eventStatusLabels, formatCurrency, saleMethodLabels } from "../../_utils/operations";
+import {
+  formatCurrency,
+  getEventPublishState,
+  inventoryCategoryKindLabels,
+  saleMethodLabels,
+} from "../../_utils/operations";
+import { EventStatusBadge } from "../../_components/status-badge";
 
-type EventDetail = GetEventOutput;
+type EventDetail = EventGetOutput;
 type SaleWindow = EventDetail["saleWindows"][number];
 type SaleOffer = SaleWindow["offers"][number];
 
@@ -18,7 +24,9 @@ export function EventDetailPage({ event }: { event: EventDetail }) {
     saleWindowsForSummary.map((saleWindow) => saleMethodLabels[saleWindow.saleMethod]),
   );
   const admissionMethods = unique(
-    event.performances.map((performance) => admissionMethodLabels[performance.admissionMethod]),
+    event.inventoryCategories.map(
+      (inventoryCategory) => inventoryCategoryKindLabels[inventoryCategory.kind],
+    ),
   );
   const totalEventCapacity = getEventCapacity(event);
   const publicEventUrl = canOpenPublicEventPage(event) ? getPublicEventUrl(event.id) : undefined;
@@ -38,10 +46,7 @@ export function EventDetailPage({ event }: { event: EventDetail }) {
           <div className="grid gap-5 md:grid-cols-[1fr_auto] md:items-start">
             <div className="min-w-0">
               <div className="mb-3 flex flex-wrap items-center gap-2">
-                <span className="inline-flex h-6 items-center gap-1.5 rounded-full bg-primary px-2.5 text-xs font-semibold text-primary-foreground">
-                  <span className="size-1.5 rounded-full bg-primary-foreground" />
-                  {eventStatusLabels[event.status]}
-                </span>
+                <EventStatusBadge event={event} />
                 <span className="text-xs text-muted-foreground">
                   {formatInlineLabels(saleMethods)} ・ 電子チケット
                 </span>
@@ -83,53 +88,58 @@ export function EventDetailPage({ event }: { event: EventDetail }) {
       </section>
 
       <div className="mx-auto grid max-w-[840px] gap-11 px-4 py-8 md:px-6 md:py-10">
+        <SetupChecklist event={event} />
+
         <section className="space-y-3.5">
-          <h2 className="text-sm font-semibold">基本情報</h2>
+          <SectionHeading
+            title="基本情報"
+            editTo="/events/$eventId/edit"
+            eventId={event.id}
+            editLabel="基本情報・公演を編集"
+          />
           <dl className="border-t">
             <DescriptionRow label="説明">
               {event.description || "説明は未設定です。"}
             </DescriptionRow>
-            <DescriptionRow label="会場">{event.location}</DescriptionRow>
+            <DescriptionRow label="会場">
+              {formatInlineLabels(unique(event.stages.map((stage) => stage.venueName)))}
+            </DescriptionRow>
+            <DescriptionRow label="公開期間">
+              {event.publishesAt
+                ? `${formatShortDateTime(event.publishesAt)} - ${
+                    event.closesAt ? formatShortDateTime(event.closesAt) : "終了日未設定"
+                  }`
+                : "未公開（下書き）"}
+            </DescriptionRow>
             <DescriptionRow label="販売方式">{formatInlineLabels(saleMethods)}</DescriptionRow>
             <DescriptionRow label="入場方式">{formatInlineLabels(admissionMethods)}</DescriptionRow>
-            <DescriptionRow label="タグ">
-              <span className="flex flex-wrap gap-2">
-                {event.tags.length > 0
-                  ? event.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="inline-flex h-6 items-center rounded-md border px-2.5 text-xs text-muted-foreground"
-                      >
-                        {tag}
-                      </span>
-                    ))
-                  : "タグは未設定です。"}
-              </span>
-            </DescriptionRow>
           </dl>
         </section>
 
         <section className="space-y-3.5">
-          <div className="flex items-baseline justify-between gap-4">
-            <h2 className="text-sm font-semibold">公演</h2>
-            <span className="text-xs text-muted-foreground">{event.performances.length}公演</span>
-          </div>
+          <SectionHeading
+            title="公演"
+            note={`${event.stages.length}公演`}
+            editTo="/events/$eventId/edit"
+            eventId={event.id}
+            editLabel="公演を編集"
+          />
 
-          {event.performances.length > 0 ? (
+          {event.stages.length > 0 ? (
             <div className="divide-y border-y">
-              {event.performances.map((performance) => (
+              {event.stages.map((stage) => (
                 <article
-                  key={performance.id}
+                  key={stage.id}
                   className="grid gap-3 py-4 sm:grid-cols-[1fr_auto] sm:items-start"
                 >
                   <div className="min-w-0">
-                    <h3 className="text-sm font-semibold">{performance.name}</h3>
+                    <h3 className="text-sm font-semibold">{stage.name}</h3>
                     <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                      {formatDateTime(performance.startsAt)} ・ {performance.venueName}
+                      {formatDateTime(stage.startsAt)} ・ {stage.venueName}
                     </p>
                   </div>
                   <span className="text-xs text-muted-foreground">
-                    {admissionMethodLabels[performance.admissionMethod]}
+                    {formatShortDateTime(stage.doorsOpenAt)} 開場
                   </span>
                 </article>
               ))}
@@ -140,13 +150,51 @@ export function EventDetailPage({ event }: { event: EventDetail }) {
         </section>
 
         <section className="space-y-3.5">
-          <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <h2 className="text-sm font-semibold">販売受付</h2>
-            <span className="text-xs text-muted-foreground">
-              総売上 {formatCurrency(event.sales.grossSales)} ・ 販売{" "}
-              {formatTicketCount(event.sales.ticketsSold, totalEventCapacity)}
-            </span>
-          </div>
+          <SectionHeading
+            title="席種・在庫"
+            note={`${event.inventoryCategories.length}席種`}
+            editTo="/events/$eventId/inventory-categories"
+            eventId={event.id}
+            editLabel="席種・在庫を編集"
+          />
+          <InventoryCategoryList event={event} />
+        </section>
+
+        <section className="space-y-3.5">
+          <SectionHeading
+            title="料金種別"
+            note={`${event.rateTypes.length}種別`}
+            editTo="/events/$eventId/rate-types"
+            eventId={event.id}
+            editLabel="料金種別を編集"
+          />
+          {event.rateTypes.length > 0 ? (
+            <ul className="flex flex-wrap gap-2 border-y py-4">
+              {event.rateTypes.map((rateType) => (
+                <li
+                  key={rateType.id}
+                  className="inline-flex h-6 items-center rounded-md border px-2.5 text-xs text-muted-foreground"
+                >
+                  {rateType.name}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="border-y py-5 text-sm text-muted-foreground">料金種別は未設定です。</p>
+          )}
+        </section>
+
+        <section className="space-y-3.5">
+          <SectionHeading
+            title="販売受付"
+            note={`総売上 ${formatCurrency(event.sales.grossSales)} ・ 販売 ${formatTicketCount(
+              event.sales.ticketsSold,
+              totalEventCapacity,
+            )}`}
+            editTo="/events/$eventId/sale-windows"
+            eventId={event.id}
+            editLabel="販売受付を編集"
+          />
 
           {event.saleWindows.length > 0 ? (
             <div className="space-y-4">
@@ -169,6 +217,142 @@ export function EventDetailPage({ event }: { event: EventDetail }) {
         </section>
       </div>
     </main>
+  );
+}
+
+// 販売開始までに必要な設定の進み具合。
+// 作成フォームでは基本情報と公演しか入力しないため、残りをここから埋めてもらう。
+// 販売受付が1件も無いイベントは購入者に公開されない（APIの getEventStatus が DRAFT を返す）。
+function SetupChecklist({ event }: { event: EventDetail }) {
+  const items = [
+    { label: "基本情報", done: true, to: "/events/$eventId/edit" as const },
+    {
+      label: "公演を登録する",
+      done: event.stages.length > 0,
+      to: "/events/$eventId/edit" as const,
+    },
+    {
+      label: "席種と在庫数を設定する",
+      done: event.inventoryPools.some((pool) => pool.capacity > 0),
+      to: "/events/$eventId/inventory-categories" as const,
+    },
+    {
+      label: "料金種別を設定する",
+      done: event.rateTypes.length > 0,
+      to: "/events/$eventId/rate-types" as const,
+    },
+    {
+      label: "販売受付と券を登録する",
+      done: event.saleWindows.some(
+        (saleWindow) => !saleWindow.canceledAt && saleWindow.offers.length > 0,
+      ),
+      to: "/events/$eventId/sale-windows" as const,
+    },
+  ];
+  const remainingCount = items.filter((item) => !item.done).length;
+
+  if (remainingCount === 0) {
+    return null;
+  }
+
+  return (
+    <section className="space-y-3.5 rounded-lg border bg-muted/40 p-4 md:p-5">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h2 className="text-sm font-semibold">販売開始までに必要な設定</h2>
+        <span className="text-xs text-muted-foreground">残り{remainingCount}件</span>
+      </div>
+
+      <ul className="space-y-1">
+        {items.map((item) => (
+          <li key={item.label} className="flex items-center gap-2.5 py-1 text-sm">
+            <span
+              aria-hidden="true"
+              className={
+                item.done
+                  ? "inline-flex size-4.5 shrink-0 items-center justify-center rounded-full bg-foreground text-background"
+                  : "inline-flex size-4.5 shrink-0 rounded-full border border-dashed"
+              }
+            >
+              {item.done ? <CheckIcon className="size-3" strokeWidth={3} /> : null}
+            </span>
+            {item.done ? (
+              <span className="text-muted-foreground">{item.label}（設定済み）</span>
+            ) : (
+              <Link
+                to={item.to}
+                params={{ eventId: event.id }}
+                className="font-medium underline-offset-4 hover:underline"
+              >
+                {item.label}
+              </Link>
+            )}
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function SectionHeading({
+  title,
+  note,
+  editTo,
+  editLabel,
+  eventId,
+}: {
+  title: string;
+  note?: string;
+  editTo:
+    | "/events/$eventId/edit"
+    | "/events/$eventId/inventory-categories"
+    | "/events/$eventId/rate-types"
+    | "/events/$eventId/sale-windows";
+  editLabel: string;
+  eventId: string;
+}) {
+  return (
+    <div className="flex flex-wrap items-baseline justify-between gap-2">
+      <div className="flex flex-wrap items-baseline gap-2.5">
+        <h2 className="text-sm font-semibold">{title}</h2>
+        {note ? <span className="text-xs text-muted-foreground">{note}</span> : null}
+      </div>
+      <Link
+        to={editTo}
+        params={{ eventId }}
+        aria-label={editLabel}
+        className="text-xs text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline"
+      >
+        編集
+      </Link>
+    </div>
+  );
+}
+
+function InventoryCategoryList({ event }: { event: EventDetail }) {
+  if (event.inventoryCategories.length === 0) {
+    return <p className="border-y py-5 text-sm text-muted-foreground">席種は未設定です。</p>;
+  }
+
+  return (
+    <div className="divide-y border-y">
+      {event.inventoryCategories.map((inventoryCategory) => {
+        const capacity = event.inventoryPools
+          .filter((pool) => pool.inventoryCategoryId === inventoryCategory.id)
+          .reduce((total, pool) => total + pool.capacity, 0);
+
+        return (
+          <div
+            key={inventoryCategory.id}
+            className="flex flex-wrap items-baseline justify-between gap-2 py-3.5"
+          >
+            <span className="text-sm font-semibold">{inventoryCategory.name}</span>
+            <span className="text-xs text-muted-foreground tabular-nums">
+              全公演あわせて {capacity.toLocaleString("ja-JP")}枚
+            </span>
+          </div>
+        );
+      })}
+    </div>
   );
 }
 
@@ -209,7 +393,7 @@ function SaleWindowPanel({
             ) : null}
           </div>
           <p className="text-xs text-muted-foreground">
-            {formatDateRange(saleWindow.opensAt, saleWindow.closesAt)}
+            {formatDateRange(saleWindow.applicationStartsAt, saleWindow.applicationEndsAt)}
           </p>
         </div>
         <div className="text-sm sm:text-right">
@@ -331,16 +515,12 @@ function getSaleWindowCapacity(
   saleWindow: SaleWindow,
   inventoryPools: EventDetail["inventoryPools"],
 ) {
-  const entitlementKeys = new Set(
+  const entitlementPoolIds = new Set(
     saleWindow.offers.flatMap((offer) =>
-      offer.entitlements.map((entitlement) =>
-        inventoryPoolKey(entitlement.performanceId, entitlement.seatCategoryId),
-      ),
+      offer.entitlements.map((entitlement) => entitlement.inventoryPoolId),
     ),
   );
-  const matchingPools = inventoryPools.filter((pool) =>
-    entitlementKeys.has(inventoryPoolKey(pool.performanceId, pool.seatCategoryId)),
-  );
+  const matchingPools = inventoryPools.filter((pool) => entitlementPoolIds.has(pool.id));
 
   if (matchingPools.length > 0) {
     return matchingPools.reduce((total, pool) => total + pool.capacity, 0);
@@ -351,10 +531,6 @@ function getSaleWindowCapacity(
 
 function getOfferCapacity(offer: SaleOffer) {
   return offer.soldQuantity + offer.availableQuantity;
-}
-
-function inventoryPoolKey(performanceId: string, seatCategoryId: string) {
-  return `${performanceId}:${seatCategoryId}`;
 }
 
 function getSellThroughRate(soldQuantity: number, capacity: number) {
@@ -394,21 +570,9 @@ function getPublicEventUrl(eventId: string) {
 }
 
 function canOpenPublicEventPage(event: EventDetail) {
-  const now = new Date();
-
-  return event.saleWindows.some(
-    (saleWindow) =>
-      !saleWindow.canceledAt &&
-      (!saleWindow.publishesAt || new Date(saleWindow.publishesAt) <= now),
-  );
+  return getEventPublishState(event) === "PUBLISHED";
 }
 
 function unique<T>(items: T[]) {
   return Array.from(new Set(items));
 }
-
-const admissionMethodLabels = {
-  GENERAL_ADMISSION: "自由席",
-  NUMBERED_ENTRY: "整理番号",
-  RESERVED_SEAT: "指定席",
-} as const satisfies Record<EventDetail["performances"][number]["admissionMethod"], string>;

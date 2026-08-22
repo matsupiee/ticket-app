@@ -1,22 +1,14 @@
 import {
-  type EventStatus,
-  type SettlementStatus,
-  eventStatusLabels,
-  settlementStatusLabels,
+  type EventPublishPeriod,
+  eventPublishStateLabels,
+  getEventPublishState,
 } from "../_utils/operations";
 
-export function EventStatusBadge({ status }: { status: EventStatus }) {
+// イベントの状態は公開期間から導出する（ADR 0012）
+export function EventStatusBadge({ event }: { event: EventPublishPeriod }) {
   return (
     <span className="inline-flex items-center border px-2 py-1 text-xs text-muted-foreground">
-      {eventStatusLabels[status]}
-    </span>
-  );
-}
-
-export function SettlementStatusBadge({ status }: { status: SettlementStatus }) {
-  return (
-    <span className="inline-flex items-center border px-2 py-1 text-xs text-muted-foreground">
-      {settlementStatusLabels[status]}
+      {eventPublishStateLabels[getEventPublishState(event)]}
     </span>
   );
 }

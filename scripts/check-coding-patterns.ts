@@ -12,6 +12,8 @@ export type CheckIssue = {
 type ProjectSnapshot = {
   files: string[];
   directories?: string[];
+  // route.ts の中身。テストから検査対象のソースを直接渡すために使う（省略時はファイルを読む）
+  routeSources?: Record<string, string>;
 };
 
 const backendRoutersRoot = "packages/api/src/routers";
@@ -84,7 +86,7 @@ export function checkCodingPatterns(snapshot: ProjectSnapshot): CheckIssue[] {
   ]);
 
   return sortIssues([
-    ...checkBackendPatterns(files, directories),
+    ...checkBackendPatterns(files, directories, snapshot.routeSources ?? {}),
     ...checkApiTestPlacementPatterns(files),
     ...checkFrontendPatterns(files, directories),
     ...checkFileNamePatterns(files),
@@ -135,7 +137,11 @@ export function runCli(cwd = process.cwd()) {
   return 0;
 }
 
-function checkBackendPatterns(files: string[], directories: string[]): CheckIssue[] {
+function checkBackendPatterns(
+  files: string[],
+  directories: string[],
+  routeSources: Record<string, string>,
+): CheckIssue[] {
   const issues: CheckIssue[] = [];
   const existingFiles = new Set(files);
   const routerFiles = files.filter((file) => file.startsWith(`${backendRoutersRoot}/`));
@@ -268,6 +274,7 @@ function checkBackendPatterns(files: string[], directories: string[]): CheckIssu
   }
 
   issues.push(...checkRouteRegistration(routerFiles));
+  issues.push(...checkRouteSchemaNaming(routerFiles, routeSources));
 
   return dedupeIssues(issues);
 }
@@ -299,6 +306,69 @@ function checkRouteRegistration(routerFiles: string[]): CheckIssue[] {
       message:
         "この route.ts が routers/index.ts から import されていません。appRouter へ登録するか、使わないなら削除してください。",
     }));
+}
+
+// docs/coding-pattern/backend.md の「変数名」ルール。
+// 利用者種別より下のディレクトリ名をキャメルケースにしたものを「ルート名」として、
+// `ルート名 + InputSchema / OutputSchema / Route` になっているかを確認する。
+function checkRouteSchemaNaming(
+  routerFiles: string[],
+  routeSources: Record<string, string>,
+): CheckIssue[] {
+  return routerFiles
+    .filter((file) => basename(file) === "route.ts")
+    .flatMap((file) => {
+      const routePath = file.slice(`${backendRoutersRoot}/`.length).replace(/\/route\.ts$/, "");
+      const [userType, ...segments] = routePath.split("/");
+
+      if (!userType || segments.length === 0 || !backendAllowedRouterRoots.has(userType)) {
+        return [];
+      }
+
+      // 仮想的なファイル一覧で検査されることがあるため、実体が無いパスは対象外にする
+      const providedSource = routeSources[file];
+      if (providedSource === undefined && !isExistingFile(file)) {
+        return [];
+      }
+
+      const routeName = toRouteName(segments);
+      const source = providedSource ?? readFileSync(file, "utf8");
+      const expectedRouteName = `${routeName}Route`;
+
+      const issues: CheckIssue[] = [];
+
+      if (!source.includes(`export const ${expectedRouteName} =`)) {
+        issues.push({
+          path: file,
+          rule: "backend route naming",
+          message: `route の変数名は \`${expectedRouteName}\` にしてください。`,
+        });
+      }
+
+      for (const suffix of ["InputSchema", "OutputSchema"] as const) {
+        const expected = `${routeName}${suffix}`;
+        // input を取らないAPIもあるため、そのsuffixのschemaが1つも無い場合は不問にする
+        const hasSuffix = new RegExp(`const [A-Za-z0-9]+${suffix}\\b`).test(source);
+
+        if (hasSuffix && !source.includes(`const ${expected} =`)) {
+          issues.push({
+            path: file,
+            rule: "backend route naming",
+            message: `${suffix} の変数名は \`${expected}\` にしてください。`,
+          });
+        }
+      }
+
+      return issues;
+    });
+}
+
+function toRouteName(segments: string[]) {
+  return segments
+    .join("-")
+    .split("-")
+    .map((word, index) => (index === 0 ? word : word.charAt(0).toUpperCase() + word.slice(1)))
+    .join("");
 }
 
 function checkApiTestPlacementPatterns(files: string[]): CheckIssue[] {

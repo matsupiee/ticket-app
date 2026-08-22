@@ -3,12 +3,12 @@ import { z } from "zod";
 import { handler } from "./handler";
 import { protectedProcedure } from "../../../../index";
 
-const listApplicationsInputSchema = z.object({
+const applicationListInputSchema = z.object({
   cursor: z.string().min(1).optional(),
   limit: z.number().int().min(1).max(100).optional(),
 });
 
-const listApplicationsOutputSchema = z.object({
+const applicationListOutputSchema = z.object({
   items: z.array(
     z.object({
       id: z.string().min(1),
@@ -25,12 +25,12 @@ const listApplicationsOutputSchema = z.object({
   nextCursor: z.string().min(1).optional(),
 });
 
-export const listApplicationsRoute = protectedProcedure
+export const applicationListRoute = protectedProcedure
   .route({
     method: "GET",
     path: "/fan/applications",
     summary: "List fan applications",
   })
-  .input(listApplicationsInputSchema)
-  .output(listApplicationsOutputSchema)
+  .input(applicationListInputSchema)
+  .output(applicationListOutputSchema)
   .handler(handler);

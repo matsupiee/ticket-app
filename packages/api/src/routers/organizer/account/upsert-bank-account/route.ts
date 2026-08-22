@@ -3,7 +3,7 @@ import { z } from "zod";
 import { handler } from "./handler";
 import { protectedProcedure } from "../../../../index";
 
-const upsertBankAccountInputSchema = z.object({
+const accountUpsertBankAccountInputSchema = z.object({
   eventOrganizerId: z.string().min(1),
   accountType: z.enum(["ORDINARY", "CURRENT", "SAVINGS", "OTHER"]),
   accountNumber: z.string().min(1),
@@ -14,17 +14,17 @@ const upsertBankAccountInputSchema = z.object({
   holderName: z.string().min(1),
 });
 
-const upsertBankAccountOutputSchema = z.object({
+const accountUpsertBankAccountOutputSchema = z.object({
   id: z.string().min(1),
   updatedAt: z.string().min(1),
 });
 
-export const upsertBankAccountRoute = protectedProcedure
+export const accountUpsertBankAccountRoute = protectedProcedure
   .route({
     method: "PUT",
     path: "/organizer/account/bank-account",
     summary: "Upsert organizer bank account",
   })
-  .input(upsertBankAccountInputSchema)
-  .output(upsertBankAccountOutputSchema)
+  .input(accountUpsertBankAccountInputSchema)
+  .output(accountUpsertBankAccountOutputSchema)
   .handler(handler);

@@ -3,14 +3,14 @@ import { z } from "zod";
 import { handler } from "./handler";
 import { protectedProcedure } from "../../../../index";
 
-const submitApplicationInputSchema = z.object({
+const applicationSubmitInputSchema = z.object({
   eventId: z.string().min(1),
   saleWindowId: z.string().min(1),
   preferences: z
     .array(
       z.object({
         preferenceRank: z.number().int().min(1),
-        performanceId: z.string().min(1).optional(),
+        stageId: z.string().min(1).optional(),
         offerId: z.string().min(1),
         items: z
           .array(
@@ -26,7 +26,7 @@ const submitApplicationInputSchema = z.object({
     .max(10),
 });
 
-const submitApplicationOutputSchema = z.object({
+const applicationSubmitOutputSchema = z.object({
   applicationId: z.string().min(1).optional(),
   orderId: z.string().min(1).optional(),
   status: z.enum(["APPLICATION_RECEIVED", "ORDER_CREATED"]),
@@ -38,12 +38,12 @@ const submitApplicationOutputSchema = z.object({
   currency: z.string().length(3),
 });
 
-export const submitApplicationRoute = protectedProcedure
+export const applicationSubmitRoute = protectedProcedure
   .route({
     method: "POST",
     path: "/fan/applications",
     summary: "Submit a fan ticket application",
   })
-  .input(submitApplicationInputSchema)
-  .output(submitApplicationOutputSchema)
+  .input(applicationSubmitInputSchema)
+  .output(applicationSubmitOutputSchema)
   .handler(handler);

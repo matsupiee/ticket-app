@@ -3,23 +3,23 @@ import { z } from "zod";
 import { handler } from "./handler";
 import { protectedProcedure } from "../../../../index";
 
-const inviteMemberInputSchema = z.object({
+const accountInviteMemberInputSchema = z.object({
   eventOrganizerId: z.string().min(1),
   email: z.string().email(),
   role: z.enum(["VIEWER", "EDITOR"]),
 });
 
-const inviteMemberOutputSchema = z.object({
+const accountInviteMemberOutputSchema = z.object({
   id: z.string().min(1),
   updatedAt: z.string().min(1),
 });
 
-export const inviteMemberRoute = protectedProcedure
+export const accountInviteMemberRoute = protectedProcedure
   .route({
     method: "POST",
     path: "/organizer/account/members/invitations",
     summary: "Invite organizer member",
   })
-  .input(inviteMemberInputSchema)
-  .output(inviteMemberOutputSchema)
+  .input(accountInviteMemberInputSchema)
+  .output(accountInviteMemberOutputSchema)
   .handler(handler);

@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Accepted（APIの本数と粒度は ADR 0011 で置き換えた。積み残しのうち `Performance`→`Stage`、`SeatCategory`→`InventoryCategory` の呼称は ADR 0011 で、`get` / `list` のスキーマのずれは ADR 0012 で解消済み）
 
 ## Context
 

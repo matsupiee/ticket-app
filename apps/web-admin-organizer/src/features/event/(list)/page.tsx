@@ -6,20 +6,16 @@ import { CalendarClock, Search, Ticket } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
+import type { EventListOutput } from "@ticket-app/api/routers/organizer/event/list/route";
+
 import { EventStatusBadge } from "../_components/status-badge";
-import {
-  type OrganizerEvent,
-  type OrganizerPortfolioSummary,
-  formatCurrency,
-  formatDate,
-  saleMethodLabels,
-} from "../_utils/operations";
+import { formatCurrency, formatDate, saleMethodLabels } from "../_utils/operations";
 import { client } from "@/lib/orpc";
 
 export function OrganizerDashboardPage({ eventOrganizerId }: { eventOrganizerId: string }) {
   const [query, setQuery] = useState("");
-  const [events, setEvents] = useState<OrganizerEvent[]>([]);
-  const [summary, setSummary] = useState<OrganizerPortfolioSummary>(emptySummary);
+  const [events, setEvents] = useState<EventListOutput["items"]>([]);
+  const [summary, setSummary] = useState<EventListOutput["summary"]>(emptySummary);
   const [isLoading, setIsLoading] = useState(true);
   const loadEvents = useCallback(async () => {
     setIsLoading(true);
@@ -63,8 +59,8 @@ export function OrganizerDashboardPage({ eventOrganizerId }: { eventOrganizerId:
           <div className="grid gap-3 md:grid-cols-4">
             <Kpi label="総売上" value={formatCurrency(summary.grossSales)} />
             <Kpi label="販売枚数" value={`${summary.ticketsSold.toLocaleString("ja-JP")}枚`} />
-            <Kpi label="販売中イベント" value={`${summary.onSaleEventCount}件`} />
-            <Kpi label="精算予定額" value={formatCurrency(summary.settlementAmount)} />
+            <Kpi label="公開中イベント" value={`${summary.publishedEventCount}件`} />
+            <Kpi label="イベント数" value={`${summary.eventCount}件`} />
           </div>
         </div>
       </section>
@@ -82,7 +78,7 @@ export function OrganizerDashboardPage({ eventOrganizerId }: { eventOrganizerId:
           <Input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="イベント名・地域・販売方式で検索"
+            placeholder="イベント名・説明で検索"
             className="h-9 border-0 px-0 text-sm focus-visible:ring-0"
           />
         </label>
@@ -92,19 +88,18 @@ export function OrganizerDashboardPage({ eventOrganizerId }: { eventOrganizerId:
         ) : events.length > 0 ? (
           <div className="divide-y border-y">
             {events.map((event) => {
-              const firstPerformance = event.performances[0];
-              const firstSaleWindow = event.saleWindows[0];
+              const firstSaleMethod = event.saleMethods[0];
 
               return (
                 <article key={event.id} className="grid gap-4 py-5 md:grid-cols-[1fr_auto]">
                   <div className="min-w-0 space-y-3">
                     <div className="flex flex-wrap items-center gap-2">
-                      <EventStatusBadge status={event.status} />
-                      {event.tags.map((tag) => (
-                        <span key={tag} className="border px-2 py-1 text-xs text-muted-foreground">
-                          {tag}
+                      <EventStatusBadge event={event} />
+                      {event.stageCount > 0 && (
+                        <span className="border px-2 py-1 text-xs text-muted-foreground">
+                          {event.stageCount}公演
                         </span>
-                      ))}
+                      )}
                     </div>
                     <div className="space-y-1">
                       <Link
@@ -121,20 +116,20 @@ export function OrganizerDashboardPage({ eventOrganizerId }: { eventOrganizerId:
                     <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs text-muted-foreground">
                       <span className="flex items-center gap-1.5">
                         <CalendarClock className="size-3.5" aria-hidden="true" />
-                        {firstPerformance ? formatDate(firstPerformance.startsAt) : "日程未定"}
+                        {event.firstStage
+                          ? `${formatDate(event.firstStage.startsAt)} ・ ${event.firstStage.venueName}`
+                          : "日程未定"}
                       </span>
                       <span className="flex items-center gap-1.5">
                         <Ticket className="size-3.5" aria-hidden="true" />
-                        {firstSaleWindow
-                          ? saleMethodLabels[firstSaleWindow.saleMethod]
-                          : "販売未定"}
+                        {firstSaleMethod ? saleMethodLabels[firstSaleMethod] : "販売未定"}
                       </span>
                     </div>
                   </div>
                   <div className="grid gap-2 text-sm md:justify-items-end">
-                    <span className="font-medium">{formatCurrency(event.sales.grossSales)}</span>
+                    <span className="font-medium">{formatCurrency(event.grossSales)}</span>
                     <span className="text-xs text-muted-foreground">
-                      {event.sales.ticketsSold.toLocaleString("ja-JP")}枚販売
+                      {event.ticketsSold.toLocaleString("ja-JP")}枚販売
                     </span>
                   </div>
                 </article>
@@ -165,11 +160,9 @@ function Kpi({ label, value }: { label: string; value: string }) {
   );
 }
 
-const emptySummary: OrganizerPortfolioSummary = {
+const emptySummary: EventListOutput["summary"] = {
   eventCount: 0,
-  onSaleEventCount: 0,
+  publishedEventCount: 0,
   ticketsSold: 0,
   grossSales: 0,
-  organizerFeeAmount: 0,
-  settlementAmount: 0,
 };

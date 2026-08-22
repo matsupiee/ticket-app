@@ -3,7 +3,7 @@ import { z } from "zod";
 import { handler } from "./handler";
 import { protectedProcedure } from "../../../../../index";
 
-const getProfileOutputSchema = z.object({
+const userProfileGetOutputSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
   email: z.string().email(),
@@ -12,11 +12,11 @@ const getProfileOutputSchema = z.object({
   phoneNumberVerified: z.boolean(),
 });
 
-export const getProfileRoute = protectedProcedure
+export const userProfileGetRoute = protectedProcedure
   .route({
     method: "GET",
     path: "/fan/user/profile",
     summary: "Get fan profile",
   })
-  .output(getProfileOutputSchema)
+  .output(userProfileGetOutputSchema)
   .handler(handler);

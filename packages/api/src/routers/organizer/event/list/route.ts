@@ -3,83 +3,53 @@ import { z } from "zod";
 import { handler } from "./handler";
 import { protectedProcedure } from "../../../../index";
 
-const eventSummarySchema = z.object({
-  id: z.string().min(1),
-  name: z.string().min(1),
-  description: z.string(),
-  status: z.enum(["DRAFT", "ON_SALE", "ENDED", "CANCELED"]),
-  location: z.string().min(1),
-  tags: z.array(z.string().min(1)),
-  performances: z.array(
-    z.object({
-      id: z.string().min(1),
-      name: z.string().min(1),
-      venueName: z.string().min(1),
-      startsAt: z.string().min(1),
-      doorsOpenAt: z.string().min(1),
-      admissionMethod: z.enum(["GENERAL_ADMISSION", "NUMBERED_ENTRY", "RESERVED_SEAT"]),
-    }),
-  ),
-  saleWindows: z.array(
-    z.object({
-      id: z.string().min(1),
-      name: z.string().min(1),
-      saleMethod: z.enum(["FIRST_COME", "LOTTERY"]),
-      opensAt: z.string().min(1),
-      closesAt: z.string().min(1),
-      offers: z.array(
-        z.object({
-          id: z.string().min(1),
-          name: z.string().min(1),
-          seatCategoryName: z.string().min(1),
-          soldQuantity: z.number().int().min(0),
-          availableQuantity: z.number().int().min(0),
-          minPrice: z.number().int().min(0),
-          maxQuantityPerOrder: z.number().int().min(1),
-        }),
-      ),
-    }),
-  ),
-  sales: z.object({
-    grossSales: z.number().int().min(0),
-    ticketsSold: z.number().int().min(0),
-    buyerFeeAmount: z.number().int().min(0),
-    organizerFeeAmount: z.number().int().min(0),
-  }),
-  settlement: z.object({
-    status: z.enum(["SCHEDULED", "PROCESSING", "PAID"]),
-    scheduledAt: z.string().min(1),
-    paidAt: z.string().min(1).optional(),
-  }),
-});
-
-const listEventsInputSchema = z.object({
+// 主催者のイベント一覧。一覧に出す情報とダッシュボードの集計だけを返す（ADR 0012）。
+// 1件ずつの設定内容は get が担当する。
+const eventListInputSchema = z.object({
   eventOrganizerId: z.string().min(1),
-  cursor: z.string().min(1).optional(),
-  limit: z.number().int().min(1).max(100).optional(),
-  query: z.string().trim().min(1).optional(),
-  status: z.enum(["DRAFT", "ON_SALE", "ENDED", "CANCELED"]).optional(),
+  // イベント名・説明の部分一致で絞り込む
+  query: z.string().min(1).optional(),
 });
 
-const listEventsOutputSchema = z.object({
-  items: z.array(eventSummarySchema),
+const eventListOutputSchema = z.object({
+  items: z.array(
+    z.object({
+      id: z.string().min(1),
+      name: z.string().min(1),
+      description: z.string(),
+      publishesAt: z.string().nullable(),
+      closesAt: z.string().nullable(),
+      // 一覧では最初の公演の日程と会場だけ出す
+      firstStage: z
+        .object({
+          startsAt: z.string().min(1),
+          venueName: z.string().min(1),
+        })
+        .nullable(),
+      stageCount: z.number().int().min(0),
+      saleMethods: z.array(z.enum(["FIRST_COME", "LOTTERY"])),
+      grossSales: z.number().int().min(0),
+      ticketsSold: z.number().int().min(0),
+    }),
+  ),
   summary: z.object({
     eventCount: z.number().int().min(0),
-    onSaleEventCount: z.number().int().min(0),
-    ticketsSold: z.number().int().min(0),
+    // 現在公開中のイベント数
+    publishedEventCount: z.number().int().min(0),
     grossSales: z.number().int().min(0),
-    organizerFeeAmount: z.number().int().min(0),
-    settlementAmount: z.number().int().min(0),
+    ticketsSold: z.number().int().min(0),
   }),
-  nextCursor: z.string().min(1).optional(),
 });
 
-export const listEventsRoute = protectedProcedure
+export type EventListInput = z.infer<typeof eventListInputSchema>;
+export type EventListOutput = z.infer<typeof eventListOutputSchema>;
+
+export const eventListRoute = protectedProcedure
   .route({
     method: "GET",
     path: "/organizer/events",
     summary: "List organizer events",
   })
-  .input(listEventsInputSchema)
-  .output(listEventsOutputSchema)
+  .input(eventListInputSchema)
+  .output(eventListOutputSchema)
   .handler(handler);

@@ -3,21 +3,21 @@ import { z } from "zod";
 import { handler } from "./handler";
 import { protectedProcedure } from "../../../../../index";
 
-const requestPhoneVerificationInputSchema = z.object({
+const userVerifyPhoneRequestInputSchema = z.object({
   phoneNumber: z.string().min(1),
 });
 
-const requestPhoneVerificationOutputSchema = z.object({
+const userVerifyPhoneRequestOutputSchema = z.object({
   verificationId: z.string().min(1),
   expiresAt: z.string().min(1),
 });
 
-export const requestPhoneVerificationRoute = protectedProcedure
+export const userVerifyPhoneRequestRoute = protectedProcedure
   .route({
     method: "POST",
     path: "/fan/user/verify-phone/request",
     summary: "Request fan phone verification",
   })
-  .input(requestPhoneVerificationInputSchema)
-  .output(requestPhoneVerificationOutputSchema)
+  .input(userVerifyPhoneRequestInputSchema)
+  .output(userVerifyPhoneRequestOutputSchema)
   .handler(handler);

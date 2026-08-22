@@ -1,4 +1,4 @@
-import type { GetEventOutput } from "@ticket-app/api/routers/organizer/event/get/route";
+import type { EventGetOutput } from "@ticket-app/api/routers/organizer/event/get/route";
 import { cleanup, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -31,7 +31,7 @@ describe("EventDetailPage", () => {
     render(<EventDetailPage event={buildEvent()} />);
 
     expect(screen.getByRole("heading", { name: "TOKYO ORBIT 2026" })).toBeInTheDocument();
-    expect(screen.getByText("販売中")).toBeInTheDocument();
+    expect(screen.getByText("公開中")).toBeInTheDocument();
     expect(screen.getByText("先着 ・ 電子チケット")).toBeInTheDocument();
     expect(screen.getByText("有明アリーナ")).toBeInTheDocument();
     expect(screen.getByText("2026年9月12日(土) 18:00 ・ 有明アリーナ")).toBeInTheDocument();
@@ -61,13 +61,10 @@ describe("EventDetailPage", () => {
     event.inventoryPools = [
       {
         id: "shared-pool",
-        performanceId: "day-1",
-        seatCategoryId: "s-seat",
-        admissionMethod: "RESERVED_SEAT",
-        seatAllocationMethod: "IMMEDIATE",
+        stageId: "day-1",
+        inventoryCategoryId: "s-seat",
         capacity: 100,
-        heldCount: 0,
-        soldCount: 10,
+        availableQuantity: 90,
       },
     ];
     event.saleWindows = [
@@ -84,12 +81,7 @@ describe("EventDetailPage", () => {
         offers: [{ ...offer, id: "general-offer" }],
       },
     ];
-    event.sales = {
-      grossSales: 100_000,
-      ticketsSold: 10,
-      buyerFeeAmount: 0,
-      organizerFeeAmount: 0,
-    };
+    event.sales = { grossSales: 100_000, ticketsSold: 10 };
 
     render(<EventDetailPage event={event} />);
 
@@ -103,13 +95,10 @@ describe("EventDetailPage", () => {
     event.inventoryPools = [
       {
         id: "shared-pool",
-        performanceId: "day-1",
-        seatCategoryId: "s-seat",
-        admissionMethod: "RESERVED_SEAT",
-        seatAllocationMethod: "IMMEDIATE",
+        stageId: "day-1",
+        inventoryCategoryId: "s-seat",
         capacity: 100,
-        heldCount: 0,
-        soldCount: 10,
+        availableQuantity: 90,
       },
     ];
     event.saleWindows = [
@@ -123,7 +112,12 @@ describe("EventDetailPage", () => {
             soldQuantity: 8,
             availableQuantity: 92,
             entitlements: [
-              { id: "adult-entitlement", performanceId: "day-1", seatCategoryId: "s-seat" },
+              {
+                id: "adult-entitlement",
+                inventoryPoolId: "shared-pool",
+                stageId: "day-1",
+                inventoryCategoryId: "s-seat",
+              },
             ],
           },
           {
@@ -133,18 +127,18 @@ describe("EventDetailPage", () => {
             soldQuantity: 2,
             availableQuantity: 98,
             entitlements: [
-              { id: "student-entitlement", performanceId: "day-1", seatCategoryId: "s-seat" },
+              {
+                id: "student-entitlement",
+                inventoryPoolId: "shared-pool",
+                stageId: "day-1",
+                inventoryCategoryId: "s-seat",
+              },
             ],
           },
         ],
       },
     ];
-    event.sales = {
-      grossSales: 100_000,
-      ticketsSold: 10,
-      buyerFeeAmount: 0,
-      organizerFeeAmount: 0,
-    };
+    event.sales = { grossSales: 100_000, ticketsSold: 10 };
 
     render(<EventDetailPage event={event} />);
 
@@ -152,73 +146,107 @@ describe("EventDetailPage", () => {
     expect(screen.queryByText("販売 10 / 200 枚")).not.toBeInTheDocument();
   });
 
-  it("購入者向けに公開されていないイベントでは販売ページリンクを表示しない", () => {
-    const event = buildEvent();
-    event.saleWindows = [];
+  it("設定がすべて揃っているイベントでは、販売開始までのチェックリストを出さない", () => {
+    render(<EventDetailPage event={buildEvent()} />);
 
-    render(<EventDetailPage event={event} />);
+    expect(screen.queryByText("販売開始までに必要な設定")).not.toBeInTheDocument();
+  });
+
+  it("席種・料金種別・販売受付が未設定なら、残り件数と各設定ページへの導線を表示する", () => {
+    const event = buildEvent();
+
+    render(
+      <EventDetailPage
+        event={{
+          ...event,
+          publishesAt: null,
+          inventoryCategories: [],
+          rateTypes: [],
+          inventoryPools: [],
+          saleWindows: [],
+        }}
+      />,
+    );
+
+    expect(screen.getByText("販売開始までに必要な設定")).toBeInTheDocument();
+    expect(screen.getByText("残り3件")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "席種と在庫数を設定する" })).toHaveAttribute(
+      "href",
+      "/events/tokyo-orbit-2026/inventory-categories",
+    );
+    expect(screen.getByRole("link", { name: "料金種別を設定する" })).toHaveAttribute(
+      "href",
+      "/events/tokyo-orbit-2026/rate-types",
+    );
+    expect(screen.getByRole("link", { name: "販売受付と券を登録する" })).toHaveAttribute(
+      "href",
+      "/events/tokyo-orbit-2026/sale-windows",
+    );
+    // 基本情報と公演は作成フォームで入力済みなので、チェックリスト上は完了扱いになる
+    expect(screen.getByText("公演を登録する（設定済み）")).toBeInTheDocument();
+  });
+
+  it("公開日時が未設定のイベントでは販売ページリンクを表示しない", () => {
+    const event = buildEvent();
+
+    render(<EventDetailPage event={{ ...event, publishesAt: null }} />);
 
     expect(screen.queryByRole("link", { name: /販売ページを見る/ })).not.toBeInTheDocument();
   });
 });
 
-function buildEvent() {
+function buildEvent(): EventGetOutput {
   return {
     id: "tokyo-orbit-2026",
     name: "TOKYO ORBIT 2026",
     description:
       "東京湾岸の大型ホールで開催する、指定席中心のライブイベント。一般販売は先着順で運用します。",
-    status: "ON_SALE",
-    location: "有明アリーナ",
-    tags: ["指定席", "先着", "電子チケット"],
-    seatCategories: [
+    // 過去日を入れて「公開中」の状態にする
+    publishesAt: "2020-07-25T01:00:00.000Z",
+    closesAt: null,
+    inventoryCategories: [
       {
         id: "s-seat",
+        kind: "RESERVED_SEAT",
         name: "S席",
         description: "",
-        active: true,
         displayOrder: 0,
+        entryNumberPrefix: null,
       },
       {
         id: "a-seat",
+        kind: "RESERVED_SEAT",
         name: "A席",
         description: "",
-        active: true,
         displayOrder: 1,
+        entryNumberPrefix: null,
       },
     ],
     rateTypes: [{ id: "adult", name: "一般", displayOrder: 0 }],
     inventoryPools: [
       {
         id: "s-pool",
-        performanceId: "day-1",
-        seatCategoryId: "s-seat",
-        admissionMethod: "RESERVED_SEAT",
-        seatAllocationMethod: "IMMEDIATE",
+        stageId: "day-1",
+        inventoryCategoryId: "s-seat",
         capacity: 548,
-        heldCount: 0,
-        soldCount: 420,
+        availableQuantity: 128,
       },
       {
         id: "a-pool",
-        performanceId: "day-1",
-        seatCategoryId: "a-seat",
-        admissionMethod: "RESERVED_SEAT",
-        seatAllocationMethod: "IMMEDIATE",
+        stageId: "day-1",
+        inventoryCategoryId: "a-seat",
         capacity: 562,
-        heldCount: 0,
-        soldCount: 316,
+        availableQuantity: 246,
       },
     ],
-    performances: [
+    stages: [
       {
         id: "day-1",
         name: "DAY 1",
         venueName: "有明アリーナ",
         venueId: "venue-1",
-        startsAt: "2026-09-12T18:00:00+09:00",
-        doorsOpenAt: "2026-09-12T17:00:00+09:00",
-        admissionMethod: "RESERVED_SEAT",
+        startsAt: "2026-09-12T09:00:00.000Z",
+        doorsOpenAt: "2026-09-12T08:00:00.000Z",
       },
     ],
     saleWindows: [
@@ -226,35 +254,34 @@ function buildEvent() {
         id: "general",
         name: "一般販売",
         saleMethod: "FIRST_COME",
-        opensAt: "2026-07-25T10:00:00+09:00",
-        closesAt: "2026-09-10T23:59:00+09:00",
+        publishesAt: "2026-07-25T01:00:00.000Z",
+        applicationStartsAt: "2026-07-25T01:00:00.000Z",
+        applicationEndsAt: "2026-09-10T14:59:00.000Z",
         isSmsAuthRequired: false,
-        lotteryMode: "AUTO",
+        autoLotteryStartsAt: null,
+        notifiesLotteryResultAt: null,
+        maxLotteryItemCount: null,
+        canceledAt: null,
+        cancelReason: null,
         offers: [
           {
             id: "s-offer",
             name: "S席",
             description: "",
             displayOrder: 0,
-            seatCategoryName: "S席",
+            quantityStep: 1,
             soldQuantity: 420,
             availableQuantity: 128,
             minPrice: 12_000,
             maxQuantityPerOrder: 4,
-            rates: [
-              {
-                id: "s-rate",
-                rateTypeId: "adult",
-                price: 12_000,
-                currency: "JPY",
-                minQuantity: 1,
-                maxQuantity: 4,
-                quantityStep: 1,
-                displayOrder: 0,
-              },
-            ],
+            rates: [{ id: "s-rate", rateTypeId: "adult", price: 12_000 }],
             entitlements: [
-              { id: "s-entitlement", performanceId: "day-1", seatCategoryId: "s-seat" },
+              {
+                id: "s-entitlement",
+                inventoryPoolId: "s-pool",
+                stageId: "day-1",
+                inventoryCategoryId: "s-seat",
+              },
             ],
           },
           {
@@ -262,25 +289,19 @@ function buildEvent() {
             name: "A席",
             description: "",
             displayOrder: 1,
-            seatCategoryName: "A席",
+            quantityStep: 1,
             soldQuantity: 316,
             availableQuantity: 246,
             minPrice: 8_800,
             maxQuantityPerOrder: 4,
-            rates: [
-              {
-                id: "a-rate",
-                rateTypeId: "adult",
-                price: 8_800,
-                currency: "JPY",
-                minQuantity: 1,
-                maxQuantity: 4,
-                quantityStep: 1,
-                displayOrder: 0,
-              },
-            ],
+            rates: [{ id: "a-rate", rateTypeId: "adult", price: 8_800 }],
             entitlements: [
-              { id: "a-entitlement", performanceId: "day-1", seatCategoryId: "a-seat" },
+              {
+                id: "a-entitlement",
+                inventoryPoolId: "a-pool",
+                stageId: "day-1",
+                inventoryCategoryId: "a-seat",
+              },
             ],
           },
         ],
@@ -289,12 +310,6 @@ function buildEvent() {
     sales: {
       grossSales: 8_942_400,
       ticketsSold: 736,
-      buyerFeeAmount: 242_880,
-      organizerFeeAmount: 447_120,
     },
-    settlement: {
-      status: "SCHEDULED",
-      scheduledAt: "2026-09-30T10:00:00+09:00",
-    },
-  } satisfies GetEventOutput;
+  };
 }
