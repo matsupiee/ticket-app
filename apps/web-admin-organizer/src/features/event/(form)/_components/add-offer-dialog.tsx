@@ -26,7 +26,7 @@ import type {
   DraftPriceCell,
   DraftRateType,
   DraftSeatCategory,
-} from "./event-wizard-draft-reducer";
+} from "../_utils/event-wizard-draft-reducer";
 
 export function AddOfferDialog({
   open,

@@ -26,4 +26,5 @@
 - [adr/0006-e2e-payment-provider-stub.md](./adr/0006-e2e-payment-provider-stub.md): E2Eの決済連携を stripe-mock と自前webhookエンドポイントに分ける判断。
 - [adr/0007-api-rewrite-premises.md](./adr/0007-api-rewrite-premises.md): スキーマを正としてAPI層を書き直す際の前提（通貨・数量・手数料・通し券）。
 - [adr/0008-organizer-event-api-surface.md](./adr/0008-organizer-event-api-surface.md): 主催者向けイベントAPIの棚卸しと、appRouterへの登録漏れ防止。
-- [adr/0008-entry-number-prefix.md](./adr/0008-entry-number-prefix.md): 整理番号の接頭辞を席種に持たせ、通し券は公演ごとに独立採番する判断。
+- [adr/0008-entry-number-prefix.md](./adr/0008-entry-number-prefix.md): 整理番号の接頭辞を在庫種別に持たせ、通し券は公演ごとに独立採番する判断。
+- [adr/0009-inventory-category-rename.md](./adr/0009-inventory-category-rename.md): 席種・券種と呼んでいた `TicketCategory` を、実体に合わせて `InventoryCategory` へ改名する判断。

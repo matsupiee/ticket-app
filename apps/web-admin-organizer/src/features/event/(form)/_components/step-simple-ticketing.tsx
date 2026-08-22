@@ -9,13 +9,13 @@ import type {
   DraftPriceCell,
   DraftRateType,
   DraftSeatCategory,
-} from "./event-wizard-draft-reducer";
+} from "../_utils/event-wizard-draft-reducer";
 import {
   buildPerformanceSchedule,
   getDoorsOpenTimeValue,
   getPerformanceDateValue,
   getStartsTimeValue,
-} from "./performance-schedule";
+} from "../_utils/performance-schedule";
 
 export function StepSimpleTicketing({
   performance,

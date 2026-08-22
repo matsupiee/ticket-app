@@ -4,12 +4,12 @@ test.describe("1公演 / S席・A席の2券種 / 先着の1販売受付", () => 
   test("主催者がイベントを作成・公開し、ファンがイベントページから購入処理を完了でき、申込履歴とチケット一覧で情報を確認できる。", async ({
     app,
   }) => {
-    // イベント名・会場名・券種名は seed シナリオ（1stage-2ticket-category-1sale-window）に合わせる
+    // イベント名・会場名・券種名は seed シナリオ（1stage-2inventory-category-1sale-window）に合わせる
     const eventName = "1公演 2チケット種別 1受付";
     const stageName = "1公演 2チケット種別 1受付 公演";
     const venueName = "東京ドーム";
-    const ticketCategoryS = { name: "S席", capacity: 20, price: 10000 };
-    const ticketCategoryA = { name: "A席", capacity: 50, price: 5000 };
+    const inventoryCategoryS = { name: "S席", capacity: 20, price: 10000 };
+    const inventoryCategoryA = { name: "A席", capacity: 50, price: 5000 };
 
     await test.step("主催者としてログイン済み状態でイベント一覧を開く。", async () => {
       await app.organizer.eventList().goto();
@@ -38,18 +38,18 @@ test.describe("1公演 / S席・A席の2券種 / 先着の1販売受付", () => 
       await app.organizer.eventWizard().clickNext();
     });
 
-    await test.step("Step3: 席種としてS席・A席を追加し、公演ごとの在庫数を設定する。", async () => {
+    await test.step("Step3: 在庫種別としてS席・A席を追加し、公演ごとの在庫数を設定する。", async () => {
       await app.organizer.eventWizard().addSeatCategory();
       await app.organizer.eventWizard().fillSeatCategory({
-        name: ticketCategoryS.name,
+        name: inventoryCategoryS.name,
         stageName,
-        capacity: ticketCategoryS.capacity,
+        capacity: inventoryCategoryS.capacity,
       });
       await app.organizer.eventWizard().addSeatCategory();
       await app.organizer.eventWizard().fillSeatCategory({
-        name: ticketCategoryA.name,
+        name: inventoryCategoryA.name,
         stageName,
-        capacity: ticketCategoryA.capacity,
+        capacity: inventoryCategoryA.capacity,
       });
       await app.organizer.eventWizard().clickNext();
     });
@@ -59,13 +59,13 @@ test.describe("1公演 / S席・A席の2券種 / 先着の1販売受付", () => 
       await app.organizer.eventWizard().fillRateType({ name: "通常" });
       await app.organizer.eventWizard().fillStandardPrice({
         rateTypeName: "通常",
-        seatCategoryName: ticketCategoryS.name,
-        price: ticketCategoryS.price,
+        seatCategoryName: inventoryCategoryS.name,
+        price: inventoryCategoryS.price,
       });
       await app.organizer.eventWizard().fillStandardPrice({
         rateTypeName: "通常",
-        seatCategoryName: ticketCategoryA.name,
-        price: ticketCategoryA.price,
+        seatCategoryName: inventoryCategoryA.name,
+        price: inventoryCategoryA.price,
       });
       await app.organizer.eventWizard().clickNext();
     });
@@ -82,13 +82,13 @@ test.describe("1公演 / S席・A席の2券種 / 先着の1販売受付", () => 
       await app.organizer.eventWizard().addOffer({ saleWindowName: "一般販売" });
       await app.organizer.eventWizard().fillOffer({
         stageName,
-        seatCategoryName: ticketCategoryS.name,
+        seatCategoryName: inventoryCategoryS.name,
         rateTypeName: "通常",
       });
       await app.organizer.eventWizard().addOffer({ saleWindowName: "一般販売" });
       await app.organizer.eventWizard().fillOffer({
         stageName,
-        seatCategoryName: ticketCategoryA.name,
+        seatCategoryName: inventoryCategoryA.name,
         rateTypeName: "通常",
       });
     });
@@ -112,20 +112,20 @@ test.describe("1公演 / S席・A席の2券種 / 先着の1販売受付", () => 
     await test.step("イベント詳細ページを開き、公演・販売受付・S席/A席の残数が表示されることを確認する。", async () => {
       await app.fan.eventList().clickEvent(eventName);
       await app.fan.eventDetail().expectStageVisible(stageName);
-      await app.fan.eventDetail().expectOfferVisible(ticketCategoryS.name);
-      await app.fan.eventDetail().expectOfferVisible(ticketCategoryA.name);
+      await app.fan.eventDetail().expectOfferVisible(inventoryCategoryS.name);
+      await app.fan.eventDetail().expectOfferVisible(inventoryCategoryA.name);
     });
 
     await test.step("チケット申し込み画面へ進み、販売受付・公演・券種・枚数を選択する。", async () => {
       await app.fan.eventDetail().clickApplyButton();
       await app.fan.ticketApplication().selectSaleWindow("一般販売");
       await app.fan.ticketApplication().selectStage(stageName);
-      await app.fan.ticketApplication().selectOffer(ticketCategoryS.name);
+      await app.fan.ticketApplication().selectOffer(inventoryCategoryS.name);
       await app.fan.ticketApplication().selectQuantity(2);
     });
 
     await test.step("小計・手数料・合計金額が表示されることを確認する。", async () => {
-      await app.fan.ticketApplication().expectSubtotal(ticketCategoryS.price * 2);
+      await app.fan.ticketApplication().expectSubtotal(inventoryCategoryS.price * 2);
       await app.fan.ticketApplication().expectTotalVisible();
     });
 
@@ -138,7 +138,7 @@ test.describe("1公演 / S席・A席の2券種 / 先着の1販売受付", () => 
       await app.fan.applicationComplete().clickGoToTickets();
       await app.fan.orderHistory().expectOrderVisible({
         eventName,
-        offerName: ticketCategoryS.name,
+        offerName: inventoryCategoryS.name,
         quantity: 2,
       });
     });
@@ -148,7 +148,7 @@ test.describe("1公演 / S席・A席の2券種 / 先着の1販売受付", () => 
       await app.fan.ticketList().expectTicketVisible({
         eventName,
         stageName,
-        offerName: ticketCategoryS.name,
+        offerName: inventoryCategoryS.name,
       });
     });
   });

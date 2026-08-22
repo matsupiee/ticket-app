@@ -2,7 +2,7 @@
 //
 // 状態:
 //   - S席 20枠 / A席 50枠。どちらも整理番号方式で、未販売の枠は entryNumber が null（ADR 0005）
-//   - 席種ごとに整理番号の接頭辞を持つ（S席→"S" / A席→"A"）（ADR 0008）
+//   - 在庫種別ごとに整理番号の接頭辞を持つ（S席→"S" / A席→"A"）（ADR 0008）
 //   - ユーザー1がS席を2枚カード決済で購入（入金済み・発券済み・整理番号 S-1, S-2）
 //   - ユーザー2がA席を1枚コンビニ払いで購入（入金待ち・未発券・整理番号 A-1）
 //
@@ -16,16 +16,16 @@ import {
   PaymentMethod,
   PaymentProvider,
   SaleMethod,
-  TicketCategoryKind,
+  InventoryCategoryKind,
 } from "../../../../generated/prisma/client";
 
-export const SEED_1STAGE_2TICKET_CATEGORY_1SALE_WINDOW = {
+export const SEED_1STAGE_2INVENTORY_CATEGORY_1SALE_WINDOW = {
   eventName: "1公演 2チケット種別 1受付",
   stageName: "1公演 2チケット種別 1受付 公演",
   venueName: "東京ドーム",
   // entryNumberPrefix は整理番号の接頭辞。S席1番は「S-1」、A席1番は「A-1」と表示される（ADR 0008）
-  ticketCategoryS: { name: "S席", entryNumberPrefix: "S", capacity: 20, price: 10000 },
-  ticketCategoryA: { name: "A席", entryNumberPrefix: "A", capacity: 50, price: 5000 },
+  inventoryCategoryS: { name: "S席", entryNumberPrefix: "S", capacity: 20, price: 10000 },
+  inventoryCategoryA: { name: "A席", entryNumberPrefix: "A", capacity: 50, price: 5000 },
   // 5% → 500 basis points（FeeRule のコメント参照）
   feeRateBasisPoints: 500,
   fanUser1: {
@@ -38,7 +38,7 @@ export const SEED_1STAGE_2TICKET_CATEGORY_1SALE_WINDOW = {
   },
 } as const;
 
-const S = SEED_1STAGE_2TICKET_CATEGORY_1SALE_WINDOW;
+const S = SEED_1STAGE_2INVENTORY_CATEGORY_1SALE_WINDOW;
 
 function addDays(base: Date, days: number) {
   const next = new Date(base);
@@ -83,11 +83,11 @@ export const seed = async () => {
     });
 
     // 在庫枠は entryNumber を採番せずに作る。採番は注文作成時（ADR 0005）
-    const createPool = async (ticketCategoryId: string, capacity: number) =>
+    const createPool = async (inventoryCategoryId: string, capacity: number) =>
       await tx.inventoryPool.create({
         data: {
           stageId: stage.id,
-          ticketCategoryId,
+          inventoryCategoryId,
           capacity,
           heldCount: 0,
           inventorySlots: {
@@ -98,29 +98,29 @@ export const seed = async () => {
         },
       });
 
-    const ticketCategoryS = await tx.ticketCategory.create({
+    const inventoryCategoryS = await tx.inventoryCategory.create({
       data: {
         eventId: event.id,
-        kind: TicketCategoryKind.ENTRY_NUMBER,
-        name: S.ticketCategoryS.name,
-        entryNumberPrefix: S.ticketCategoryS.entryNumberPrefix,
+        kind: InventoryCategoryKind.ENTRY_NUMBER,
+        name: S.inventoryCategoryS.name,
+        entryNumberPrefix: S.inventoryCategoryS.entryNumberPrefix,
         description: "",
         displayOrder: 0,
       },
     });
-    const inventoryPoolS = await createPool(ticketCategoryS.id, S.ticketCategoryS.capacity);
+    const inventoryPoolS = await createPool(inventoryCategoryS.id, S.inventoryCategoryS.capacity);
 
-    const ticketCategoryA = await tx.ticketCategory.create({
+    const inventoryCategoryA = await tx.inventoryCategory.create({
       data: {
         eventId: event.id,
-        kind: TicketCategoryKind.ENTRY_NUMBER,
-        name: S.ticketCategoryA.name,
-        entryNumberPrefix: S.ticketCategoryA.entryNumberPrefix,
+        kind: InventoryCategoryKind.ENTRY_NUMBER,
+        name: S.inventoryCategoryA.name,
+        entryNumberPrefix: S.inventoryCategoryA.entryNumberPrefix,
         description: "",
         displayOrder: 1,
       },
     });
-    const inventoryPoolA = await createPool(ticketCategoryA.id, S.ticketCategoryA.capacity);
+    const inventoryPoolA = await createPool(inventoryCategoryA.id, S.inventoryCategoryA.capacity);
 
     const rateType = await tx.rateType.create({
       data: { eventId: event.id, name: "通常" },
@@ -164,13 +164,13 @@ export const seed = async () => {
     };
 
     const offerS = await createOffer({
-      name: S.ticketCategoryS.name,
-      price: S.ticketCategoryS.price,
+      name: S.inventoryCategoryS.name,
+      price: S.inventoryCategoryS.price,
       inventoryPoolId: inventoryPoolS.id,
     });
     const offerA = await createOffer({
-      name: S.ticketCategoryA.name,
-      price: S.ticketCategoryA.price,
+      name: S.inventoryCategoryA.name,
+      price: S.inventoryCategoryA.price,
       inventoryPoolId: inventoryPoolA.id,
     });
 
@@ -190,8 +190,6 @@ export const seed = async () => {
       inventoryPoolId: string;
       applicationItemId: string;
       quantity: number;
-      // コンビニ払いのように入金待ちの場合は支払期限を入れる
-      holdExpiresAt: Date | null;
     }) => {
       const slots = await tx.inventorySlot.findMany({
         where: {
@@ -230,7 +228,6 @@ export const seed = async () => {
             data: {
               inventorySlotId: slot.id,
               applicationItemId: input.applicationItemId,
-              expiresAt: input.holdExpiresAt,
             },
           });
 
@@ -248,7 +245,7 @@ export const seed = async () => {
       },
     });
 
-    const subtotalS = S.ticketCategoryS.price * 2;
+    const subtotalS = S.inventoryCategoryS.price * 2;
     const feeS = calcFeeAmount(subtotalS);
     const applicationS = await tx.application.create({
       data: {
@@ -261,7 +258,7 @@ export const seed = async () => {
       data: {
         applicationId: applicationS.id,
         saleOfferRateId: offerS.saleOfferRate.id,
-        unitPrice: S.ticketCategoryS.price,
+        unitPrice: S.inventoryCategoryS.price,
         quantity: 2,
         preferenceRank: 1,
         applicationItemFees: {
@@ -297,12 +294,10 @@ export const seed = async () => {
       },
     });
 
-    // カード決済は即時入金なので hold に期限を持たせない
     const allocatedSlotsS = await allocateSlots({
       inventoryPoolId: inventoryPoolS.id,
       applicationItemId: applicationItemS.id,
       quantity: applicationItemS.quantity,
-      holdExpiresAt: null,
     });
 
     // 入金済みなので発券する
@@ -327,7 +322,7 @@ export const seed = async () => {
       },
     });
 
-    const subtotalA = S.ticketCategoryA.price;
+    const subtotalA = S.inventoryCategoryA.price;
     const feeA = calcFeeAmount(subtotalA);
     const applicationA = await tx.application.create({
       data: {
@@ -341,7 +336,7 @@ export const seed = async () => {
         applicationId: applicationA.id,
         saleOfferRateId: offerA.saleOfferRate.id,
         quantity: 1,
-        unitPrice: S.ticketCategoryA.price,
+        unitPrice: S.inventoryCategoryA.price,
         preferenceRank: 1,
         applicationItemFees: {
           create: {
@@ -377,12 +372,12 @@ export const seed = async () => {
       },
     });
 
-    // コンビニ払いは支払期限までの確保。期限切れバッチが解放できるよう expiresAt を入れる
+    // コンビニ払いも入金前から枠を押さえる。
+    // 支払期限は InventorySlotHold に持たず、Application / Payment から導出する（schema.prisma のコメント参照）
     await allocateSlots({
       inventoryPoolId: inventoryPoolA.id,
       applicationItemId: applicationItemA.id,
       quantity: applicationItemA.quantity,
-      holdExpiresAt: addDays(now, 3),
     });
     // 入金前なので Ticket / TicketEntitlement は作らない
   });

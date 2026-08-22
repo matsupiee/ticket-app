@@ -26,12 +26,12 @@ model Event {
 
   organizer Organizer @relation(fields: [organizerId], references: [id])
 
-  stages           Stage[]
-  saleWindows      SaleWindow[]
-  seatCategories   TicketCategory[]
-  rateTypes        RateType[]
-  voucherTemplates VoucherTemplate[]
-  feeRules         FeeRule[]
+  stages              Stage[]
+  saleWindows         SaleWindow[]
+  inventoryCategories InventoryCategory[]
+  rateTypes           RateType[]
+  voucherTemplates    VoucherTemplate[]
+  feeRules            FeeRule[]
 }
 
 model Stage {
@@ -96,29 +96,29 @@ model Venue {
 }
 
 // ============================================================
-// チケット種別
+// 在庫種別
 //
-// ツアーや複数公演で同じ席種を共有するため、席種はEvent配下に置く。
+// ツアーや複数公演で同じ在庫種別を共有するため、在庫種別はEvent配下に置く。
 //
 // 例: S席, A席, VIP席, 一般席 などなど
 // ============================================================
 
-model TicketCategory {
+model InventoryCategory {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
   eventId String
 
-  kind         TicketCategoryKind
+  kind         InventoryCategoryKind
   name         String
   description  String // 何もない場合は空文字
-  displayOrder Int                @default(0)
+  displayOrder Int                   @default(0)
 
-  // 整理番号の接頭辞。「A-1」「S-1」のように席種を見分けるために使う（ADR 0008）
+  // 整理番号の接頭辞。「A-1」「S-1」のように在庫種別を見分けるために使う（ADR 0008）
   // kind = ENTRY_NUMBER のときだけ設定でき、null なら接頭辞なしで数字だけを表示する
   // 半角英数字1〜4文字（大文字）。区切り文字「-」は表示時に付けるのでここには含めない
-  // 整理番号の一意スコープは InventoryPool（公演 × 席種）なので、接頭辞も席種単位で持つ
+  // 整理番号の一意スコープは InventoryPool（公演 × 在庫種別）なので、接頭辞も在庫種別単位で持つ
   entryNumberPrefix String?
 
   event Event @relation(fields: [eventId], references: [id])
@@ -126,12 +126,12 @@ model TicketCategory {
   inventoryPools InventoryPool[]
 
   @@unique([eventId, name])
-  // 同じイベント内で接頭辞が重複すると席種を見分けられなくなるため一意にする
-  // PostgreSQL は NULL 同士を重複とみなさないので、接頭辞なしの席種は複数あってよい
+  // 同じイベント内で接頭辞が重複すると在庫種別を見分けられなくなるため一意にする
+  // PostgreSQL は NULL 同士を重複とみなさないので、接頭辞なしの在庫種別は複数あってよい
   @@unique([eventId, entryNumberPrefix])
 }
 
-enum TicketCategoryKind {
+enum InventoryCategoryKind {
   ENTRY_NUMBER // 整理番号
   RESERVED_SEAT // 指定席
 }
@@ -317,7 +317,7 @@ model SaleOffer {
 
   saleWindowId String
 
-  // 基本的に TicketCategory.name がコピーされる
+  // 基本的に InventoryCategory.name がコピーされる
   // 通し券などの場合は上書きされる
   name        String
   description String // 何もない場合は空文字
@@ -432,7 +432,7 @@ model SaleOfferEntitlement {
 // ============================================================
 // 在庫
 //
-// InventoryPool: 公演 x 席種に対して 1 レコード作成される
+// InventoryPool: 公演 x 在庫種別に対して 1 レコード作成される
 // InventorySlot: 販売・確保・発券で消費される最小単位。指定席でも整理番号でも、発券時には必ず1つのInventorySlotを消費する。
 // ============================================================
 
@@ -441,8 +441,8 @@ model InventoryPool {
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  stageId          String
-  ticketCategoryId String
+  stageId             String
+  inventoryCategoryId String
 
   // 以下の2つは表示用のキャッシュ値（正しい値は inventorySlot を数える必要がある）
   capacity  Int
@@ -453,13 +453,13 @@ model InventoryPool {
   // キャンセルで空いた番号は再利用しないので、この値は減らさない
   nextEntryNumber Int @default(1)
 
-  stage          Stage          @relation(fields: [stageId], references: [id])
-  ticketCategory TicketCategory @relation(fields: [ticketCategoryId], references: [id])
+  stage             Stage             @relation(fields: [stageId], references: [id])
+  inventoryCategory InventoryCategory @relation(fields: [inventoryCategoryId], references: [id])
 
   inventorySlots        InventorySlot[]
   saleOfferEntitlements SaleOfferEntitlement[]
 
-  @@unique([stageId, ticketCategoryId])
+  @@unique([stageId, inventoryCategoryId])
 }
 
 model InventorySlot {
@@ -489,7 +489,7 @@ model InventorySlot {
   ticketEntitlements TicketEntitlement[]
 
   @@unique([inventoryPoolId, seatId]) // 同じ座席に対する在庫枠が二重に作られないようにする
-  @@unique([inventoryPoolId, entryNumber]) // 同じ公演 x 席種で整理番号が重複しないようにする
+  @@unique([inventoryPoolId, entryNumber]) // 同じ公演 x 在庫種別で整理番号が重複しないようにする
   @@index([inventoryPoolId, status]) // 先着販売で AVAILABLE な枠を探しやすくするためのインデックス
 }
 

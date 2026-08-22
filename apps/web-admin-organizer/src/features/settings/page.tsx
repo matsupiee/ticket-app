@@ -9,9 +9,7 @@ export function SettingsPage() {
       <section className="border-b">
         <div className="mx-auto max-w-6xl space-y-3 px-4 py-8 md:px-6">
           <p className="text-xs font-medium text-muted-foreground">account</p>
-          <h1 className="text-3xl font-semibold tracking-normal md:text-4xl">
-            アカウント設定
-          </h1>
+          <h1 className="text-3xl font-semibold tracking-normal md:text-4xl">アカウント設定</h1>
           <p className="max-w-2xl text-sm leading-7 text-muted-foreground">
             主催者プロフィール、メンバー、銀行口座を管理します。
           </p>
@@ -52,13 +50,7 @@ export function SettingsPage() {
   );
 }
 
-function SettingsSection({
-  title,
-  children,
-}: {
-  title: string;
-  children: ReactNode;
-}) {
+function SettingsSection({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="space-y-4">
       <h2 className="text-sm font-semibold text-muted-foreground">{title}</h2>
@@ -67,13 +59,7 @@ function SettingsSection({
   );
 }
 
-function Field({
-  label,
-  defaultValue,
-}: {
-  label: string;
-  defaultValue: string;
-}) {
+function Field({ label, defaultValue }: { label: string; defaultValue: string }) {
   const id = label;
 
   return (

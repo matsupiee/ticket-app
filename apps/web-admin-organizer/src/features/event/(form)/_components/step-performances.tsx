@@ -3,13 +3,13 @@ import { Input } from "@ticket-app/ui/components/input";
 import { Label } from "@ticket-app/ui/components/label";
 import { PlusIcon, XIcon } from "lucide-react";
 
-import type { DraftPerformance } from "./event-wizard-draft-reducer";
+import type { DraftPerformance } from "../_utils/event-wizard-draft-reducer";
 import {
   buildPerformanceSchedule,
   getDoorsOpenTimeValue,
   getPerformanceDateValue,
   getStartsTimeValue,
-} from "./performance-schedule";
+} from "../_utils/performance-schedule";
 
 export function StepPerformances({
   performances,

@@ -2,7 +2,7 @@ import { Label } from "@ticket-app/ui/components/label";
 import { Input } from "@ticket-app/ui/components/input";
 import { Textarea } from "@ticket-app/ui/components/textarea";
 
-import type { WizardDraft } from "./event-wizard-draft-reducer";
+import type { WizardDraft } from "../_utils/event-wizard-draft-reducer";
 
 export function StepBasicInfo({
   draft,

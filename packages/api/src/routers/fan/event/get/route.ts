@@ -29,11 +29,7 @@ const eventGetOutputSchema = z.object({
       venueName: z.string().min(1),
       doorsOpenAt: z.string().min(1),
       startsAt: z.string().min(1),
-      admissionMethod: z.enum([
-        "GENERAL_ADMISSION",
-        "NUMBERED_ENTRY",
-        "RESERVED_SEAT",
-      ]),
+      admissionMethod: z.enum(["GENERAL_ADMISSION", "NUMBERED_ENTRY", "RESERVED_SEAT"]),
     }),
   ),
   saleWindows: z.array(

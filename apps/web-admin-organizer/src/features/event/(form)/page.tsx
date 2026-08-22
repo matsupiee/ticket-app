@@ -7,26 +7,28 @@ import type { GetEventOutput } from "@ticket-app/api/routers/organizer/event/get
 
 import { client } from "@/lib/orpc";
 
-import { EventWizardStepper, SIMPLE_WIZARD_STEPS, WIZARD_STEPS } from "./event-wizard-stepper";
-import { CreationModePicker, type CreationMode } from "./creation-mode-picker";
-import { StepBasicInfo } from "./step-basic-info";
-import { StepPerformances } from "./step-performances";
-import { StepRateTypes } from "./step-rate-types";
-import { StepSaleWindows } from "./step-sale-windows";
-import { StepSeatCategories } from "./step-seat-categories";
-import { StepSimpleTicketing } from "./step-simple-ticketing";
-import { useEventWizardDraft } from "./use-event-wizard-draft";
-import { EventStatusBadge } from "../status-badge";
+import {
+  EventWizardStepper,
+  SIMPLE_WIZARD_STEPS,
+  WIZARD_STEPS,
+} from "./_components/event-wizard-stepper";
+import { CreationModePicker, type CreationMode } from "./_components/creation-mode-picker";
+import { StepBasicInfo } from "./_components/step-basic-info";
+import { StepPerformances } from "./_components/step-performances";
+import { StepRateTypes } from "./_components/step-rate-types";
+import { StepSaleWindows } from "./_components/step-sale-windows";
+import { StepSeatCategories } from "./_components/step-seat-categories";
+import { StepSimpleTicketing } from "./_components/step-simple-ticketing";
+import { useEventWizardDraft } from "./_hooks/use-event-wizard-draft";
+import { EventStatusBadge } from "../_components/status-badge";
 
-export function EventWizard({
-  mode,
-  eventOrganizerId,
-  initialEvent,
-}: {
-  mode: "create" | "edit";
-  eventOrganizerId: string;
-  initialEvent?: GetEventOutput;
-}) {
+type EventFormPageProps =
+  | { mode: "create"; eventOrganizerId: string }
+  | { mode: "edit"; eventOrganizerId: string; event: GetEventOutput };
+
+export function EventFormPage(props: EventFormPageProps) {
+  const { mode, eventOrganizerId } = props;
+  const initialEvent = props.mode === "edit" ? props.event : undefined;
   const navigate = useNavigate();
   const { draft, dispatch, saveSteps } = useEventWizardDraft({
     mode,
@@ -132,7 +134,10 @@ export function EventWizard({
     if (!nextStepConfig) {
       toast.success(mode === "create" ? "イベントを作成して公開しました" : "設定を保存しました");
       if (draft.eventId) {
-        await navigate({ to: "/events/$eventId", params: { eventId: draft.eventId } });
+        await navigate({
+          to: "/events/$eventId",
+          params: { eventId: draft.eventId },
+        });
       }
       return;
     }
@@ -345,7 +350,12 @@ export function EventWizard({
                     })
                   }
                   onPriceChange={(seatCategoryKey, rateTypeKey, price) =>
-                    dispatch({ type: "SET_PRICE_CELL", seatCategoryKey, rateTypeKey, price })
+                    dispatch({
+                      type: "SET_PRICE_CELL",
+                      seatCategoryKey,
+                      rateTypeKey,
+                      price,
+                    })
                   }
                 />
               )}
@@ -378,7 +388,12 @@ export function EventWizard({
                   onUpdate={(key, patch) => dispatch({ type: "UPDATE_RATE_TYPE", key, patch })}
                   onRemove={(key) => dispatch({ type: "REMOVE_RATE_TYPE", key })}
                   onPriceChange={(seatCategoryKey, rateTypeKey, price) =>
-                    dispatch({ type: "SET_PRICE_CELL", seatCategoryKey, rateTypeKey, price })
+                    dispatch({
+                      type: "SET_PRICE_CELL",
+                      seatCategoryKey,
+                      rateTypeKey,
+                      price,
+                    })
                   }
                 />
               )}
@@ -398,10 +413,19 @@ export function EventWizard({
                     dispatch({ type: "ADD_OFFER", saleWindowKey, offer })
                   }
                   onUpdateOffer={(saleWindowKey, offer) =>
-                    dispatch({ type: "UPDATE_OFFER", saleWindowKey, key: offer.key, patch: offer })
+                    dispatch({
+                      type: "UPDATE_OFFER",
+                      saleWindowKey,
+                      key: offer.key,
+                      patch: offer,
+                    })
                   }
                   onRemoveOffer={(saleWindowKey, offerKey) =>
-                    dispatch({ type: "REMOVE_OFFER", saleWindowKey, key: offerKey })
+                    dispatch({
+                      type: "REMOVE_OFFER",
+                      saleWindowKey,
+                      key: offerKey,
+                    })
                   }
                 />
               )}

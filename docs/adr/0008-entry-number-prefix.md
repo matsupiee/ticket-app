@@ -1,8 +1,8 @@
-# ADR 0008: 整理番号の接頭辞を席種(TicketCategory)に持たせる
+# ADR 0008: 整理番号の接頭辞を在庫種別(InventoryCategory)に持たせる
 
 ## Status
 
-Accepted
+Accepted（`TicketCategory` は ADR 0009 で `InventoryCategory` に改名済み。本文中の `TicketCategory` は読み替える）
 
 ## Context
 

@@ -10,7 +10,7 @@ import {
   wizardDraftReducer,
   type DraftOffer,
   type WizardDraft,
-} from "./event-wizard-draft-reducer";
+} from "../_utils/event-wizard-draft-reducer";
 
 export function useEventWizardDraft(input: {
   mode: "create" | "edit";

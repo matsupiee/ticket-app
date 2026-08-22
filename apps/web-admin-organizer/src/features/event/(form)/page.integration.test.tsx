@@ -28,10 +28,10 @@ vi.mock("@/lib/orpc", () => ({
 }));
 
 const { client } = await import("@/lib/orpc");
-const { EventWizard } = await import("./event-wizard");
-const { getDefaultPerformanceSchedule } = await import("./performance-schedule");
+const { EventFormPage } = await import("./page");
+const { getDefaultPerformanceSchedule } = await import("./_utils/performance-schedule");
 
-describe("EventWizard", () => {
+describe("EventFormPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -54,7 +54,7 @@ describe("EventWizard", () => {
       updatedAt: "2026-07-20T00:00:00.000Z",
     });
 
-    render(<EventWizard mode="create" eventOrganizerId="organizer-1" />);
+    render(<EventFormPage mode="create" eventOrganizerId="organizer-1" />);
 
     await user.click(screen.getByRole("button", { name: /詳細イベント作成ではじめる/ }));
     await user.type(screen.getByLabelText("イベント名"), "TOKYO ORBIT 2026");
@@ -128,7 +128,7 @@ describe("EventWizard", () => {
       updatedAt: "2026-07-20T00:00:00.000Z",
     });
 
-    render(<EventWizard mode="create" eventOrganizerId="organizer-1" />);
+    render(<EventFormPage mode="create" eventOrganizerId="organizer-1" />);
 
     await user.click(screen.getByRole("button", { name: /詳細イベント作成ではじめる/ }));
     await user.type(screen.getByLabelText("イベント名"), "TOKYO ORBIT 2026");
@@ -155,7 +155,7 @@ describe("EventWizard", () => {
       updatedAt: "2026-07-20T00:00:00.000Z",
     });
 
-    render(<EventWizard mode="create" eventOrganizerId="organizer-1" />);
+    render(<EventFormPage mode="create" eventOrganizerId="organizer-1" />);
 
     await user.click(screen.getByRole("button", { name: /簡単イベント作成/ }));
     await user.click(screen.getByRole("button", { name: "作成方法を変更" }));
@@ -200,7 +200,7 @@ describe("EventWizard", () => {
       updatedAt: "2026-07-20T00:00:00.000Z",
     });
 
-    render(<EventWizard mode="create" eventOrganizerId="organizer-1" />);
+    render(<EventFormPage mode="create" eventOrganizerId="organizer-1" />);
 
     await user.click(screen.getByRole("button", { name: /簡単イベント作成/ }));
     await user.type(screen.getByLabelText("イベント名"), "E2E簡単イベント");
@@ -286,7 +286,7 @@ describe("EventWizard", () => {
 
   it("編集モードでは既存イベントの内容をStep1に反映する", () => {
     render(
-      <EventWizard mode="edit" eventOrganizerId="organizer-1" initialEvent={buildMinimalEvent()} />,
+      <EventFormPage mode="edit" eventOrganizerId="organizer-1" event={buildMinimalEvent()} />,
     );
 
     expect(screen.getByLabelText("イベント名")).toHaveValue("既存イベント");
@@ -301,10 +301,10 @@ describe("EventWizard", () => {
     });
 
     render(
-      <EventWizard
+      <EventFormPage
         mode="edit"
         eventOrganizerId="organizer-1"
-        initialEvent={buildMinimalEvent({
+        event={buildMinimalEvent({
           performances: [
             {
               id: "performance-existing",

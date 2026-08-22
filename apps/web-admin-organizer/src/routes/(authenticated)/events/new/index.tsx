@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { EventNewPage } from "@/features/event/(new)/page";
+import { EventFormPage } from "@/features/event/(form)/page";
 
 export const Route = createFileRoute("/(authenticated)/events/new/")({
   component: RouteComponent,
@@ -9,5 +9,5 @@ export const Route = createFileRoute("/(authenticated)/events/new/")({
 function RouteComponent() {
   const { organizerAccount } = Route.useRouteContext();
 
-  return <EventNewPage eventOrganizerId={organizerAccount.eventOrganizerId} />;
+  return <EventFormPage mode="create" eventOrganizerId={organizerAccount.eventOrganizerId} />;
 }

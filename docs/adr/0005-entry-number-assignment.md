@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Accepted（`TicketCategory` は ADR 0009 で `InventoryCategory` に改名済み。本文中の `TicketCategory` は読み替える）
 
 ## Context
 
