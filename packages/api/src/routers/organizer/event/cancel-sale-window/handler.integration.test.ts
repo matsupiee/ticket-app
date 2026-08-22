@@ -1,7 +1,7 @@
 import { db } from "@ticket-app/db";
 import { describe, expect, inject, it } from "vitest";
 
-import { cancelSaleWindowHandler } from "./handler";
+import { handler } from "./handler";
 
 const { serverUrl } = inject("apiIntegration");
 
@@ -23,7 +23,7 @@ describe("organizer event cancel-sale-window handler", () => {
   it("正常な入力で販売受付をキャンセルする", async () => {
     const { organizer, editor, event, saleWindow } = await seedFixture();
 
-    const result = await cancelSaleWindowHandler({
+    const result = await handler({
       input: {
         eventOrganizerId: organizer.id,
         eventId: event.id,
@@ -47,7 +47,7 @@ describe("organizer event cancel-sale-window handler", () => {
     });
 
     await expect(
-      cancelSaleWindowHandler({
+      handler({
         input: {
           eventOrganizerId: organizer.id,
           eventId: event.id,
@@ -64,7 +64,7 @@ describe("organizer event cancel-sale-window handler", () => {
     const other = await seedFixture();
 
     await expect(
-      cancelSaleWindowHandler({
+      handler({
         input: {
           eventOrganizerId: organizer.id,
           eventId: event.id,
@@ -86,7 +86,7 @@ describe("organizer event cancel-sale-window handler", () => {
     });
 
     await expect(
-      cancelSaleWindowHandler({
+      handler({
         input: {
           eventOrganizerId: organizer.id,
           eventId: event.id,

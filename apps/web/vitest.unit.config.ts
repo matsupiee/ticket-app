@@ -10,5 +10,7 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["src/**/*.unit.test.ts"],
+    // 現時点の apps/web には unit テスト対象の純粋関数が無いため、0件でも失敗させない
+    passWithNoTests: true,
   },
 });

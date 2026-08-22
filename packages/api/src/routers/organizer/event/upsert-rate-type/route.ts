@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { upsertRateTypeHandler } from "./handler";
+import { handler } from "./handler";
 import { protectedProcedure } from "../../../../index";
 
 const upsertRateTypeInputSchema = z.object({
@@ -27,4 +27,4 @@ export const upsertRateTypeRoute = protectedProcedure
   })
   .input(upsertRateTypeInputSchema)
   .output(upsertRateTypeOutputSchema)
-  .handler(upsertRateTypeHandler);
+  .handler(handler);

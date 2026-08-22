@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { updateOrganizerProfileHandler } from "./handler";
+import { handler } from "./handler";
 import { protectedProcedure } from "../../../../index";
 
 const updateProfileInputSchema = z.object({
@@ -23,4 +23,4 @@ export const updateProfileRoute = protectedProcedure
   })
   .input(updateProfileInputSchema)
   .output(updateProfileOutputSchema)
-  .handler(updateOrganizerProfileHandler);
+  .handler(handler);

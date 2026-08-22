@@ -1,7 +1,7 @@
 import { db } from "@ticket-app/db";
 import { describe, expect, inject, it } from "vitest";
 
-import { upsertSaleWindowHandler } from "./handler";
+import { handler } from "./handler";
 
 const { serverUrl } = inject("apiIntegration");
 
@@ -23,7 +23,7 @@ describe("organizer event upsert-sale-window handler", () => {
   it("saleWindowIdを指定しない場合、先着方式の販売受付を新規作成する", async () => {
     const { organizer, editor, event } = await seedEditorWithEvent();
 
-    const result = await upsertSaleWindowHandler({
+    const result = await handler({
       input: {
         eventOrganizerId: organizer.id,
         eventId: event.id,
@@ -48,7 +48,7 @@ describe("organizer event upsert-sale-window handler", () => {
   it("抽選方式かつ当落発表日時ありで新規作成できる", async () => {
     const { organizer, editor, event } = await seedEditorWithEvent();
 
-    const result = await upsertSaleWindowHandler({
+    const result = await handler({
       input: {
         eventOrganizerId: organizer.id,
         eventId: event.id,
@@ -72,7 +72,7 @@ describe("organizer event upsert-sale-window handler", () => {
 
   it("saleWindowIdを指定すると、既存の販売受付を更新する", async () => {
     const { organizer, editor, event } = await seedEditorWithEvent();
-    const created = await upsertSaleWindowHandler({
+    const created = await handler({
       input: {
         eventOrganizerId: organizer.id,
         eventId: event.id,
@@ -86,7 +86,7 @@ describe("organizer event upsert-sale-window handler", () => {
       context: { session: { user: { id: editor.id } } },
     });
 
-    const updated = await upsertSaleWindowHandler({
+    const updated = await handler({
       input: {
         eventOrganizerId: organizer.id,
         eventId: event.id,
@@ -114,7 +114,7 @@ describe("organizer event upsert-sale-window handler", () => {
     const { organizer, editor, event } = await seedEditorWithEvent();
 
     await expect(
-      upsertSaleWindowHandler({
+      handler({
         input: {
           eventOrganizerId: organizer.id,
           eventId: event.id,
@@ -134,7 +134,7 @@ describe("organizer event upsert-sale-window handler", () => {
     const { organizer, editor, event } = await seedEditorWithEvent();
 
     await expect(
-      upsertSaleWindowHandler({
+      handler({
         input: {
           eventOrganizerId: organizer.id,
           eventId: event.id,
@@ -155,7 +155,7 @@ describe("organizer event upsert-sale-window handler", () => {
     const { organizer, editor, event } = await seedEditorWithEvent();
 
     await expect(
-      upsertSaleWindowHandler({
+      handler({
         input: {
           eventOrganizerId: organizer.id,
           eventId: event.id,
@@ -173,7 +173,7 @@ describe("organizer event upsert-sale-window handler", () => {
 
   it("キャンセル済みの販売受付は編集できない", async () => {
     const { organizer, editor, event } = await seedEditorWithEvent();
-    const created = await upsertSaleWindowHandler({
+    const created = await handler({
       input: {
         eventOrganizerId: organizer.id,
         eventId: event.id,
@@ -192,7 +192,7 @@ describe("organizer event upsert-sale-window handler", () => {
     });
 
     await expect(
-      upsertSaleWindowHandler({
+      handler({
         input: {
           eventOrganizerId: organizer.id,
           eventId: event.id,
@@ -212,7 +212,7 @@ describe("organizer event upsert-sale-window handler", () => {
   it("他のイベントに属するsaleWindowIdを指定するとNOT_FOUNDを返す", async () => {
     const { organizer, editor, event } = await seedEditorWithEvent();
     const other = await seedEditorWithEvent();
-    const otherSaleWindow = await upsertSaleWindowHandler({
+    const otherSaleWindow = await handler({
       input: {
         eventOrganizerId: other.organizer.id,
         eventId: other.event.id,
@@ -227,7 +227,7 @@ describe("organizer event upsert-sale-window handler", () => {
     });
 
     await expect(
-      upsertSaleWindowHandler({
+      handler({
         input: {
           eventOrganizerId: organizer.id,
           eventId: event.id,
@@ -254,7 +254,7 @@ describe("organizer event upsert-sale-window handler", () => {
     });
 
     await expect(
-      upsertSaleWindowHandler({
+      handler({
         input: {
           eventOrganizerId: organizer.id,
           eventId: event.id,

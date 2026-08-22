@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { listApplicationsHandler } from "./handler";
+import { handler } from "./handler";
 import { protectedProcedure } from "../../../../index";
 
 const listApplicationsInputSchema = z.object({
@@ -33,4 +33,4 @@ export const listApplicationsRoute = protectedProcedure
   })
   .input(listApplicationsInputSchema)
   .output(listApplicationsOutputSchema)
-  .handler(listApplicationsHandler);
+  .handler(handler);

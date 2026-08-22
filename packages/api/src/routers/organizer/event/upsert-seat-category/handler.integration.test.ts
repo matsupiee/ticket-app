@@ -1,7 +1,7 @@
 import { db } from "@ticket-app/db";
 import { describe, expect, inject, it } from "vitest";
 
-import { upsertSeatCategoryHandler } from "./handler";
+import { handler } from "./handler";
 
 const { serverUrl } = inject("apiIntegration");
 
@@ -23,7 +23,7 @@ describe("organizer event upsert-seat-category handler", () => {
   it("seatCategoryIdを指定しない場合、席種を新規作成する", async () => {
     const { organizer, editor, event } = await seedEditorWithEvent();
 
-    const result = await upsertSeatCategoryHandler({
+    const result = await handler({
       input: {
         eventOrganizerId: organizer.id,
         eventId: event.id,
@@ -45,7 +45,7 @@ describe("organizer event upsert-seat-category handler", () => {
 
   it("seatCategoryIdを指定すると、既存の席種を更新する(activeのfalse化を含む)", async () => {
     const { organizer, editor, event } = await seedEditorWithEvent();
-    const created = await upsertSeatCategoryHandler({
+    const created = await handler({
       input: {
         eventOrganizerId: organizer.id,
         eventId: event.id,
@@ -57,7 +57,7 @@ describe("organizer event upsert-seat-category handler", () => {
       context: { session: { user: { id: editor.id } } },
     });
 
-    const updated = await upsertSeatCategoryHandler({
+    const updated = await handler({
       input: {
         eventOrganizerId: organizer.id,
         eventId: event.id,
@@ -82,7 +82,7 @@ describe("organizer event upsert-seat-category handler", () => {
 
   it("同一イベント内で新規作成時に名前が重複しているとCONFLICTを返す", async () => {
     const { organizer, editor, event } = await seedEditorWithEvent();
-    await upsertSeatCategoryHandler({
+    await handler({
       input: {
         eventOrganizerId: organizer.id,
         eventId: event.id,
@@ -95,7 +95,7 @@ describe("organizer event upsert-seat-category handler", () => {
     });
 
     await expect(
-      upsertSeatCategoryHandler({
+      handler({
         input: {
           eventOrganizerId: organizer.id,
           eventId: event.id,
@@ -114,7 +114,7 @@ describe("organizer event upsert-seat-category handler", () => {
 
   it("更新時に別の席種と同じ名前へ改名しようとするとCONFLICTを返す", async () => {
     const { organizer, editor, event } = await seedEditorWithEvent();
-    await upsertSeatCategoryHandler({
+    await handler({
       input: {
         eventOrganizerId: organizer.id,
         eventId: event.id,
@@ -125,7 +125,7 @@ describe("organizer event upsert-seat-category handler", () => {
       },
       context: { session: { user: { id: editor.id } } },
     });
-    const aSeat = await upsertSeatCategoryHandler({
+    const aSeat = await handler({
       input: {
         eventOrganizerId: organizer.id,
         eventId: event.id,
@@ -138,7 +138,7 @@ describe("organizer event upsert-seat-category handler", () => {
     });
 
     await expect(
-      upsertSeatCategoryHandler({
+      handler({
         input: {
           eventOrganizerId: organizer.id,
           eventId: event.id,
@@ -156,7 +156,7 @@ describe("organizer event upsert-seat-category handler", () => {
   it("他のイベントに属するseatCategoryIdを指定するとNOT_FOUNDを返す", async () => {
     const { organizer, editor, event } = await seedEditorWithEvent();
     const other = await seedEditorWithEvent();
-    const otherSeatCategory = await upsertSeatCategoryHandler({
+    const otherSeatCategory = await handler({
       input: {
         eventOrganizerId: other.organizer.id,
         eventId: other.event.id,
@@ -169,7 +169,7 @@ describe("organizer event upsert-seat-category handler", () => {
     });
 
     await expect(
-      upsertSeatCategoryHandler({
+      handler({
         input: {
           eventOrganizerId: organizer.id,
           eventId: event.id,
@@ -194,7 +194,7 @@ describe("organizer event upsert-seat-category handler", () => {
     });
 
     await expect(
-      upsertSeatCategoryHandler({
+      handler({
         input: {
           eventOrganizerId: organizer.id,
           eventId: event.id,

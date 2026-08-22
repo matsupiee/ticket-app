@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { inviteMemberHandler } from "./handler";
+import { handler } from "./handler";
 import { protectedProcedure } from "../../../../index";
 
 const inviteMemberInputSchema = z.object({
@@ -22,4 +22,4 @@ export const inviteMemberRoute = protectedProcedure
   })
   .input(inviteMemberInputSchema)
   .output(inviteMemberOutputSchema)
-  .handler(inviteMemberHandler);
+  .handler(handler);

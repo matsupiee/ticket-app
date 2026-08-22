@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { signUpOrganizerAccountHandler } from "./handler";
+import { handler } from "./handler";
 import { protectedProcedure } from "../../../../index";
 
 const signUpOrganizerAccountInputSchema = z.object({
@@ -10,7 +10,6 @@ const signUpOrganizerAccountInputSchema = z.object({
 const signUpOrganizerAccountOutputSchema = z.object({
   eventOrganizerId: z.string().min(1),
   name: z.string().min(1),
-  slug: z.string().min(1),
   role: z.enum(["VIEWER", "EDITOR"]),
 });
 
@@ -22,4 +21,4 @@ export const signUpOrganizerAccountRoute = protectedProcedure
   })
   .input(signUpOrganizerAccountInputSchema)
   .output(signUpOrganizerAccountOutputSchema)
-  .handler(signUpOrganizerAccountHandler);
+  .handler(handler);

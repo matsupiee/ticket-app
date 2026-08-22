@@ -50,7 +50,7 @@ fan.user.profile.update → ./organizer/account/update-profile/route
 
 ## 積み残し（別PRで対応する）
 
-棚卸し中に、残す11本の `route.ts` のスキーマが `schema.prisma`（ADR 0007 の書き直し）に追従していないことを確認した。`handler.ts` が全ルート空の状態のため型チェックでは表面化していないが、実装前に修正が必要である。
+棚卸し中に、残す11本の `route.ts` のスキーマが `schema.prisma`（ADR 0007 の書き直し）に追従していないことを確認した。`handler.ts` が `NOT_IMPLEMENTED` を投げるスタブで input を参照していないため型チェックでは表面化しないが、実装前に修正が必要である。
 
 - `upsertSeatCategory.active`: `TicketCategory` に `active` カラムが無い（論理削除できない）。逆に必須の `kind`（`ENTRY_NUMBER` / `RESERVED_SEAT`）が入力に無い
 - `upsertSaleOffer.rates[].currency` / `minQuantity` / `maxQuantity` / `quantityStep`: `SaleOfferRate` から削除済み。`SaleOffer.quantityStep` は逆に受け取れていない

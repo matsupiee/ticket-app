@@ -13,6 +13,8 @@
 - [coding-pattern/backend.md](./coding-pattern/backend.md): API実装とディレクトリ構成の規約。
 - [coding-pattern/frontend.md](./coding-pattern/frontend.md): フロントエンド実装とディレクトリ構成の規約。
 - [coding-pattern/test.md](./coding-pattern/test.md): テスト配置とテストデータ作成の規約。
+- [coding-pattern/playwright.md](./coding-pattern/playwright.md): E2E（Playwright）のspec実装の規約。
+- [coding-pattern/playwright-page-object.md](./coding-pattern/playwright-page-object.md): E2EのPage Object実装の規約。
 
 ## ADR
 

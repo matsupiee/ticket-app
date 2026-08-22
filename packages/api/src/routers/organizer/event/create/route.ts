@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { createEventHandler } from "./handler";
+import { handler } from "./handler";
 import { protectedProcedure } from "../../../../index";
 
 const createEventInputSchema = z.object({
@@ -25,4 +25,4 @@ export const createEventRoute = protectedProcedure
   })
   .input(createEventInputSchema)
   .output(createEventOutputSchema)
-  .handler(createEventHandler);
+  .handler(handler);
