@@ -115,11 +115,20 @@ model TicketCategory {
   description  String // 何もない場合は空文字
   displayOrder Int                @default(0)
 
+  // 整理番号の接頭辞。「A-1」「S-1」のように席種を見分けるために使う（ADR 0008）
+  // kind = ENTRY_NUMBER のときだけ設定でき、null なら接頭辞なしで数字だけを表示する
+  // 半角英数字1〜4文字（大文字）。区切り文字「-」は表示時に付けるのでここには含めない
+  // 整理番号の一意スコープは InventoryPool（公演 × 席種）なので、接頭辞も席種単位で持つ
+  entryNumberPrefix String?
+
   event Event @relation(fields: [eventId], references: [id])
 
   inventoryPools InventoryPool[]
 
   @@unique([eventId, name])
+  // 同じイベント内で接頭辞が重複すると席種を見分けられなくなるため一意にする
+  // PostgreSQL は NULL 同士を重複とみなさないので、接頭辞なしの席種は複数あってよい
+  @@unique([eventId, entryNumberPrefix])
 }
 
 enum TicketCategoryKind {
